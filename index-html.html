@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>D&D 5e Character Sheet</title>
+  <meta name="theme-color" content="#d97706"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="D&D Sheet"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <style>
+    body { background: #111827; margin: 0; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+    ::-webkit-scrollbar { width: 6px; } 
+    ::-webkit-scrollbar-track { background: #1f2937; }
+    ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+const SKILLS = [
+  { name: "Akrobatik", en: "Acrobatics", stat: "dex" },
+  { name: "Arkane Kunde", en: "Arcana", stat: "int" },
+  { name: "Athletik", en: "Athletics", stat: "str" },
+  { name: "Auftreten", en: "Performance", stat: "cha" },
+  { name: "Einschüchtern", en: "Intimidation", stat: "cha" },
+  { name: "Geschichte", en: "History", stat: "int" },
+  { name: "Heimlichkeit", en: "Stealth", stat: "dex" },
+  { name: "Medizin", en: "Medicine", stat: "wis" },
+  { name: "Mit Tieren umgehen", en: "Animal Handling", stat: "wis" },
+  { name: "Motiv erkennen", en: "Insight", stat: "wis" },
+  { name: "Natur", en: "Nature", stat: "int" },
+  { name: "Überleben", en: "Survival", stat: "wis" },
+  { name: "Überzeugung", en: "Persuasion", stat: "cha" },
+  { name: "Taschendiebstahl", en: "Sleight of Hand", stat: "dex" },
+  { name: "Täuschen", en: "Deception", stat: "cha" },
+  { name: "Wahrnehmung", en: "Perception", stat: "wis" },
+  { name: "Religion", en: "Religion", stat: "int" },
+  { name: "Untersuchen", en: "Investigation", stat: "int" },
+];
+
+const SAVES = ["str","dex","con","int","wis","cha"];
+const STAT_NAMES = { str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA" };
+
+const FEATURE_TYPES = [
+  { value: "extra_attack",  label: "⚔ Extra Angriff" },
+  { value: "bonus_damage",  label: "🎲 Bonusschaden" },
+  { value: "sneak_attack",  label: "🗡 Sneak Attack" },
+  { value: "attack_bonus",  label: "🎯 Angriffsbonus" },
+  { value: "ac_bonus",      label: "🛡 RK Bonus" },
+  { value: "stat_bonus",    label: "💪 Attributbonus" },
+  { value: "skill_bonus",   label: "🎓 Fertigkeitsbonus" },
+  { value: "passive",       label: "✨ Passives Feature" },
+  { value: "other",         label: "📝 Sonstiges" },
+];
+
+const ITEM_TYPES = [
+  { value: "misc",    label: "📦 Sonstiges" },
+  { value: "weapon",  label: "⚔ Waffe" },
+  { value: "armor",   label: "🛡 Rüstung" },
+  { value: "shield",  label: "🔰 Schild" },
+  { value: "potion",  label: "🧪 Trank" },
+  { value: "magic",   label: "✨ Magischer Gegenstand" },
+];
+
+const WEAPON_PROPS = ["Finesse","Leicht","Schwer","Zweihändig","Vielseitig","Reichweite","Wurfwaffe","Ladezeit","Versteckt"];
+const DAMAGE_TYPES = ["Hieb","Stich","Wucht","Feuer","Kälte","Blitz","Nekrotisch","Strahlend","Gift","Säure","Donner","Psychisch","Kraft"];
+const SCALE_STATS  = ["STR","DEX","STR oder DEX","INT","WIS","CHA","—"];
+
+const DEFAULT_ITEM = { name:"", type:"misc", qty:1, weight:0, equipped:false,
+  weapon:{ damage:"", damageType:"Stich", scale:"STR", bonus:0, props:[], range:"" },
+  armor:{ ac:10, stealthDisadv:false, bonus:0 },
+  shield:{ acBonus:2 },
+  potion:{ healing:"", effect:"" },
+  magic:{ description:"", bonus:0, attunement:false, attuned:false },
+  desc:"" };
+
+const DEFAULT_FEATURE = { name:"", type:"passive", value:"", target:"", note:"", active:true };
+
+const DEFAULT = {
+  name:"", race:"", background:"", alignment:"",
+  classes:[{ name:"", subclass:"", level:1 }],
+  xp:0, maxHP:10, currentHP:10, tempHP:0, ac:10, speed:30,
+  inspiration:false, hitDice:"1d8",
+  stats:{ str:10, dex:10, con:10, int:10, wis:10, cha:10 },
+  saveProficiencies:{ str:false, dex:false, con:false, int:false, wis:false, cha:false },
+  skillProficiencies: Object.fromEntries(SKILLS.map(s=>[s.name, false])),
+  skillExpertise: Object.fromEntries(SKILLS.map(s=>[s.name, false])),
+  attacks:[], featureList:[],
+  spellcastingAbility:"", spellSaveDC:8, spellAttackBonus:0,
+  spells:{ 0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[] },
+  spellSlots:{ 1:[0,0],2:[0,0],3:[0,0],4:[0,0],5:[0,0],6:[0,0],7:[0,0],8:[0,0],9:[0,0] },
+  equipment:"", notes:"", personalityTraits:"", ideals:"", bonds:"", flaws:"",
+  currency:{ pp:0, gp:0, ep:0, sp:0, cp:0 },
+  inventory:[]
+};
+
+const statMod = v => Math.floor((v - 10) / 2);
+const fmtMod  = v => (v >= 0 ? "+" : "") + v;
+const profB   = lvl => Math.ceil(lvl / 4) + 1;
+
+function Sheet() {
+  const [ch, setCh]         = useState(DEFAULT);
+  const [tab, setTab]       = useState("core");
+  const [saved, setSaved]   = useState(false);
+  const [expandedItem, setExpandedItem] = useState(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("dnd5e_sheet");
+      if (raw) {
+        const p = JSON.parse(raw);
+        setCh({ ...DEFAULT, ...p,
+          currency:    { ...DEFAULT.currency,    ...(p.currency    || {}) },
+          inventory:   (p.inventory   || []).map(it => ({ ...DEFAULT_ITEM, ...it, weapon:{...DEFAULT_ITEM.weapon,...(it.weapon||{})}, armor:{...DEFAULT_ITEM.armor,...(it.armor||{})}, shield:{...DEFAULT_ITEM.shield,...(it.shield||{})}, potion:{...DEFAULT_ITEM.potion,...(it.potion||{})}, magic:{...DEFAULT_ITEM.magic,...(it.magic||{})} })),
+          featureList: (p.featureList || []).map(f => ({ ...DEFAULT_FEATURE, ...f })),
+          classes:      p.classes || DEFAULT.classes,
+        });
+      }
+    } catch {}
+  }, []);
+
+  const save = useCallback((data) => {
+    try { localStorage.setItem("dnd5e_sheet", JSON.stringify(data)); setSaved(true); setTimeout(()=>setSaved(false),1500); } catch {}
+  }, []);
+
+  const up = (path, val) => {
+    setCh(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      const keys = path.split(".");
+      let obj = next;
+      for (let i = 0; i < keys.length-1; i++) obj = obj[keys[i]];
+      obj[keys[keys.length-1]] = val;
+      save(next); return next;
+    });
+  };
+
+  const upCh = (fn) => {
+    setCh(prev => { const next = fn(JSON.parse(JSON.stringify(prev))); save(next); return next; });
+  };
+
+  const activeF = ch.featureList.filter(f => f.active !== false);
+  const statBonuses  = Object.fromEntries(SAVES.map(s => [s, 0]));
+  const skillBonuses = Object.fromEntries(SKILLS.map(s => [s.name, 0]));
+  activeF.filter(f=>f.type==="stat_bonus"  && f.target).forEach(f=>{ if(statBonuses[f.target]!==undefined)  statBonuses[f.target]  += parseInt(f.value)||0; });
+  activeF.filter(f=>f.type==="skill_bonus" && f.target).forEach(f=>{ if(skillBonuses[f.target]!==undefined) skillBonuses[f.target] += parseInt(f.value)||0; });
+
+  const equipped        = ch.inventory.filter(it => it.equipped);
+  const equippedWeapons = equipped.filter(it => it.type==="weapon");
+  const equippedArmor   = equipped.find(it  => it.type==="armor");
+  const equippedShield  = equipped.find(it  => it.type==="shield");
+  const equippedMagic   = equipped.filter(it => it.type==="magic" && it.magic?.bonus);
+  const armorACBonus    = equippedArmor  ? (equippedArmor.armor?.bonus  || 0) : 0;
+  const shieldACBonus   = equippedShield ? (equippedShield.shield?.acBonus || 0) : 0;
+  const magicACBonus    = equippedMagic.reduce((s,it) => s + (parseInt(it.magic?.bonus)||0), 0);
+
+  const totalLevel = ch.classes.reduce((s,c)=>s+(c.level||0),0) || 1;
+  const pb         = profB(totalLevel);
+  const effStat    = k => ch.stats[k] + (statBonuses[k]||0);
+
+  const skillMod = skill => {
+    const s = SKILLS.find(x=>x.name===skill);
+    const base = statMod(effStat(s.stat)) + (skillBonuses[skill]||0);
+    if (ch.skillExpertise[skill])     return base + pb*2;
+    if (ch.skillProficiencies[skill]) return base + pb;
+    return base;
+  };
+  const saveMod = stat => {
+    const base = statMod(effStat(stat));
+    return ch.saveProficiencies[stat] ? base+pb : base;
+  };
+  const passivePerc = 10 + skillMod("Wahrnehmung");
+
+  const extraAttacks = activeF.filter(f=>f.type==="extra_attack").reduce((s,f)=>s+(parseInt(f.value)||1),0);
+  const totalAttacks = 1 + extraAttacks;
+  const attackBonusF = activeF.filter(f=>f.type==="attack_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
+  const acBonusF     = activeF.filter(f=>f.type==="ac_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
+  const totalAC      = ch.ac + acBonusF + armorACBonus + shieldACBonus + magicACBonus;
+  const bonusDmgF    = activeF.filter(f=>f.type==="bonus_damage"||f.type==="sneak_attack");
+  const passiveF     = activeF.filter(f=>f.type==="passive"||f.type==="other");
+  const statBonusF   = activeF.filter(f=>f.type==="stat_bonus");
+  const skillBonusF  = activeF.filter(f=>f.type==="skill_bonus");
+
+  const weaponAtkBonus = (w) => {
+    const sc = w.weapon?.scale || "STR";
+    let mod = 0;
+    if (sc==="STR") mod = statMod(effStat("str"));
+    else if (sc==="DEX") mod = statMod(effStat("dex"));
+    else if (sc==="STR oder DEX") mod = Math.max(statMod(effStat("str")), statMod(effStat("dex")));
+    else if (sc==="INT") mod = statMod(effStat("int"));
+    else if (sc==="WIS") mod = statMod(effStat("wis"));
+    else if (sc==="CHA") mod = statMod(effStat("cha"));
+    return mod + pb + (parseInt(w.weapon?.bonus)||0) + attackBonusF;
+  };
+
+  const Check = ({path, label}) => (
+    <label className="flex items-center gap-1 cursor-pointer text-xs text-gray-300">
+      <input type="checkbox" checked={path.split(".").reduce((o,k)=>o?.[k]??false,ch)} onChange={e=>up(path,e.target.checked)} className="accent-yellow-500"/>
+      {label}
+    </label>
+  );
+  const TInput = ({value, onChange, placeholder, cls="", type="text"}) => (
+    <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+      className={`bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500 ${cls}`}/>
+  );
+  const Label = ({children}) => <label className="text-xs text-gray-400 block mb-1">{children}</label>;
+
+  const tabs = [["core","Charakter"],["skills","Fertigkeiten"],["combat","Kampf"],["spells","Zauber"],["inventory","Inventar"],["features","Features"],["notes","Notizen"]];
+
+  const ItemDetail = ({it, i}) => {
+    const subNested = (cat, field, val) => upCh(n=>{ n.inventory[i][cat][field]=val; return n; });
+    const toggleProp = (prop) => upCh(n=>{
+      const props = n.inventory[i].weapon.props || [];
+      n.inventory[i].weapon.props = props.includes(prop) ? props.filter(p=>p!==prop) : [...props, prop];
+      return n;
+    });
+    return (
+      <div className="mt-3 pt-3 border-t border-gray-600 space-y-3">
+        {it.type==="weapon" && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div><Label>Schaden</Label><TInput value={it.weapon.damage} onChange={e=>subNested("weapon","damage",e.target.value)} placeholder="1d6" cls="w-full"/></div>
+              <div><Label>Schadenstyp</Label>
+                <select value={it.weapon.damageType} onChange={e=>subNested("weapon","damageType",e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500">
+                  {DAMAGE_TYPES.map(d=><option key={d}>{d}</option>)}
+                </select>
+              </div>
+              <div><Label>Skalierung</Label>
+                <select value={it.weapon.scale} onChange={e=>subNested("weapon","scale",e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500">
+                  {SCALE_STATS.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div><Label>Magischer Bonus</Label><TInput type="number" value={it.weapon.bonus} onChange={e=>subNested("weapon","bonus",+e.target.value)} placeholder="0" cls="w-full"/></div>
+            </div>
+            <div><Label>Reichweite</Label><TInput value={it.weapon.range} onChange={e=>subNested("weapon","range",e.target.value)} placeholder="5ft" cls="w-48"/></div>
+            <div>
+              <Label>Eigenschaften</Label>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {WEAPON_PROPS.map(p=>(
+                  <button key={p} onClick={()=>toggleProp(p)}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${(it.weapon.props||[]).includes(p)?"bg-yellow-700 border-yellow-500 text-white":"bg-gray-700 border-gray-600 text-gray-400 hover:text-white"}`}>{p}</button>
+                ))}
+              </div>
+            </div>
+            {it.equipped && <div className="bg-gray-700 rounded p-2 text-xs text-green-400">⚡ Angriff: <strong>{fmtMod(weaponAtkBonus(it))}</strong> | Schaden: <strong>{it.weapon.damage}{it.weapon.bonus?` +${it.weapon.bonus}`:""} {it.weapon.damageType}</strong></div>}
+          </div>
+        )}
+        {it.type==="armor" && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div><Label>Basis-RK</Label><TInput type="number" value={it.armor.ac} onChange={e=>subNested("armor","ac",+e.target.value)} placeholder="14" cls="w-full"/></div>
+            <div><Label>Magischer Bonus</Label><TInput type="number" value={it.armor.bonus} onChange={e=>subNested("armor","bonus",+e.target.value)} placeholder="0" cls="w-full"/></div>
+            <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={it.armor.stealthDisadv} onChange={e=>subNested("armor","stealthDisadv",e.target.checked)} className="accent-yellow-500"/>Nachteil Heimlichkeit</label></div>
+            {it.equipped && <div className="col-span-full bg-gray-700 rounded p-2 text-xs text-green-400">⚡ Gibt {it.armor.ac+(it.armor.bonus||0)} RK{it.armor.stealthDisadv?" · Nachteil Heimlichkeit":""}</div>}
+          </div>
+        )}
+        {it.type==="shield" && (
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>RK-Bonus</Label><TInput type="number" value={it.shield.acBonus} onChange={e=>subNested("shield","acBonus",+e.target.value)} placeholder="2" cls="w-full"/></div>
+            {it.equipped && <div className="flex items-end pb-1 text-xs text-green-400">⚡ Gibt +{it.shield.acBonus} RK</div>}
+          </div>
+        )}
+        {it.type==="potion" && (
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Heilung (z.B. 2d4+2)</Label><TInput value={it.potion.healing} onChange={e=>subNested("potion","healing",e.target.value)} placeholder="2d4+2" cls="w-full"/></div>
+            <div><Label>Effekt</Label><TInput value={it.potion.effect} onChange={e=>subNested("potion","effect",e.target.value)} placeholder="Heilt HP..." cls="w-full"/></div>
+          </div>
+        )}
+        {it.type==="magic" && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label>Magischer Bonus (+X)</Label><TInput type="number" value={it.magic.bonus} onChange={e=>subNested("magic","bonus",+e.target.value)} placeholder="0" cls="w-full"/></div>
+              <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={it.magic.attunement} onChange={e=>subNested("magic","attunement",e.target.checked)} className="accent-yellow-500"/>Abstimmung nötig</label></div>
+              {it.magic.attunement && <div className="flex items-end pb-1"><label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer"><input type="checkbox" checked={it.magic.attuned} onChange={e=>subNested("magic","attuned",e.target.checked)} className="accent-yellow-500"/>Abgestimmt ✓</label></div>}
+            </div>
+            <div><Label>Beschreibung</Label><textarea value={it.magic.description} onChange={e=>subNested("magic","description",e.target.value)} rows={2} placeholder="Effekt..." className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+          </div>
+        )}
+        <div><Label>Notiz</Label><TInput value={it.desc} onChange={e=>upCh(n=>{n.inventory[i].desc=e.target.value;return n;})} placeholder="Sonstige Notiz..." cls="w-full"/></div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4 font-sans">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-yellow-400">⚔ D&D 5e Sheet</h1>
+          {saved && <span className="text-green-400 text-xs ml-2">✓ Gespeichert</span>}
+        </div>
+        <button onClick={()=>{
+          const w=window.open("","_blank");
+          w.document.write(`<!DOCTYPE html><html><head><title>${ch.name} - D&D 5e</title><style>body{font-family:sans-serif;color:#222;margin:20px}h2{font-size:14px;border-bottom:1px solid #ccc;margin:12px 0 4px}table{border-collapse:collapse;width:100%}td,th{padding:3px 6px;font-size:12px}.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}.box{border:1px solid #ccc;border-radius:4px;padding:4px;text-align:center}.bv{font-size:18px;font-weight:bold}</style></head><body>
+          <h1>${ch.name||"?"}</h1><p style="color:#555">${ch.race} · ${ch.classes.map(c=>`${c.name} ${c.level}`).join("/")} · Level ${totalLevel} · ${ch.background}</p>
+          <h2>Attribute</h2><div class="grid">${SAVES.map(k=>`<div class="box"><div style="font-size:9px;color:#888">${STAT_NAMES[k]}</div><div class="bv">${fmtMod(statMod(effStat(k)))}</div><div style="font-size:10px">${effStat(k)}</div></div>`).join("")}</div>
+          <h2>Kampf</h2><table><tr>${[["HP",`${ch.currentHP}/${ch.maxHP}`],["RK",totalAC],["Angriffe",totalAttacks],["Init",fmtMod(statMod(effStat("dex")))],["ÜB",fmtMod(pb)],["Pass.W.",passivePerc]].map(([l,v])=>`<td style="text-align:center;border:1px solid #ddd;padding:5px"><div style="font-size:9px;color:#888">${l}</div><div style="font-size:15px;font-weight:bold">${v}</div></td>`).join("")}</tr></table>
+          <h2>Waffen</h2><table><tr><th>Name</th><th>Angriff</th><th>Schaden</th><th>Typ</th></tr>${equippedWeapons.map(w=>`<tr><td>${w.name}</td><td>${fmtMod(weaponAtkBonus(w))}</td><td>${w.weapon.damage}${w.weapon.bonus?"+"+w.weapon.bonus:""}</td><td>${w.weapon.damageType}</td></tr>`).join("")}</table>
+          </body></html>`);
+          w.document.close(); setTimeout(()=>w.print(),400);
+        }} className="bg-yellow-600 hover:bg-yellow-500 text-black font-bold px-3 py-2 rounded text-sm">PDF</button>
+      </div>
+
+      <div className="flex gap-1 mb-4 border-b border-gray-700 flex-wrap">
+        {tabs.map(([id,label])=>(
+          <button key={id} onClick={()=>setTab(id)}
+            className={`px-3 py-2 text-sm font-medium rounded-t transition-colors ${tab===id?"bg-yellow-600 text-black":"text-gray-400 hover:text-white"}`}>{label}</button>
+        ))}
+      </div>
+
+      {tab==="core" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[["Charaktername","name"],["Rasse","race"],["Hintergrund","background"],["Gesinnung","alignment"]].map(([l,p])=>(
+              <div key={p}><Label>{l}</Label><input value={ch[p]} onChange={e=>up(p,e.target.value)} className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+            ))}
+            <div><Label>XP</Label><input type="number" value={ch.xp} onChange={e=>up("xp",+e.target.value)} className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+            <div><Label>Hit Dice</Label><input value={ch.hitDice} onChange={e=>up("hitDice",e.target.value)} placeholder="1d8" className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-yellow-400 font-bold">Klassen</h2>
+              <button onClick={()=>upCh(n=>{n.classes.push({name:"",subclass:"",level:1});return n;})} className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded">+ Klasse</button>
+            </div>
+            <div className="space-y-2">
+              {ch.classes.map((c,i)=>(
+                <div key={i} className="flex items-center gap-2 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2">
+                  <div className="flex-1"><Label>Klasse</Label><input value={c.name} onChange={e=>upCh(n=>{n.classes[i].name=e.target.value;return n;})} placeholder="z.B. Mönch" className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+                  <div className="flex-1"><Label>Subklasse</Label><input value={c.subclass} onChange={e=>upCh(n=>{n.classes[i].subclass=e.target.value;return n;})} placeholder="z.B. Offene Hand" className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/></div>
+                  <div className="w-20"><Label>Level</Label><input type="number" min="1" max="20" value={c.level} onChange={e=>upCh(n=>{n.classes[i].level=+e.target.value;return n;})} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-yellow-500"/></div>
+                  {ch.classes.length>1 && <button onClick={()=>upCh(n=>{n.classes.splice(i,1);return n;})} className="text-red-500 hover:text-red-300 font-bold mt-4">✕</button>}
+                </div>
+              ))}
+              <div className="text-xs text-gray-400 text-right">Gesamt-Level: <span className="text-yellow-400 font-bold">{totalLevel}</span> | ÜB: <span className="text-yellow-400 font-bold">{fmtMod(pb)}</span></div>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-yellow-400 font-bold mb-3">Attribute</h2>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+              {SAVES.map(k=>{
+                const bonus=statBonuses[k]||0;
+                return (
+                  <div key={k} className={`bg-gray-800 border rounded-lg p-3 text-center ${bonus!==0?"border-yellow-600":"border-gray-600"}`}>
+                    <div className="text-xs text-gray-400 font-bold">{STAT_NAMES[k]}</div>
+                    <div className="text-2xl font-bold text-yellow-400 my-1">{fmtMod(statMod(effStat(k)))}</div>
+                    <input type="number" min="1" max="30" value={ch.stats[k]} onChange={e=>up(`stats.${k}`,+e.target.value)} className="w-14 bg-gray-700 border border-gray-500 rounded text-center text-sm text-white focus:outline-none focus:border-yellow-500"/>
+                    {bonus!==0 && <div className="text-xs text-yellow-500 mt-1">{fmtMod(bonus)} Feat.</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <h2 className="text-yellow-400 font-bold mb-2">Rettungswürfe</h2>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {SAVES.map(s=>(
+                <div key={s} className="bg-gray-800 border border-gray-600 rounded p-2 text-center">
+                  <div className="text-xs text-gray-400">{STAT_NAMES[s]}</div>
+                  <div className="text-lg font-bold">{fmtMod(saveMod(s))}</div>
+                  <Check path={`saveProficiencies.${s}`} label="Prof."/>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab==="skills" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {SKILLS.map(s=>{
+            const bonus=skillBonuses[s.name]||0;
+            return (
+              <div key={s.name} className={`flex items-center gap-2 bg-gray-800 border rounded px-3 py-2 ${bonus!==0?"border-yellow-600":"border-gray-600"}`}>
+                <span className={`text-lg font-bold w-10 text-center ${skillMod(s.name)>=0?"text-green-400":"text-red-400"}`}>{fmtMod(skillMod(s.name))}</span>
+                <div className="flex-1">
+                  <div className="text-sm text-white">{s.name} <span className="text-gray-500 text-xs">({s.en})</span> <span className="text-gray-600 text-xs">· {STAT_NAMES[s.stat]}</span>{bonus!==0&&<span className="text-yellow-500 text-xs ml-1">({fmtMod(bonus)} Feat.)</span>}</div>
+                  <div className="flex gap-3 mt-1"><Check path={`skillProficiencies.${s.name}`} label="Geübt"/><Check path={`skillExpertise.${s.name}`} label="Expertise"/></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {tab==="combat" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[["Max TP","maxHP"],["Akt. TP","currentHP"],["Temp TP","tempHP"],["Basis-RK","ac"],["Speed ft","speed"]].map(([l,p])=>(
+              <div key={p} className="bg-gray-800 border border-gray-600 rounded-lg p-3"><Label>{l}</Label><input type="number" value={ch[p]} onChange={e=>up(p,+e.target.value)} className="w-full bg-transparent text-white text-lg font-bold mt-1 focus:outline-none"/></div>
+            ))}
+            <div className="bg-gray-800 border border-gray-600 rounded-lg p-3"><div className="text-xs text-gray-400">Initiative</div><div className="text-lg font-bold text-yellow-400">{fmtMod(statMod(effStat("dex")))}</div></div>
+            <div className="bg-gray-800 border border-gray-600 rounded-lg p-3"><div className="text-xs text-gray-400">Übungsbonus</div><div className="text-lg font-bold text-yellow-400">{fmtMod(pb)}</div></div>
+            <div className="bg-gray-800 border border-gray-600 rounded-lg p-3"><div className="text-xs text-gray-400">Passive Wahrn.</div><div className="text-lg font-bold text-yellow-400">{passivePerc}</div></div>
+          </div>
+          <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+            <div className="flex justify-between mb-1 text-sm"><span>HP</span><span>{ch.currentHP}/{ch.maxHP}</span></div>
+            <div className="bg-gray-700 rounded-full h-4 overflow-hidden"><div className="h-full rounded-full transition-all duration-300" style={{width:`${Math.max(0,Math.min(100,(ch.currentHP/Math.max(1,ch.maxHP))*100))}%`,background:ch.currentHP/ch.maxHP>0.5?"#22c55e":ch.currentHP/ch.maxHP>0.25?"#f59e0b":"#ef4444"}}/></div>
+          </div>
+          {equippedWeapons.length>0&&(
+            <div>
+              <h2 className="text-yellow-400 font-bold mb-2">⚔ Ausgerüstete Waffen</h2>
+              <table className="w-full text-sm"><thead><tr className="text-gray-400 text-xs"><th className="text-left p-2">Name</th><th className="p-2">Angriff</th><th className="p-2">Schaden</th><th className="p-2">Typ</th><th className="text-left p-2">Eigenschaften</th></tr></thead>
+                <tbody>{equippedWeapons.map((w,i)=><tr key={i} className="border-t border-gray-700"><td className="p-2 font-medium">{w.name}</td><td className="p-2 text-center text-green-400 font-bold">{fmtMod(weaponAtkBonus(w))}</td><td className="p-2 text-center">{w.weapon.damage}{w.weapon.bonus?<span className="text-yellow-400"> +{w.weapon.bonus}</span>:""}</td><td className="p-2 text-center text-gray-400">{w.weapon.damageType}</td><td className="p-2 text-xs text-gray-400">{(w.weapon.props||[]).join(", ")}</td></tr>)}</tbody>
+              </table>
+            </div>
+          )}
+          {(equippedArmor||equippedShield)&&(
+            <div className="bg-gray-800 border border-gray-600 rounded-lg p-3">
+              <h2 className="text-yellow-400 font-bold mb-2">🛡 Rüstung & Schild</h2>
+              <div className="flex gap-4 flex-wrap text-sm">
+                {equippedArmor&&<div className="bg-gray-700 rounded px-3 py-2"><div className="text-xs text-gray-400">Rüstung</div><div className="font-medium">{equippedArmor.name}</div><div className="text-yellow-400">RK {equippedArmor.armor.ac+(equippedArmor.armor.bonus||0)}</div>{equippedArmor.armor.stealthDisadv&&<div className="text-red-400 text-xs">Nachteil Heimlichkeit</div>}</div>}
+                {equippedShield&&<div className="bg-gray-700 rounded px-3 py-2"><div className="text-xs text-gray-400">Schild</div><div className="font-medium">{equippedShield.name}</div><div className="text-yellow-400">+{equippedShield.shield.acBonus} RK</div></div>}
+                <div className="bg-yellow-900 border border-yellow-600 rounded px-3 py-2"><div className="text-xs text-yellow-400">Gesamt-RK</div><div className="text-2xl font-bold text-yellow-400">{totalAC}</div></div>
+              </div>
+            </div>
+          )}
+          {activeF.length>0&&(
+            <div className="bg-gray-800 border border-yellow-700 rounded-lg p-4">
+              <h2 className="text-yellow-400 font-bold mb-3">✨ Aktive Feature-Boni</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                <div className="bg-gray-700 rounded-lg p-3 text-center"><div className="text-xs text-gray-400">Angriffe/Runde</div><div className="text-2xl font-bold text-yellow-400">{totalAttacks}</div>{extraAttacks>0&&<div className="text-xs text-green-400">+{extraAttacks} Feature</div>}</div>
+                <div className="bg-gray-700 rounded-lg p-3 text-center"><div className="text-xs text-gray-400">Effektive RK</div><div className="text-2xl font-bold text-yellow-400">{totalAC}</div>{acBonusF!==0&&<div className="text-xs text-green-400">{fmtMod(acBonusF)} Feature</div>}</div>
+                <div className="bg-gray-700 rounded-lg p-3 text-center"><div className="text-xs text-gray-400">Angriffsbonus</div><div className="text-2xl font-bold text-yellow-400">{attackBonusF!==0?fmtMod(attackBonusF):"—"}</div></div>
+                <div className="bg-gray-700 rounded-lg p-3 text-center"><div className="text-xs text-gray-400">Bonusschaden</div><div className="text-lg font-bold text-yellow-400">{bonusDmgF.length>0?bonusDmgF.map(f=>f.value).join(" + "):"—"}</div></div>
+              </div>
+              <div className="space-y-1">
+                {bonusDmgF.map((f,i)=><div key={i} className="flex items-center gap-2 text-sm bg-gray-700 rounded px-3 py-1"><span className="text-yellow-400">🎲</span><span className="font-medium">{f.name}</span><span className="text-gray-400">—</span><span className="text-green-400">{f.value}</span>{f.note&&<span className="text-gray-500 text-xs italic ml-auto">{f.note}</span>}</div>)}
+                {statBonusF.map((f,i)=><div key={i} className="flex items-center gap-2 text-sm bg-gray-700 rounded px-3 py-1"><span className="text-yellow-400">💪</span><span className="font-medium">{f.name}</span><span className="text-green-400 ml-2">{f.target?STAT_NAMES[f.target]:""} {fmtMod(parseInt(f.value)||0)}</span></div>)}
+                {skillBonusF.map((f,i)=><div key={i} className="flex items-center gap-2 text-sm bg-gray-700 rounded px-3 py-1"><span className="text-yellow-400">🎓</span><span className="font-medium">{f.name}</span><span className="text-green-400 ml-2">{f.target} {fmtMod(parseInt(f.value)||0)}</span></div>)}
+                {passiveF.map((f,i)=><div key={i} className="flex items-center gap-2 text-sm bg-gray-700 rounded px-3 py-1"><span className="text-yellow-400">✨</span><span className="font-medium">{f.name}</span>{f.note&&<span className="text-gray-500 text-xs italic ml-2">{f.note}</span>}</div>)}
+              </div>
+            </div>
+          )}
+          <div>
+            <div className="flex items-center justify-between mb-2"><h2 className="text-yellow-400 font-bold">Manuelle Angriffe</h2><button onClick={()=>upCh(n=>{n.attacks.push({name:"",bonus:"",damage:"",type:""});return n;})} className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded">+ Hinzufügen</button></div>
+            <table className="w-full text-sm"><thead><tr className="text-gray-400 text-xs"><th className="text-left p-2">Name</th><th className="p-2">Bonus</th><th className="p-2">Schaden</th><th className="p-2">Typ</th><th></th></tr></thead>
+              <tbody>{ch.attacks.map((a,i)=><tr key={i} className="border-t border-gray-700">
+                <td className="p-1"><input value={a.name} onChange={e=>upCh(n=>{n.attacks[i].name=e.target.value;return n;})} placeholder="Name" className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm w-full focus:outline-none focus:border-yellow-500"/></td>
+                <td className="p-1"><input value={a.bonus} onChange={e=>upCh(n=>{n.attacks[i].bonus=e.target.value;return n;})} placeholder="+5" className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm w-16 focus:outline-none focus:border-yellow-500"/></td>
+                <td className="p-1"><input value={a.damage} onChange={e=>upCh(n=>{n.attacks[i].damage=e.target.value;return n;})} placeholder="1d6+3" className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm w-20 focus:outline-none focus:border-yellow-500"/></td>
+                <td className="p-1"><input value={a.type} onChange={e=>upCh(n=>{n.attacks[i].type=e.target.value;return n;})} placeholder="Stich" className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm w-20 focus:outline-none focus:border-yellow-500"/></td>
+                <td className="p-1 text-center"><button onClick={()=>upCh(n=>{n.attacks.splice(i,1);return n;})} className="text-red-500 hover:text-red-300 font-bold">✕</button></td>
+              </tr>)}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {tab==="spells" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            {[["Zaubermerkmal","spellcastingAbility","text","INT/WIS/CHA"],["Zauber-SG","spellSaveDC","number",""],["Zauberangriff","spellAttackBonus","number",""]].map(([l,p,t,ph])=>(
+              <div key={p} className="bg-gray-800 border border-gray-600 rounded-lg p-3"><Label>{l}</Label><input type={t} value={ch[p]} onChange={e=>up(p,t==="number"?+e.target.value:e.target.value)} placeholder={ph} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm mt-1 focus:outline-none focus:border-yellow-500"/></div>
+            ))}
+          </div>
+          {[0,1,2,3,4,5,6,7,8,9].map(lvl=>(
+            <div key={lvl} className="bg-gray-800 border border-gray-600 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-yellow-400 font-bold">{lvl===0?"Zaubertricks":"Grad "+lvl}</h3>
+                <div className="flex items-center gap-3">
+                  {lvl>0&&<div className="flex items-center gap-1 text-xs text-gray-400">Slots:<input type="number" min="0" max="9" value={ch.spellSlots[lvl][0]} onChange={e=>upCh(n=>{n.spellSlots[lvl][0]=+e.target.value;return n;})} className="w-10 bg-gray-700 border border-gray-600 rounded text-center text-white text-xs focus:outline-none"/>/<input type="number" min="0" max="9" value={ch.spellSlots[lvl][1]} onChange={e=>upCh(n=>{n.spellSlots[lvl][1]=+e.target.value;return n;})} className="w-10 bg-gray-700 border border-gray-600 rounded text-center text-white text-xs focus:outline-none"/></div>}
+                  <button onClick={()=>upCh(n=>{n.spells[lvl].push({name:"",prepared:false});return n;})} className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded">+ Zauber</button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {ch.spells[lvl].map((sp,i)=>(
+                  <div key={i} className="flex items-center gap-2">
+                    {lvl>0&&<input type="checkbox" checked={sp.prepared} onChange={e=>upCh(n=>{n.spells[lvl][i].prepared=e.target.checked;return n;})} className="accent-yellow-500"/>}
+                    <input value={sp.name} onChange={e=>upCh(n=>{n.spells[lvl][i].name=e.target.value;return n;})} placeholder="Zaubername..." className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/>
+                    <button onClick={()=>upCh(n=>{n.spells[lvl].splice(i,1);return n;})} className="text-red-500 hover:text-red-300 font-bold text-sm">✕</button>
+                  </div>
+                ))}
+                {ch.spells[lvl].length===0&&<div className="text-gray-600 text-xs italic">Keine Zauber</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab==="inventory" && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-yellow-400 font-bold mb-3">💰 Geldbeutel</h2>
+            <div className="grid grid-cols-5 gap-3">
+              {[["PP","Platin","pp"],["GP","Gold","gp"],["EP","Elektrum","ep"],["SP","Silber","sp"],["CP","Kupfer","cp"]].map(([short,long,key])=>(
+                <div key={key} className="bg-gray-800 border border-gray-600 rounded-lg p-3 text-center">
+                  <div className="text-xs text-gray-400 font-bold">{short}</div><div className="text-xs text-gray-500 mb-2">{long}</div>
+                  <input type="number" min="0" value={ch.currency[key]} onChange={e=>upCh(n=>{n.currency[key]=+e.target.value;return n;})} className="w-full bg-gray-700 border border-gray-600 rounded text-center text-white font-bold text-lg focus:outline-none focus:border-yellow-500"/>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-xs text-gray-500 text-right">Gesamt: {(ch.currency.pp*10+ch.currency.gp+ch.currency.ep*0.5+ch.currency.sp*0.1+ch.currency.cp*0.01).toFixed(2)} gp</div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-yellow-400 font-bold">🎒 Inventar</h2>
+              <button onClick={()=>{upCh(n=>{n.inventory.push({...DEFAULT_ITEM});return n;}); setExpandedItem(ch.inventory.length);}} className="bg-yellow-700 hover:bg-yellow-600 text-white text-xs px-3 py-1 rounded font-bold">+ Gegenstand</button>
+            </div>
+            {ch.inventory.length===0
+              ? <div className="text-gray-600 text-sm italic text-center py-8">Inventar ist leer</div>
+              : <div className="space-y-2">
+                  {ch.inventory.map((it,i)=>(
+                    <div key={i} className={`bg-gray-800 border rounded-lg overflow-hidden ${it.equipped?"border-yellow-600":"border-gray-700"}`}>
+                      <div className="flex items-center gap-2 px-3 py-2">
+                        {(it.type==="weapon"||it.type==="armor"||it.type==="shield"||it.type==="magic")&&(
+                          <button onClick={()=>upCh(n=>{n.inventory[i].equipped=!n.inventory[i].equipped;return n;})} title={it.equipped?"Ablegen":"Ausrüsten"}
+                            className={`text-lg leading-none transition-all ${it.equipped?"text-yellow-400":"text-gray-600 hover:text-gray-400"}`}>
+                            {it.type==="weapon"?"⚔":it.type==="armor"?"🛡":it.type==="shield"?"🔰":"✨"}
+                          </button>
+                        )}
+                        {(it.type==="potion"||it.type==="misc")&&<span className="text-lg">{it.type==="potion"?"🧪":"📦"}</span>}
+                        <select value={it.type} onChange={e=>upCh(n=>{n.inventory[i].type=e.target.value;n.inventory[i].equipped=false;return n;})} className="bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs focus:outline-none focus:border-yellow-500">
+                          {ITEM_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                        <input value={it.name} onChange={e=>upCh(n=>{n.inventory[i].name=e.target.value;return n;})} placeholder="Gegenstandsname" className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500"/>
+                        <input type="number" min="1" value={it.qty} onChange={e=>upCh(n=>{n.inventory[i].qty=+e.target.value;return n;})} className="w-14 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-yellow-500" title="Anzahl"/>
+                        <input type="number" min="0" step="0.5" value={it.weight} onChange={e=>upCh(n=>{n.inventory[i].weight=+e.target.value;return n;})} className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm text-center focus:outline-none focus:border-yellow-500" title="Gewicht lbs"/>
+                        <span className="text-xs text-gray-500">lbs</span>
+                        <button onClick={()=>setExpandedItem(expandedItem===i?null:i)} className="text-gray-400 hover:text-white text-sm px-1">{expandedItem===i?"▲":"▼"}</button>
+                        <button onClick={()=>{upCh(n=>{n.inventory.splice(i,1);return n;}); if(expandedItem===i)setExpandedItem(null);}} className="text-red-500 hover:text-red-300 font-bold text-sm">✕</button>
+                      </div>
+                      {it.equipped&&<div className="px-3 pb-1 text-xs text-yellow-400">✓ Ausgerüstet</div>}
+                      {expandedItem===i&&<div className="px-3 pb-3"><ItemDetail it={it} i={i}/></div>}
+                    </div>
+                  ))}
+                  <div className="text-xs text-gray-400 text-right pt-1">Gewicht: {ch.inventory.reduce((s,it)=>s+(it.weight*it.qty),0).toFixed(1)} / {ch.stats.str*15} lbs</div>
+                </div>
+            }
+          </div>
+        </div>
+      )}
+
+      {tab==="features" && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div><h2 className="text-yellow-400 font-bold">Features & Klassenmerkmale</h2><p className="text-xs text-gray-500 mt-1">Attribut- & Fertigkeitsboni werden überall eingerechnet. Kampf-Features erscheinen im Kampf-Tab.</p></div>
+            <button onClick={()=>upCh(n=>{n.featureList.push({...DEFAULT_FEATURE});return n;})} className="bg-yellow-700 hover:bg-yellow-600 text-white text-xs px-3 py-1 rounded font-bold">+ Feature</button>
+          </div>
+          {ch.featureList.length===0
+            ? <div className="text-gray-600 text-sm italic text-center py-12">Noch keine Features</div>
+            : <div className="space-y-2">
+                {ch.featureList.map((f,i)=>(
+                  <div key={i} className={`bg-gray-800 border rounded-lg p-3 ${f.active!==false?"border-gray-600":"border-gray-700 opacity-50"}`}>
+                    <div className="flex items-start gap-2">
+                      <input type="checkbox" checked={f.active!==false} onChange={e=>upCh(n=>{n.featureList[i].active=e.target.checked;return n;})} className="accent-yellow-500 mt-3"/>
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <div><Label>Name</Label><TInput value={f.name} onChange={e=>upCh(n=>{n.featureList[i].name=e.target.value;return n;})} placeholder="z.B. Sneak Attack" cls="w-full"/></div>
+                        <div><Label>Typ</Label>
+                          <select value={f.type} onChange={e=>upCh(n=>{n.featureList[i].type=e.target.value;n.featureList[i].target="";return n;})} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500">
+                            {FEATURE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+                          </select>
+                        </div>
+                        {f.type!=="passive"&&f.type!=="other"?(
+                          <div><Label>{f.type==="extra_attack"?"Anzahl":f.type==="bonus_damage"||f.type==="sneak_attack"?"Würfel":"Bonus +X"}</Label>
+                            <TInput value={f.value} onChange={e=>upCh(n=>{n.featureList[i].value=e.target.value;return n;})} placeholder={f.type==="extra_attack"?"1":f.type==="bonus_damage"||f.type==="sneak_attack"?"2d6":"2"} cls="w-full"/>
+                          </div>
+                        ):<div/>}
+                        {f.type==="stat_bonus"?(
+                          <div><Label>Attribut</Label>
+                            <select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500">
+                              <option value="">— wählen —</option>{SAVES.map(s=><option key={s} value={s}>{STAT_NAMES[s]}</option>)}
+                            </select>
+                          </div>
+                        ):f.type==="skill_bonus"?(
+                          <div><Label>Fertigkeit</Label>
+                            <select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-yellow-500">
+                              <option value="">— wählen —</option>{SKILLS.map(s=><option key={s.name} value={s.name}>{s.name}</option>)}
+                            </select>
+                          </div>
+                        ):(
+                          <div><Label>Notiz</Label><TInput value={f.note} onChange={e=>upCh(n=>{n.featureList[i].note=e.target.value;return n;})} placeholder="z.B. einmal pro Runde" cls="w-full"/></div>
+                        )}
+                      </div>
+                      <button onClick={()=>upCh(n=>{n.featureList.splice(i,1);return n;})} className="text-red-500 hover:text-red-300 font-bold text-sm mt-6">✕</button>
+                    </div>
+                    {f.active!==false&&(
+                      <div className="mt-2 ml-6 text-xs italic">
+                        {(f.type==="stat_bonus"||f.type==="skill_bonus")&&<span className="text-blue-400">📊 Wird in Attributen & Fertigkeiten eingerechnet</span>}
+                        {(f.type==="extra_attack"||f.type==="attack_bonus"||f.type==="ac_bonus"||f.type==="bonus_damage"||f.type==="sneak_attack")&&<span className="text-yellow-600">⚡ Wird im Kampf-Tab berechnet</span>}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+      )}
+
+      {tab==="notes" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[["🧠 Persönlichkeitsmerkmale","personalityTraits","Personality Traits..."],["💡 Ideale","ideals","Ideals..."],["🔗 Bindungen","bonds","Bonds..."],["⚠️ Schwächen","flaws","Flaws..."]].map(([label,path,ph])=>(
+              <div key={path} className="bg-gray-800 border border-gray-600 rounded-lg p-3">
+                <h2 className="text-yellow-400 font-bold mb-2 text-sm">{label}</h2>
+                <textarea value={ch[path]} onChange={e=>up(path,e.target.value)} rows={4} placeholder={ph} className="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white text-sm focus:outline-none focus:border-yellow-500"/>
+              </div>
+            ))}
+          </div>
+          <div><h2 className="text-yellow-400 font-bold mb-2">Notizen</h2>
+            <textarea value={ch.notes} onChange={e=>up("notes",e.target.value)} rows={8} placeholder="Freie Notizen..." className="w-full bg-gray-800 border border-gray-600 rounded p-3 text-white text-sm focus:outline-none focus:border-yellow-500"/>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Sheet/>);
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch(()=>{});
+    });
+  }
+</script>
+</body>
+</html>

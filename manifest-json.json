@@ -1,0 +1,24 @@
+{
+  "name": "D&D 5e Character Sheet",
+  "short_name": "D&D Sheet",
+  "description": "Digitales D&D 5e Charakterblatt",
+  "start_url": "/dnd-sheet/",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#d97706",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
