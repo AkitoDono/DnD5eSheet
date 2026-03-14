@@ -30,8 +30,6 @@
     .rk-box-mobile { display: none; }
     .skills-mobile { display: none; }
     @media (min-width: 481px) { .skills-mobile { display: none !important; } }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
     @keyframes flyIn{0%{transform:translateY(-300px) scale(0.5);opacity:0}60%{transform:translateY(20px) scale(1.08);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
   </style>
 </head>
@@ -72,20 +70,20 @@ const SKILLS = [
 const SAVES      = ["str","dex","con","int","wis","cha"];
 const STAT_NAMES = { str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA" };
 const FEATURE_TYPES = [
-  { value:"extra_attack", label:"⚔ Extra Angriff"     },
-  { value:"bonus_damage", label:"🎲 Bonusschaden"      },
-  { value:"sneak_attack", label:"🗡 Sneak Attack"      },
-  { value:"attack_bonus", label:"🎯 Angriffsbonus"     },
-  { value:"ac_bonus",     label:"🛡 RK Bonus"          },
-  { value:"stat_bonus",   label:"💪 Attributbonus"     },
-  { value:"skill_bonus",  label:"🎓 Fertigkeitsbonus"  },
+  { value:"extra_attack", label:"⚔ Extra Angriff"    },
+  { value:"bonus_damage", label:"🎲 Bonusschaden"     },
+  { value:"sneak_attack", label:"🗡 Sneak Attack"     },
+  { value:"attack_bonus", label:"🎯 Angriffsbonus"    },
+  { value:"ac_bonus",     label:"🛡 RK Bonus"         },
+  { value:"stat_bonus",   label:"💪 Attributbonus"    },
+  { value:"skill_bonus",  label:"🎓 Fertigkeitsbonus" },
   { value:"passive",      label:"✨ Passives Feature"  },
-  { value:"resistance",   label:"🛡 Resistenz"         },
-  { value:"advantage",    label:"🟢 Vorteil"           },
-  { value:"disadvantage", label:"🔴 Nachteil"          },
-  { value:"other",        label:"📝 Sonstiges"         },
+  { value:"resistance",   label:"🛡 Resistenz"        },
+  { value:"advantage",    label:"🟢 Vorteil"          },
+  { value:"disadvantage", label:"🔴 Nachteil"         },
+  { value:"other",        label:"📝 Sonstiges"        },
 ];
-const ITEM_TYPES   = [
+const ITEM_TYPES  = [
   { value:"misc",   label:"📦 Sonstiges" },
   { value:"weapon", label:"⚔ Waffe"     },
   { value:"armor",  label:"🛡 Rüstung"  },
@@ -93,30 +91,9 @@ const ITEM_TYPES   = [
   { value:"potion", label:"🧪 Trank"    },
   { value:"magic",  label:"✨ Magisch"  },
 ];
-const WEAPON_PROPS  = ["Finesse","Leicht","Schwer","Zweihändig","Vielseitig","Reichweite","Wurfwaffe","Ladezeit","Versteckt"];
-const DAMAGE_TYPES  = ["Hieb","Stich","Wucht","Feuer","Kälte","Blitz","Nekrotisch","Strahlend","Gift","Säure","Donner","Psychisch","Kraft"];
-const SCALE_STATS   = ["STR","DEX","STR oder DEX","INT","WIS","CHA","—"];
-
-const ASSIGN_FIELDS = [
-  { key:"name",             label:"Charaktername",    type:"text"   },
-  { key:"race",             label:"Rasse",             type:"text"   },
-  { key:"background",       label:"Hintergrund",       type:"text"   },
-  { key:"alignment",        label:"Gesinnung",         type:"text"   },
-  { key:"classes.0.name",   label:"Klasse",            type:"text"   },
-  { key:"classes.0.level",  label:"Level",             type:"number" },
-  { key:"maxHP",            label:"Max HP",            type:"number" },
-  { key:"ac",               label:"Rüstungsklasse",    type:"number" },
-  { key:"speed",            label:"Bewegungsrate",     type:"number" },
-  { key:"xp",               label:"Erfahrungspunkte",  type:"number" },
-  { key:"stats.str",        label:"STR",               type:"number" },
-  { key:"stats.dex",        label:"DEX",               type:"number" },
-  { key:"stats.con",        label:"CON",               type:"number" },
-  { key:"stats.int",        label:"INT",               type:"number" },
-  { key:"stats.wis",        label:"WIS",               type:"number" },
-  { key:"stats.cha",        label:"CHA",               type:"number" },
-  { key:"spellSaveDC",      label:"Zauber-SG",         type:"number" },
-  { key:"spellAttackBonus", label:"Zauberangriff",     type:"number" },
-];
+const WEAPON_PROPS = ["Finesse","Leicht","Schwer","Zweihändig","Vielseitig","Reichweite","Wurfwaffe","Ladezeit","Versteckt"];
+const DAMAGE_TYPES = ["Hieb","Stich","Wucht","Feuer","Kälte","Blitz","Nekrotisch","Strahlend","Gift","Säure","Donner","Psychisch","Kraft"];
+const SCALE_STATS  = ["STR","DEX","STR oder DEX","INT","WIS","CHA","—"];
 
 const DEFAULT_ITEM = {
   name:"",type:"misc",qty:1,weight:0,equipped:false,
@@ -175,235 +152,6 @@ const imgKey     = id => `dnd5e_img_${id}`;
 function loadAllChars(){try{return JSON.parse(localStorage.getItem(storageKey)||"[]");}catch{return[];}}
 function saveAllChars(arr){localStorage.setItem(storageKey,JSON.stringify(arr));}
 
-// ─── OCR via Tesseract.js (läuft komplett im Browser, kein API-Key) ──────────
-async function runOCR(dataUrl, onProgress) {
-  onProgress(5);
-  if (!window.Tesseract) {
-    await new Promise((res, rej) => {
-      const s = document.createElement("script");
-      s.src = "https://unpkg.com/tesseract.js@5/dist/tesseract.min.js";
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
-  onProgress(10);
-  const { createWorker } = window.Tesseract;
-  const worker = await createWorker("eng+deu", 1, {
-    workerPath: "https://unpkg.com/tesseract.js@5/dist/worker.min.js",
-    corePath:   "https://unpkg.com/tesseract.js-core@5/tesseract-core-simd-lstm.wasm.js",
-    langPath:   "https://tessdata.projectnaptha.com/4.0.0",
-    logger: m => { if (m.status==="recognizing text") onProgress(10+Math.round(m.progress*85)); }
-  });
-  const { data } = await worker.recognize(dataUrl);
-  await worker.terminate();
-  onProgress(100);
-  const seen = new Set();
-  return data.words
-    .filter(w => w.confidence > 35 && w.text.trim().length > 0)
-    .map(w => w.text.trim())
-    .filter(w => { if(seen.has(w)) return false; seen.add(w); return true; });
-}
-
-// ─── SCAN MODAL ───────────────────────────────────────────────────────────────
-function ScanModal({ theme, onClose, onImport }) {
-  const [phase,    setPhase]    = useState("select");
-  const [preview,  setPreview]  = useState(null);
-  const [ocrWords, setOcrWords] = useState([]);
-  const [assigned, setAssigned] = useState({});
-  const [progress, setProgress] = useState(0);
-  const [error,    setError]    = useState("");
-  const [dragWord, setDragWord] = useState(null);
-  const [usedWords,setUsedWords]= useState(new Set());
-  const fileRef = useRef(null);
-
-  const Sb = {
-    overlay:  { position:"fixed",inset:0,zIndex:70,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.93)",padding:8 },
-    modal:    { background:theme.bg,border:`1px solid ${theme.border}`,borderRadius:20,padding:20,maxWidth:700,width:"100%",maxHeight:"96vh",overflowY:"auto" },
-    btn:      { background:`linear-gradient(135deg,${theme.accent}cc,${theme.accent}77)`,color:"white",border:"none",borderRadius:10,padding:"10px 20px",fontWeight:700,cursor:"pointer",fontSize:14,fontFamily:"inherit" },
-    btnGhost: { background:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"8px 16px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit" },
-  };
-
-  const handleFile = async file => {
-    if (!file||!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = async e => {
-      setPreview(e.target.result);
-      setPhase("scanning");
-      setProgress(0);
-      try {
-        const words = await runOCR(e.target.result, p => setProgress(p));
-        setOcrWords(words);
-        setPhase("assign");
-      } catch(err) {
-        setError("OCR Fehler: " + err.message);
-        setPhase("error");
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (fieldKey, word) => {
-    setAssigned(prev => {
-      const next = {...prev};
-      const old = next[fieldKey];
-      if (old) setUsedWords(u => { const n=new Set(u); n.delete(old); return n; });
-      next[fieldKey] = word;
-      return next;
-    });
-    setUsedWords(u => new Set([...u, word]));
-    setDragWord(null);
-  };
-
-  const clearField = fieldKey => {
-    const word = assigned[fieldKey];
-    if (word) setUsedWords(u => { const n=new Set(u); n.delete(word); return n; });
-    setAssigned(prev => { const n={...prev}; delete n[fieldKey]; return n; });
-  };
-
-  const buildResult = () => {
-    const result = JSON.parse(JSON.stringify(DEFAULT));
-    Object.entries(assigned).forEach(([key, word]) => {
-      const field = ASSIGN_FIELDS.find(f=>f.key===key);
-      const val   = field?.type==="number" ? (parseInt(word)||0) : word;
-      const keys  = key.split(".");
-      let obj = result;
-      for (let i=0;i<keys.length-1;i++) { if(obj[keys[i]]===undefined) obj[keys[i]]={};  obj=obj[keys[i]]; }
-      obj[keys[keys.length-1]] = val;
-    });
-    if (result.maxHP) result.currentHP = result.maxHP;
-    return result;
-  };
-
-  const assignedCount = Object.keys(assigned).length;
-
-  return (
-    <div style={Sb.overlay} onClick={onClose}>
-      <div style={Sb.modal} onClick={e=>e.stopPropagation()}>
-
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-          <div style={{fontSize:20,fontWeight:900,color:theme.accent}}>📷 Bogen scannen</div>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.4)",fontSize:22,cursor:"pointer",lineHeight:1}}>✕</button>
-        </div>
-
-        {phase==="select" && <>
-          <div style={{fontSize:13,color:"rgba(255,255,255,0.45)",marginBottom:20,lineHeight:1.7}}>
-            Lade ein Foto deines Charakterbogens hoch. Der Text wird per OCR direkt im Browser erkannt —
-            danach ziehst du die Werte per <strong style={{color:"rgba(255,255,255,0.75)"}}>Drag &amp; Drop</strong> oder
-            per <strong style={{color:"rgba(255,255,255,0.75)"}}>Klick</strong> in die richtigen Felder.
-            <br/><strong style={{color:theme.accent}}>Kein API-Key, kein Server, läuft komplett offline.</strong>
-          </div>
-          <div onClick={()=>fileRef.current.click()}
-            style={{border:`2px dashed ${theme.accent}66`,borderRadius:16,padding:"40px 20px",textAlign:"center",cursor:"pointer",background:`${theme.accent}08`,marginBottom:16,transition:"background 0.2s"}}
-            onMouseEnter={e=>e.currentTarget.style.background=`${theme.accent}15`}
-            onMouseLeave={e=>e.currentTarget.style.background=`${theme.accent}08`}>
-            <div style={{fontSize:48,marginBottom:10}}>📸</div>
-            <div style={{fontWeight:700,fontSize:15,color:"rgba(255,255,255,0.8)"}}>Bild auswählen oder aufnehmen</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:6}}>JPG · PNG · WEBP — Foto oder Scan</div>
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:"none"}} onChange={e=>handleFile(e.target.files[0])}/>
-        </>}
-
-        {phase==="scanning" && <div style={{textAlign:"center",padding:"30px 0"}}>
-          {preview && <img src={preview} alt="" style={{width:"100%",maxHeight:180,objectFit:"contain",borderRadius:12,marginBottom:20,border:`1px solid ${theme.border}`}}/>}
-          <div style={{width:48,height:48,border:`4px solid ${theme.accent}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}/>
-          <div style={{fontWeight:700,fontSize:16,color:theme.accent}}>Text wird erkannt… {progress}%</div>
-          <div style={{height:6,background:"rgba(255,255,255,0.07)",borderRadius:10,margin:"12px auto 0",maxWidth:260,overflow:"hidden"}}>
-            <div style={{height:"100%",width:progress+"%",background:theme.accent,borderRadius:10,transition:"width 0.3s"}}/>
-          </div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.25)",marginTop:12}}>Läuft komplett im Browser — kein Server nötig</div>
-        </div>}
-
-        {phase==="assign" && <>
-          <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:14,lineHeight:1.7}}>
-            Klicke ein <strong style={{color:"rgba(255,255,255,0.7)"}}>Wort links an</strong>, dann klicke das
-            passende <strong style={{color:"rgba(255,255,255,0.7)"}}>Feld rechts</strong>. Oder per Drag &amp; Drop.
-            Mit <strong style={{color:theme.accent}}>✕</strong> an einem Feld kannst du es wieder leeren.
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-
-            {/* LINKE SEITE */}
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {preview && <img src={preview} alt="" style={{width:"100%",maxHeight:150,objectFit:"contain",borderRadius:10,border:`1px solid ${theme.border}`}}/>}
-              <div style={{fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.06em"}}>ERKANNTE WÖRTER ({ocrWords.length})</div>
-              <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,border:`1px solid ${theme.border}`,padding:10,maxHeight:310,overflowY:"auto"}}>
-                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                  {ocrWords.length===0 && <div style={{fontSize:12,color:"rgba(255,255,255,0.2)"}}>Keine Wörter erkannt — versuche ein klareres Bild.</div>}
-                  {ocrWords.map((w,i) => {
-                    const used = usedWords.has(w);
-                    const sel  = dragWord===w;
-                    return (
-                      <span key={i} draggable
-                        onDragStart={()=>setDragWord(w)}
-                        onDragEnd={()=>setDragWord(null)}
-                        onClick={()=>setDragWord(sel?null:w)}
-                        style={{padding:"3px 9px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"grab",userSelect:"none",transition:"all 0.15s",
-                          background: sel?theme.accent:used?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.09)",
-                          color:      sel?"white":used?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.8)",
-                          border:    `1px solid ${sel?theme.accent:used?"rgba(255,255,255,0.05)":"rgba(255,255,255,0.15)"}`,
-                          textDecoration: used?"line-through":"none",
-                        }}>{w}</span>
-                    );
-                  })}
-                </div>
-              </div>
-              {dragWord && <div style={{textAlign:"center",fontSize:12,color:theme.accent,fontWeight:700,animation:"pulse 1s ease-in-out infinite"}}>„{dragWord}" ausgewählt → Feld rechts anklicken</div>}
-            </div>
-
-            {/* RECHTE SEITE */}
-            <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:480,overflowY:"auto"}}>
-              <div style={{fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:4}}>FELDER BEFÜLLEN</div>
-              {ASSIGN_FIELDS.map(field => {
-                const val      = assigned[field.key];
-                const isTarget = !!dragWord;
-                return (
-                  <div key={field.key}
-                    onDragOver={e=>e.preventDefault()}
-                    onDrop={e=>{e.preventDefault();if(dragWord)handleDrop(field.key,dragWord);}}
-                    onClick={()=>{if(dragWord)handleDrop(field.key,dragWord);}}
-                    style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:10,
-                      cursor:isTarget?"pointer":"default",
-                      background: val?`${theme.accent}12`:isTarget?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.03)",
-                      border:`1px solid ${val?`${theme.accent}55`:isTarget?`${theme.accent}33`:"rgba(255,255,255,0.08)"}`,
-                      transition:"all 0.15s",
-                    }}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.05em"}}>{field.label}</div>
-                      {val
-                        ? <div style={{fontSize:14,fontWeight:800,color:theme.accent,marginTop:1}}>{val}</div>
-                        : <div style={{fontSize:12,color:"rgba(255,255,255,0.2)",marginTop:1,fontStyle:"italic"}}>{isTarget?"← hier ablegen":"leer"}</div>
-                      }
-                    </div>
-                    {val && <button onClick={e=>{e.stopPropagation();clearField(field.key);}} style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.25)",cursor:"pointer",fontSize:14,padding:0,lineHeight:1}}>✕</button>}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={{display:"flex",gap:10,marginTop:16}}>
-            <button onClick={()=>onImport(buildResult())} disabled={assignedCount===0}
-              style={{...Sb.btn,flex:1,opacity:assignedCount>0?1:0.4,cursor:assignedCount>0?"pointer":"not-allowed"}}>
-              ✓ Charakter erstellen ({assignedCount} Felder befüllt)
-            </button>
-            <button onClick={()=>{setPhase("select");setOcrWords([]);setAssigned({});setUsedWords(new Set());setPreview(null);setProgress(0);}} style={Sb.btnGhost}>↩ Neu</button>
-          </div>
-        </>}
-
-        {phase==="error" && <>
-          <div style={{fontSize:18,fontWeight:900,color:"#f87171",marginBottom:8}}>⚠ Fehler</div>
-          <div style={{fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:16,lineHeight:1.6}}>{error}</div>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>{setPhase("select");setError("");setPreview(null);}} style={{...Sb.btn,flex:1}}>Nochmal versuchen</button>
-            <button onClick={onClose} style={Sb.btnGhost}>Schließen</button>
-          </div>
-        </>}
-
-      </div>
-    </div>
-  );
-}
-
-// ─── AUTO-TEXTAREA ────────────────────────────────────────────────────────────
 function AutoTextarea({value,onChange,placeholder,style={},minRows=1}){
   const [local,setLocal]=useState(value);
   const ref=useRef(null);
@@ -413,7 +161,6 @@ function AutoTextarea({value,onChange,placeholder,style={},minRows=1}){
   return <textarea ref={ref} value={local} rows={minRows} placeholder={placeholder} style={{...s,...style}} onChange={e=>setLocal(e.target.value)} onBlur={e=>{if(e.target.value!==value)onChange(e);}}/>;
 }
 
-// ─── WALLET ───────────────────────────────────────────────────────────────────
 function Wallet({currency,onUpdate,theme}){
   const [quickText,setQuickText]=useState("");
   const [quickMode,setQuickMode]=useState("add");
@@ -465,7 +212,6 @@ function Wallet({currency,onUpdate,theme}){
   );
 }
 
-// ─── HP BUTTONS ───────────────────────────────────────────────────────────────
 function HpButtons({currentHP,maxHP,onUpdate}){
   const [mode,setMode]=useState(null);
   const [input,setInput]=useState("");
@@ -492,7 +238,6 @@ function HpButtons({currentHP,maxHP,onUpdate}){
   );
 }
 
-// ─── REST MODALS ──────────────────────────────────────────────────────────────
 function RestModals({restModal,setRestModal,ch,upCh,totalLevel,deathSaves,setDeathSaves,theme}){
   const [shortRestDice,setShortRestDice]=useState(0);
   const [shortRestInput,setShortRestInput]=useState("");
@@ -579,20 +324,15 @@ function RestModals({restModal,setRestModal,ch,upCh,totalLevel,deathSaves,setDea
   );
 }
 
-// ─── CHARACTER SELECT (Startseite) ────────────────────────────────────────────
-function CharacterSelect({onSelect,onNew,onScanImport,theme,onThemeChange}){
-  const [chars,   setChars]   = useState([]);
-  const [delConf, setDelConf] = useState(null);
-  const [showScan,setShowScan]= useState(false);
+function CharacterSelect({onSelect,onNew,theme,onThemeChange}){
+  const [chars,setChars]=useState([]);
+  const [delConf,setDelConf]=useState(null);
   useEffect(()=>setChars(loadAllChars()),[]);
-  const deleteChar = id => { const u=chars.filter(c=>c.id!==id); saveAllChars(u); try{localStorage.removeItem(imgKey(id));}catch{} setChars(u); setDelConf(null); };
-  const totalLevel = c => (c.classes||[]).reduce((s,cl)=>s+(cl.level||0),0)||1;
-  const classLabel = c => (c.classes||[]).map(cl=>`${cl.name} ${cl.level}`).filter(x=>x.trim()!==" 1").join(" / ")||"Unbekannte Klasse";
-  const handleImport = parsed => { setShowScan(false); const id=Date.now().toString(); onScanImport(id,parsed); };
-
+  const deleteChar=id=>{const u=chars.filter(c=>c.id!==id);saveAllChars(u);try{localStorage.removeItem(imgKey(id));}catch{}setChars(u);setDelConf(null);};
+  const totalLevel=c=>(c.classes||[]).reduce((s,cl)=>s+(cl.level||0),0)||1;
+  const classLabel=c=>(c.classes||[]).map(cl=>`${cl.name} ${cl.level}`).filter(x=>x.trim()!==" 1").join(" / ")||"Unbekannte Klasse";
   return(
     <div style={{minHeight:"100vh",background:theme.bg,color:"white",padding:"20px 16px"}}>
-      {showScan && <ScanModal theme={theme} onClose={()=>setShowScan(false)} onImport={handleImport}/>}
       <div style={{maxWidth:480,margin:"0 auto"}}>
         <div style={{marginBottom:28,display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
           <h1 style={{fontSize:26,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ D&amp;D 5e Sheet</h1>
@@ -602,27 +342,14 @@ function CharacterSelect({onSelect,onNew,onScanImport,theme,onThemeChange}){
             ))}
           </div>
         </div>
-
-        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10,marginBottom:8}}>
-          <button onClick={onNew} style={{background:`linear-gradient(135deg,${theme.accent}bb,${theme.accent}77)`,color:"white",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",textAlign:"center"}}>
-            + Neuen Charakter erstellen
-          </button>
-          <button onClick={()=>setShowScan(true)} title="Charakterbogen einscannen"
-            style={{background:"rgba(255,255,255,0.06)",border:`1px solid ${theme.accent}55`,borderRadius:14,padding:"14px 18px",fontSize:22,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background 0.2s"}}
-            onMouseEnter={e=>e.currentTarget.style.background=`${theme.accent}22`}
-            onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.06)"}>
-            📷
-          </button>
-        </div>
-        <div style={{fontSize:11,color:"rgba(255,255,255,0.2)",textAlign:"center",marginBottom:24}}>
-          📷 = Charakterbogen fotografieren &amp; Werte automatisch einlesen
-        </div>
-
+        <button onClick={onNew} style={{background:`linear-gradient(135deg,${theme.accent}bb,${theme.accent}77)`,color:"white",border:"none",borderRadius:14,padding:"14px 0",fontSize:15,fontWeight:800,cursor:"pointer",fontFamily:"inherit",width:"100%",marginBottom:24,display:"block",textAlign:"center"}}>
+          + Neuen Charakter erstellen
+        </button>
         {chars.length===0?(
           <div style={{textAlign:"center",padding:"60px 0",color:"rgba(255,255,255,0.2)"}}>
             <div style={{fontSize:48,marginBottom:12}}>🎲</div>
             <div style={{fontSize:16,fontWeight:700}}>Noch keine Charaktere</div>
-            <div style={{fontSize:13,marginTop:4}}>Erstelle deinen ersten oder scanne einen Bogen!</div>
+            <div style={{fontSize:13,marginTop:4}}>Erstelle deinen ersten!</div>
           </div>
         ):(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -660,38 +387,35 @@ function CharacterSelect({onSelect,onNew,onScanImport,theme,onThemeChange}){
   );
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
 function App(){
-  const [themeId,  setThemeId]  = useState(()=>localStorage.getItem("dnd5e_theme")||"black");
-  const theme = THEMES.find(t=>t.id===themeId)||THEMES[0];
-  const [screen,   setScreen]   = useState("select");
-  const [currentId,setCurId]    = useState(null);
-  const [ch,       setCh]       = useState(DEFAULT);
-  const [tab,      setTab]      = useState("overview");
-  const [saved,    setSaved]    = useState(false);
-  const [expandedItem,setExpandedItem] = useState(null);
-  const [charImage,setCharImage]= useState(null);
+  const [themeId,setThemeId]=useState(()=>localStorage.getItem("dnd5e_theme")||"black");
+  const theme=THEMES.find(t=>t.id===themeId)||THEMES[0];
+  const [screen,setScreen]=useState("select");
+  const [currentId,setCurId]=useState(null);
+  const [ch,setCh]=useState(DEFAULT);
+  const [tab,setTab]=useState("overview");
+  const [saved,setSaved]=useState(false);
+  const [expandedItem,setExpandedItem]=useState(null);
+  const [charImage,setCharImage]=useState(null);
   const [deathSaves,setDeathSaves]=useState({success:0,fail:0});
   const [deathInput,setDeathInput]=useState("");
   const [deathBanner,setDeathBanner]=useState(null);
   const [restModal,setRestModal]=useState(null);
 
-  const changeTheme = id => { setThemeId(id); localStorage.setItem("dnd5e_theme",id); document.body.style.background=THEMES.find(t=>t.id===id)?.bg||"#0f1117"; };
-  useEffect(()=>{ document.body.style.background=theme.bg; },[theme]);
+  const changeTheme=id=>{setThemeId(id);localStorage.setItem("dnd5e_theme",id);document.body.style.background=THEMES.find(t=>t.id===id)?.bg||"#0f1117";};
+  useEffect(()=>{document.body.style.background=theme.bg;},[theme]);
 
-  const saveChar = useCallback((data,id)=>{
-    try{ const all=loadAllChars(); const idx=all.findIndex(c=>c.id===id); if(idx>=0)all[idx]={...data,id};else all.push({...data,id}); saveAllChars(all); setSaved(true); setTimeout(()=>setSaved(false),1500); }catch{}
+  const saveChar=useCallback((data,id)=>{
+    try{const all=loadAllChars();const idx=all.findIndex(c=>c.id===id);if(idx>=0)all[idx]={...data,id};else all.push({...data,id});saveAllChars(all);setSaved(true);setTimeout(()=>setSaved(false),1500);}catch{}
   },[]);
 
-  const openChar = (id,data) => { setCh(mergeChar(data)); setCurId(id); setScreen("sheet"); setTab("overview"); setDeathSaves({success:0,fail:0}); setDeathInput(""); setDeathBanner(null); setRestModal(null); try{setCharImage(localStorage.getItem(imgKey(id))||null);}catch{setCharImage(null);} };
-  const newChar  = () => { const id=Date.now().toString(); setCh({...DEFAULT}); setCurId(id); setScreen("sheet"); setTab("overview"); setCharImage(null); setDeathSaves({success:0,fail:0}); setDeathInput(""); setDeathBanner(null); setRestModal(null); };
-  const scanImport=(id,parsed)=>{ const merged=mergeChar(parsed); saveChar({...merged,id},id); setCh(merged); setCurId(id); setScreen("sheet"); setTab("overview"); setCharImage(null); setDeathSaves({success:0,fail:0}); setDeathInput(""); setDeathBanner(null); setRestModal(null); };
+  const openChar=(id,data)=>{setCh(mergeChar(data));setCurId(id);setScreen("sheet");setTab("overview");setDeathSaves({success:0,fail:0});setDeathInput("");setDeathBanner(null);setRestModal(null);try{setCharImage(localStorage.getItem(imgKey(id))||null);}catch{setCharImage(null);}};
+  const newChar=()=>{const id=Date.now().toString();setCh({...DEFAULT});setCurId(id);setScreen("sheet");setTab("overview");setCharImage(null);setDeathSaves({success:0,fail:0});setDeathInput("");setDeathBanner(null);setRestModal(null);};
+  const up=(path,val)=>{setCh(prev=>{const next=JSON.parse(JSON.stringify(prev));const keys=path.split(".");let obj=next;for(let i=0;i<keys.length-1;i++)obj=obj[keys[i]];obj[keys[keys.length-1]]=val;saveChar(next,currentId);return next;});};
+  const upCh=fn=>{setCh(prev=>{const next=fn(JSON.parse(JSON.stringify(prev)));saveChar(next,currentId);return next;});};
+  const handleImageUpload=e=>{const file=e.target.files[0];if(!file)return;const r=new FileReader();r.onload=ev=>{setCharImage(ev.target.result);try{localStorage.setItem(imgKey(currentId),ev.target.result);}catch{}};r.readAsDataURL(file);};
 
-  const up   = (path,val) => { setCh(prev=>{ const next=JSON.parse(JSON.stringify(prev)); const keys=path.split("."); let obj=next; for(let i=0;i<keys.length-1;i++)obj=obj[keys[i]]; obj[keys[keys.length-1]]=val; saveChar(next,currentId); return next; }); };
-  const upCh = fn => { setCh(prev=>{ const next=fn(JSON.parse(JSON.stringify(prev))); saveChar(next,currentId); return next; }); };
-  const handleImageUpload = e => { const file=e.target.files[0]; if(!file)return; const r=new FileReader(); r.onload=ev=>{ setCharImage(ev.target.result); try{localStorage.setItem(imgKey(currentId),ev.target.result);}catch{} }; r.readAsDataURL(file); };
-
-  if(screen==="select") return <CharacterSelect onSelect={openChar} onNew={newChar} onScanImport={scanImport} theme={theme} onThemeChange={changeTheme}/>;
+  if(screen==="select") return <CharacterSelect onSelect={openChar} onNew={newChar} theme={theme} onThemeChange={changeTheme}/>;
 
   const S={
     card:      {background:theme.card,borderRadius:16,border:`1px solid ${theme.border}`,padding:16},
@@ -706,48 +430,43 @@ function App(){
     statBox:   {background:"rgba(255,255,255,0.04)",borderRadius:14,border:`1px solid ${theme.border}`,padding:"10px 6px",textAlign:"center"},
     section:   {color:theme.accent,fontWeight:800,fontSize:15,marginBottom:10},
   };
-  const Label = ({children}) => <label style={S.label}>{children}</label>;
-  const Check = ({path,label}) => (<label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.5)"}}><input type="checkbox" checked={path.split(".").reduce((o,k)=>o?.[k]??false,ch)} onChange={e=>up(path,e.target.checked)} style={{accentColor:theme.accent}}/>{label}</label>);
-  const AT    = ({path,placeholder,style={},minRows=1}) => (<AutoTextarea value={path.split(".").reduce((o,k)=>o?.[k]??"",ch)} onChange={e=>up(path,e.target.value)} placeholder={placeholder} style={style} minRows={minRows}/>);
+  const Label=({children})=><label style={S.label}>{children}</label>;
+  const Check=({path,label})=>(<label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:12,color:"rgba(255,255,255,0.5)"}}><input type="checkbox" checked={path.split(".").reduce((o,k)=>o?.[k]??false,ch)} onChange={e=>up(path,e.target.checked)} style={{accentColor:theme.accent}}/>{label}</label>);
+  const AT=({path,placeholder,style={},minRows=1})=>(<AutoTextarea value={path.split(".").reduce((o,k)=>o?.[k]??"",ch)} onChange={e=>up(path,e.target.value)} placeholder={placeholder} style={style} minRows={minRows}/>);
 
-  const activeF      = ch.featureList.filter(f=>f.active!==false);
-  const statBonuses  = Object.fromEntries(SAVES.map(s=>[s,0]));
-  const skillBonuses = Object.fromEntries(SKILLS.map(s=>[s.name,0]));
-  activeF.filter(f=>f.type==="stat_bonus"&&f.target).forEach(f=>{ if(statBonuses[f.target]!==undefined) statBonuses[f.target]+=parseInt(f.value)||0; });
-  activeF.filter(f=>f.type==="skill_bonus"&&f.target).forEach(f=>{ if(skillBonuses[f.target]!==undefined) skillBonuses[f.target]+=parseInt(f.value)||0; });
-
-  const equipped       = ch.inventory.filter(it=>it.equipped);
-  const equippedWeapons= equipped.filter(it=>it.type==="weapon");
-  const equippedArmor  = equipped.find(it=>it.type==="armor");
-  const equippedShield = equipped.find(it=>it.type==="shield");
-  const equippedMagic  = equipped.filter(it=>it.type==="magic"&&it.magic?.bonus);
-  const armorACBonus   = equippedArmor?(equippedArmor.armor?.bonus||0):0;
-  const shieldACBonus  = equippedShield?(equippedShield.shield?.acBonus||0):0;
-  const magicACBonus   = equippedMagic.reduce((s,it)=>s+(parseInt(it.magic?.bonus)||0),0);
-  const totalLevel     = ch.classes.reduce((s,c)=>s+(c.level||0),0)||1;
-  const pb             = profB(totalLevel);
-  const effStat        = k => ch.stats[k]+(statBonuses[k]||0);
-  const skillMod       = skill => { const s=SKILLS.find(x=>x.name===skill); const base=statMod(effStat(s.stat))+(skillBonuses[skill]||0); if(ch.skillExpertise[skill])return base+pb*2; if(ch.skillProficiencies[skill])return base+pb; return base; };
-  const saveMod        = stat  => { const base=statMod(effStat(stat)); return ch.saveProficiencies[stat]?base+pb:base; };
-  const passivePerc    = 10+skillMod("Wahrnehmung");
-  const attackBonusF   = activeF.filter(f=>f.type==="attack_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
-  const acBonusF       = activeF.filter(f=>f.type==="ac_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
-  const totalAC        = ch.ac+acBonusF+armorACBonus+shieldACBonus+magicACBonus;
-  const hpRatio        = ch.currentHP/Math.max(1,ch.maxHP);
-  const hpColor        = hpRatio>0.5?"#22c55e":hpRatio>0.25?"#f59e0b":"#ef4444";
-  const weaponAtkBonus = w => { const sc=w.weapon?.scale||"STR"; let m=0; if(sc==="STR")m=statMod(effStat("str")); else if(sc==="DEX")m=statMod(effStat("dex")); else if(sc==="STR oder DEX")m=Math.max(statMod(effStat("str")),statMod(effStat("dex"))); else if(sc==="INT")m=statMod(effStat("int")); else if(sc==="WIS")m=statMod(effStat("wis")); else if(sc==="CHA")m=statMod(effStat("cha")); return m+pb+(parseInt(w.weapon?.bonus)||0)+attackBonusF; };
-  const availableHitDice = Math.max(0,totalLevel-(ch.usedHitDice||0));
-
+  const activeF=ch.featureList.filter(f=>f.active!==false);
+  const statBonuses=Object.fromEntries(SAVES.map(s=>[s,0]));
+  const skillBonuses=Object.fromEntries(SKILLS.map(s=>[s.name,0]));
+  activeF.filter(f=>f.type==="stat_bonus"&&f.target).forEach(f=>{if(statBonuses[f.target]!==undefined)statBonuses[f.target]+=parseInt(f.value)||0;});
+  activeF.filter(f=>f.type==="skill_bonus"&&f.target).forEach(f=>{if(skillBonuses[f.target]!==undefined)skillBonuses[f.target]+=parseInt(f.value)||0;});
+  const equipped=ch.inventory.filter(it=>it.equipped);
+  const equippedWeapons=equipped.filter(it=>it.type==="weapon");
+  const equippedArmor=equipped.find(it=>it.type==="armor");
+  const equippedShield=equipped.find(it=>it.type==="shield");
+  const equippedMagic=equipped.filter(it=>it.type==="magic"&&it.magic?.bonus);
+  const armorACBonus=equippedArmor?(equippedArmor.armor?.bonus||0):0;
+  const shieldACBonus=equippedShield?(equippedShield.shield?.acBonus||0):0;
+  const magicACBonus=equippedMagic.reduce((s,it)=>s+(parseInt(it.magic?.bonus)||0),0);
+  const totalLevel=ch.classes.reduce((s,c)=>s+(c.level||0),0)||1;
+  const pb=profB(totalLevel);
+  const effStat=k=>ch.stats[k]+(statBonuses[k]||0);
+  const skillMod=skill=>{const s=SKILLS.find(x=>x.name===skill);const base=statMod(effStat(s.stat))+(skillBonuses[skill]||0);if(ch.skillExpertise[skill])return base+pb*2;if(ch.skillProficiencies[skill])return base+pb;return base;};
+  const saveMod=stat=>{const base=statMod(effStat(stat));return ch.saveProficiencies[stat]?base+pb:base;};
+  const passivePerc=10+skillMod("Wahrnehmung");
+  const attackBonusF=activeF.filter(f=>f.type==="attack_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
+  const acBonusF=activeF.filter(f=>f.type==="ac_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
+  const totalAC=ch.ac+acBonusF+armorACBonus+shieldACBonus+magicACBonus;
+  const hpRatio=ch.currentHP/Math.max(1,ch.maxHP);
+  const hpColor=hpRatio>0.5?"#22c55e":hpRatio>0.25?"#f59e0b":"#ef4444";
+  const weaponAtkBonus=w=>{const sc=w.weapon?.scale||"STR";let m=0;if(sc==="STR")m=statMod(effStat("str"));else if(sc==="DEX")m=statMod(effStat("dex"));else if(sc==="STR oder DEX")m=Math.max(statMod(effStat("str")),statMod(effStat("dex")));else if(sc==="INT")m=statMod(effStat("int"));else if(sc==="WIS")m=statMod(effStat("wis"));else if(sc==="CHA")m=statMod(effStat("cha"));return m+pb+(parseInt(w.weapon?.bonus)||0)+attackBonusF;};
+  const availableHitDice=Math.max(0,totalLevel-(ch.usedHitDice||0));
   const preparedSpells=[];
-  for(let lvl=0;lvl<=9;lvl++){ (ch.spells[lvl]||[]).forEach(sp=>{ if((lvl===0||sp.prepared)&&sp.name&&sp.name.trim()!=="") preparedSpells.push({name:sp.name,level:lvl}); }); }
+  for(let lvl=0;lvl<=9;lvl++){(ch.spells[lvl]||[]).forEach(sp=>{if((lvl===0||sp.prepared)&&sp.name&&sp.name.trim()!=="")preparedSpells.push({name:sp.name,level:lvl});});}
+  const isDying=ch.currentHP<=0,isDead=deathSaves.fail>=3,isStable=deathSaves.success>=3;
+  const submitDeathSave=()=>{const roll=parseInt(deathInput);if(isNaN(roll)||roll<1||roll>20)return;setDeathInput("");setDeathSaves(prev=>{let next;if(roll===20)next={success:Math.min(3,prev.success+2),fail:prev.fail};else if(roll===1)next={success:prev.success,fail:Math.min(3,prev.fail+2)};else if(roll>=10)next={success:Math.min(3,prev.success+1),fail:prev.fail};else next={success:prev.success,fail:Math.min(3,prev.fail+1)};if(next.fail>=3)setTimeout(()=>{setDeathBanner("dead");setTimeout(()=>setDeathBanner(null),3500);},100);if(next.success>=3)setTimeout(()=>{setDeathBanner("alive");setTimeout(()=>setDeathBanner(null),3500);},100);return next;});};
+  const resetDeathSaves=()=>{setDeathSaves({success:0,fail:0});setDeathInput("");setDeathBanner(null);};
 
-  const isDying  = ch.currentHP<=0;
-  const isDead   = deathSaves.fail>=3;
-  const isStable = deathSaves.success>=3;
-  const submitDeathSave = () => { const roll=parseInt(deathInput); if(isNaN(roll)||roll<1||roll>20)return; setDeathInput(""); setDeathSaves(prev=>{ let next; if(roll===20)next={success:Math.min(3,prev.success+2),fail:prev.fail}; else if(roll===1)next={success:prev.success,fail:Math.min(3,prev.fail+2)}; else if(roll>=10)next={success:Math.min(3,prev.success+1),fail:prev.fail}; else next={success:prev.success,fail:Math.min(3,prev.fail+1)}; if(next.fail>=3)setTimeout(()=>{setDeathBanner("dead");setTimeout(()=>setDeathBanner(null),3500);},100); if(next.success>=3)setTimeout(()=>{setDeathBanner("alive");setTimeout(()=>setDeathBanner(null),3500);},100); return next; }); };
-  const resetDeathSaves = () => { setDeathSaves({success:0,fail:0}); setDeathInput(""); setDeathBanner(null); };
-
-  const ItemDetail = ({it,i}) => {
+  const ItemDetail=({it,i})=>{
     const sub=(cat,field,val)=>upCh(n=>{n.inventory[i][cat][field]=val;return n;});
     const toggleProp=prop=>upCh(n=>{const props=n.inventory[i].weapon.props||[];n.inventory[i].weapon.props=props.includes(prop)?props.filter(p=>p!==prop):[...props,prop];return n;});
     return(
@@ -795,12 +514,12 @@ function App(){
 
   const tabs=[["overview","Übersicht"],["core","Charakter"],["skills","Fertigkeiten"],["combat","Kampf"],["spells","Zauber"],["inventory","Inventar"],["features","Features"],["notes","Notizen"]];
 
-  const SkillsSidebar = () => (
+  const SkillsSidebar=()=>(
     <div className="skills-sidebar" style={{...S.card,padding:"10px 8px",minWidth:0}}>
       <div style={{fontSize:20,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:8,textAlign:"center"}}>FERTIGKEITEN</div>
       <div style={{display:"flex",flexDirection:"column",gap:4}}>
         {SKILLS.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(s=>{
-          const mod=skillMod(s.name); const hp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
+          const mod=skillMod(s.name);const hp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
           return(<div key={s.name} style={{display:"flex",alignItems:"center",gap:7,padding:"4px 6px",borderRadius:6,background:hp?`${theme.accent}0d`:"transparent"}}>
             <span style={{fontSize:20,fontWeight:800,minWidth:36,textAlign:"right",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
             <span style={{width:10,height:10,borderRadius:"50%",flexShrink:0,background:ch.skillExpertise[s.name]?theme.accent:ch.skillProficiencies[s.name]?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.15)",border:`1px solid ${ch.skillExpertise[s.name]?theme.accent:"rgba(255,255,255,0.2)"}`}}/>
@@ -814,12 +533,12 @@ function App(){
     </div>
   );
 
-  const SkillsMobile = () => (
+  const SkillsMobile=()=>(
     <div style={{...S.card}}>
       <div style={{fontSize:15,fontWeight:800,color:theme.accent,marginBottom:10}}>FERTIGKEITEN</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
         {SKILLS.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(s=>{
-          const mod=skillMod(s.name); const hp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
+          const mod=skillMod(s.name);const hp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
           return(<div key={s.name} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 6px",borderRadius:6,background:hp?`${theme.accent}0d`:"transparent"}}>
             <span style={{fontSize:13,fontWeight:800,minWidth:28,textAlign:"right",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
             <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,background:ch.skillExpertise[s.name]?theme.accent:ch.skillProficiencies[s.name]?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.15)",border:`1px solid ${ch.skillExpertise[s.name]?theme.accent:"rgba(255,255,255,0.2)"}`}}/>
@@ -835,7 +554,6 @@ function App(){
 
   return(
     <div style={{minHeight:"100vh",background:theme.bg,color:"white",fontFamily:"system-ui,sans-serif",position:"relative"}}>
-      {/* Hintergrund D20 */}
       <svg style={{position:"fixed",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}} xmlns="http://www.w3.org/2000/svg">
         <defs><radialGradient id="d20grad" cx="50%" cy="40%" r="60%"><stop offset="0%" stopColor={theme.accent} stopOpacity="0.25"/><stop offset="100%" stopColor={theme.accent} stopOpacity="0"/></radialGradient></defs>
         <g transform="translate(50%,50%)" opacity="0.07"><g transform="translate(-120,-120)">
@@ -896,7 +614,6 @@ function App(){
 
       <RestModals restModal={restModal} setRestModal={setRestModal} ch={ch} upCh={upCh} totalLevel={totalLevel} deathSaves={deathSaves} setDeathSaves={setDeathSaves} theme={theme}/>
 
-      {/* HEADER */}
       <div style={{position:"sticky",top:0,zIndex:40,backdropFilter:"blur(12px)",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button onClick={()=>setScreen("select")} style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:20,padding:0}}>←</button>
@@ -910,7 +627,6 @@ function App(){
         </div>
       </div>
 
-      {/* TABS */}
       <div style={{position:"relative",zIndex:1,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,padding:"8px 10px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
         {tabs.map(([id,label])=>(
           <button key={id} onClick={()=>setTab(id)} style={{padding:"7px 4px",fontSize:11,fontWeight:700,borderRadius:8,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(255,255,255,0.07)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",background:tab===id?`${theme.accent}18`:"rgba(255,255,255,0.03)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>
@@ -919,14 +635,10 @@ function App(){
         ))}
       </div>
 
-      {/* CONTENT */}
       <div style={{position:"relative",zIndex:1,padding:"12px 12px",maxWidth:900,margin:"0 auto"}}>
-
         {tab==="overview"&&(
           <div className="overview-grid" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:14,alignItems:"start"}}>
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
-
-              {/* Charakter-Header */}
               <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                 <div style={{flexShrink:0}}>
                   <div onClick={()=>document.getElementById("char-img-upload").click()} style={{width:90,height:114,borderRadius:14,overflow:"hidden",cursor:"pointer",border:`2px solid ${hpRatio<=0.15?"#ef4444":hpRatio<=0.5?"#f59e0b":theme.border}`,background:"rgba(255,255,255,0.04)"}}>
@@ -948,8 +660,6 @@ function App(){
                   </div>
                 </div>
               </div>
-
-              {/* HP */}
               <div style={S.card}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <span style={{fontWeight:700,fontSize:14}}>❤️ Trefferpunkte</span>
@@ -963,8 +673,6 @@ function App(){
                 </div>
                 <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
               </div>
-
-              {/* Attribute */}
               <div className="stat-grid-rk">
                 <div className="rk-box-desktop" style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                   <div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div>
@@ -980,8 +688,6 @@ function App(){
                 <div style={{fontSize:12,color:theme.accent,fontWeight:800}}>RÜSTUNGSKLASSE</div>
                 <div style={{fontSize:36,fontWeight:900,color:theme.accent,lineHeight:1}}>{totalAC}</div>
               </div>
-
-              {/* Rettungswürfe */}
               <div>
                 <div style={{fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:6,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
                 <div className="stat-grid-6">
@@ -992,8 +698,6 @@ function App(){
                   </div>))}
                 </div>
               </div>
-
-              {/* Rast-Buttons */}
               <div style={{display:"flex",gap:8}}>
                 <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                   <span>☕ Kurze Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(251,191,36,0.6)"}}>TW: {availableHitDice}/{totalLevel}</span>
@@ -1002,14 +706,12 @@ function App(){
                   <span>🌙 Lange Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(96,165,250,0.6)"}}>Volle Erholung</span>
                 </button>
               </div>
-
-              {/* Features Übersicht */}
               {(()=>{
                 const resist=activeF.filter(f=>f.type==="resistance"),adv=activeF.filter(f=>f.type==="advantage"),disadv=activeF.filter(f=>f.type==="disadvantage"),extraAtk=activeF.filter(f=>f.type==="extra_attack"),atkBonus=activeF.filter(f=>f.type==="attack_bonus"),sneakAtk=activeF.filter(f=>f.type==="sneak_attack"),bonusDmg=activeF.filter(f=>f.type==="bonus_damage"),acBonus=activeF.filter(f=>f.type==="ac_bonus"),statBon=activeF.filter(f=>f.type==="stat_bonus"),passive=activeF.filter(f=>f.type==="passive"||f.type==="other");
                 if(activeF.length===0)return null;
                 const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);
                 const Tag=({color,bg,border,shape,children})=>(<span style={{background:bg,border:`2px solid ${border}`,borderRadius:shape==="sharp"?6:20,padding:"4px 12px",fontSize:12,fontWeight:700,color,display:"inline-flex",alignItems:"center",gap:5,boxShadow:`0 0 8px ${border}55`}}>{children}</span>);
-                const kw=f=>f.keyword||f.name||"?"; const val=f=>f.value?` ${f.value}`:"";
+                const kw=f=>f.keyword||f.name||"?";const val=f=>f.value?` ${f.value}`:"";
                 return(<div style={S.card}>
                   <div style={S.section}>✨ Features &amp; Boni</div>
                   <div style={{display:"flex",flexDirection:"column",gap:12}}>
@@ -1023,14 +725,12 @@ function App(){
                   </div>
                 </div>);
               })()}
-
-              {/* Angriffe & Zauber */}
               <div style={S.card}>
                 <div style={S.section}>⚔ Angriffe &amp; Zauber</div>
                 {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(
                   <div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:13,padding:"16px 0"}}>Keine Waffen ausgerüstet und keine vorbereiteten Zauber</div>
                 ):<div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {equippedWeapons.map((w,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
+                  {equippedWeapons.map((w,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
                       <span style={{fontSize:16}}>⚔</span>
                       <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name||"Waffe"}</div></div>
@@ -1039,7 +739,7 @@ function App(){
                       <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:13}}>{w.weapon.damage||"—"}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{w.weapon.damageType||""}</div></div>
                     </div>
                   </div>))}
-                  {ch.attacks.map((a,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
+                  {ch.attacks.map((a,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`}}>
                     <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
                       <span style={{fontSize:16}}>🗡</span>
                       <div style={{flex:1,fontWeight:700,fontSize:13}}>{a.name||"Angriff"}</div>
@@ -1050,7 +750,7 @@ function App(){
                   </div>))}
                   {preparedSpells.length>0&&<>
                     <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginTop:4,marginBottom:2}}>✨ VORBEREITETE ZAUBER</div>
-                    {preparedSpells.map((sp,i)=>(<div key={i} style={{background:"rgba(192,132,252,0.06)",borderRadius:12,border:"1px solid rgba(192,132,252,0.2)",overflow:"hidden"}}>
+                    {preparedSpells.map((sp,i)=>(<div key={i} style={{background:"rgba(192,132,252,0.06)",borderRadius:12,border:"1px solid rgba(192,132,252,0.2)"}}>
                       <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
                         <span style={{fontSize:16}}>✨</span>
                         <div style={{flex:1,fontWeight:700,fontSize:13}}>{sp.name}</div>
@@ -1064,7 +764,6 @@ function App(){
                   </>}
                 </div>}
               </div>
-
               <div className="skills-mobile"><SkillsMobile/></div>
             </div>
             <div style={{position:"sticky",top:80}}><SkillsSidebar/></div>
@@ -1072,7 +771,6 @@ function App(){
         )}
 
         {tab!=="overview"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-
           {tab==="core"&&<>
             <div style={S.card}>
               <div style={S.section}>📋 Grunddaten</div>
@@ -1310,14 +1008,13 @@ function App(){
               <AT path="notes" placeholder="Freie Notizen..." minRows={8}/>
             </div>
           </>}
-
         </div>}
       </div>
     </div>
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root=ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App/>);
 </script>
 </body>
