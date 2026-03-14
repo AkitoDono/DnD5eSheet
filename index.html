@@ -220,65 +220,37 @@
       const [shortRestDice,setShortRestDice]=useState(0);
       const [shortRestInput,setShortRestInput]=useState("");
       const [shortRestResult,setShortRestResult]=useState(null);
-
       const S={
         card:{background:theme.card,borderRadius:16,border:`1px solid ${theme.border}`,padding:16},
         input:{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"6px 10px",color:"white",fontSize:14,outline:"none",width:"100%",fontFamily:"inherit"},
         btnGhost:{background:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"6px 12px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit"},
       };
-
-      const dieType = ch.hitDice||"1d8";
-      const conMod  = statMod(ch.stats.con+(0));
-      const availHD = Math.max(0, totalLevel-(ch.usedHitDice||0));
-
+      const dieType=ch.hitDice||"1d8";
+      const conMod=statMod(ch.stats.con);
+      const availHD=Math.max(0,totalLevel-(ch.usedHitDice||0));
       const closeShort=()=>{setRestModal(null);setShortRestDice(0);setShortRestInput("");setShortRestResult(null);};
-
       const doShortRest=()=>{
-        if(shortRestDice<=0) return;
+        if(shortRestDice<=0)return;
         const rolled=parseInt(shortRestInput);
-        if(isNaN(rolled)||rolled<shortRestDice) return;
-        const healing=Math.max(0, rolled + conMod*shortRestDice);
-        upCh(n=>{
-          n.currentHP=Math.min(n.maxHP, n.currentHP+healing);
-          n.usedHitDice=(n.usedHitDice||0)+shortRestDice;
-          return n;
-        });
-        setShortRestResult({rolled, conMod, healing, dice:shortRestDice});
+        if(isNaN(rolled)||rolled<shortRestDice)return;
+        const healing=Math.max(0,rolled+conMod*shortRestDice);
+        upCh(n=>{n.currentHP=Math.min(n.maxHP,n.currentHP+healing);n.usedHitDice=(n.usedHitDice||0)+shortRestDice;return n;});
+        setShortRestResult({rolled,conMod,healing,dice:shortRestDice});
       };
-
       const doLongRest=()=>{
-        upCh(n=>{
-          n.currentHP=n.maxHP;
-          n.tempHP=0;
-          n.usedHitDice=0;
-          for(let lvl=1;lvl<=9;lvl++){
-            const max=n.spellSlots[lvl][1];
-            n.spellSlots[lvl]=[max,max];
-          }
-          return n;
-        });
+        upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=0;for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}return n;});
         setDeathSaves({success:0,fail:0});
         setRestModal(null);
       };
-
-      if(!restModal) return null;
-
+      if(!restModal)return null;
       return(
-        <div style={{position:"fixed",inset:0,zIndex:55,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.85)"}}
-          onClick={restModal==="short"?closeShort:()=>setRestModal(null)}>
+        <div style={{position:"fixed",inset:0,zIndex:55,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.85)"}} onClick={restModal==="short"?closeShort:()=>setRestModal(null)}>
           <div style={{...S.card,maxWidth:360,width:"90%",padding:24}} onClick={e=>e.stopPropagation()}>
-
             {restModal==="long"&&<>
               <div style={{fontSize:18,fontWeight:900,color:"#60a5fa",marginBottom:6}}>🌙 Lange Rast</div>
               <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden. Folgendes wird wiederhergestellt:</div>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>
-                {[
-                  ["❤️ Trefferpunkte", `Volle HP (${ch.maxHP})`],
-                  ["🎲 Trefferwürfel",  `Alle TW zurück (${totalLevel}/${totalLevel})`],
-                  ["✨ Zauberslots",    "Alle Slots zurück"],
-                  ["💀 Todesrettungswürfe","Reset"],
-                  ["🛡 Temporäre HP",  "Werden entfernt"],
-                ].map(([label,desc])=>(
+                {[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel",`Alle TW zurück (${totalLevel}/${totalLevel})`],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(
                   <div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 10px",background:"rgba(96,165,250,0.05)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
                     <span style={{color:"rgba(255,255,255,0.7)"}}>{label}</span>
                     <span style={{color:"#60a5fa",fontWeight:700}}>{desc}</span>
@@ -290,12 +262,10 @@
                 <button onClick={()=>setRestModal(null)} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button>
               </div>
             </>}
-
             {restModal==="short"&&<>
               <div style={{fontSize:18,fontWeight:900,color:"#fbbf24",marginBottom:6}}>☕ Kurze Rast</div>
               <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:14,lineHeight:1.6}}>Eine kurze Rast dauert mindestens 1 Stunde. Du kannst Trefferwürfel ausgeben, um HP zu heilen.</div>
-
-              {!shortRestResult ? <>
+              {!shortRestResult?<>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
                   <div style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>Trefferwürfel ausgeben:</div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
@@ -305,7 +275,6 @@
                   </div>
                 </div>
                 <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginBottom:12,textAlign:"right"}}>Verfügbar: {availHD}/{totalLevel} · Würfeltyp: {dieType}</div>
-
                 {shortRestDice>0&&<>
                   <div style={{padding:"10px 14px",background:"rgba(251,191,36,0.07)",borderRadius:10,border:"1px solid rgba(251,191,36,0.2)",marginBottom:12}}>
                     <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:4}}>📋 Dein Wurf:</div>
@@ -314,29 +283,17 @@
                   </div>
                   <div style={{marginBottom:16}}>
                     <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>Summe deiner Würfel eingeben</div>
-                    <input type="number" min={shortRestDice} value={shortRestInput}
-                      onChange={e=>setShortRestInput(e.target.value)}
-                      onKeyDown={e=>e.key==="Enter"&&doShortRest()}
-                      placeholder={`Mind. ${shortRestDice}`}
-                      style={{...S.input,fontSize:22,fontWeight:900,textAlign:"center",padding:"10px 14px"}}/>
+                    <input type="number" min={shortRestDice} value={shortRestInput} onChange={e=>setShortRestInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doShortRest()} placeholder={`Mind. ${shortRestDice}`} style={{...S.input,fontSize:22,fontWeight:900,textAlign:"center",padding:"10px 14px"}}/>
                   </div>
                 </>}
-
                 <div style={{display:"flex",gap:8}}>
-                  <button onClick={doShortRest}
-                    disabled={shortRestDice===0||shortRestInput===""}
-                    style={{flex:1,background:shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.05)",color:shortRestDice>0&&shortRestInput!==""?"#fbbf24":"rgba(255,255,255,0.2)",border:`1px solid ${shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.1)"}`,borderRadius:10,padding:"10px 0",fontWeight:800,cursor:shortRestDice>0&&shortRestInput!==""?"pointer":"not-allowed",fontSize:14,fontFamily:"inherit"}}>
-                    ☕ Bestätigen
-                  </button>
+                  <button onClick={doShortRest} disabled={shortRestDice===0||shortRestInput===""} style={{flex:1,background:shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.05)",color:shortRestDice>0&&shortRestInput!==""?"#fbbf24":"rgba(255,255,255,0.2)",border:`1px solid ${shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.1)"}`,borderRadius:10,padding:"10px 0",fontWeight:800,cursor:shortRestDice>0&&shortRestInput!==""?"pointer":"not-allowed",fontSize:14,fontFamily:"inherit"}}>☕ Bestätigen</button>
                   <button onClick={closeShort} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button>
                 </div>
-              </> : <>
+              </>:<>
                 <div style={{padding:"14px",background:"rgba(251,191,36,0.07)",borderRadius:12,border:"1px solid rgba(251,191,36,0.2)",marginBottom:16}}>
                   <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:6}}>Dein Wurf ({shortRestResult.dice}×{dieType}):</div>
-                  <div style={{fontSize:22,fontWeight:900,color:"#fbbf24",marginBottom:4}}>
-                    {shortRestResult.rolled}
-                    {shortRestResult.conMod!==0&&<span style={{fontSize:14,color:"rgba(255,255,255,0.4)"}}> + {shortRestResult.dice}×{fmtMod(shortRestResult.conMod)} CON</span>}
-                  </div>
+                  <div style={{fontSize:22,fontWeight:900,color:"#fbbf24",marginBottom:4}}>{shortRestResult.rolled}{shortRestResult.conMod!==0&&<span style={{fontSize:14,color:"rgba(255,255,255,0.4)"}}> + {shortRestResult.dice}×{fmtMod(shortRestResult.conMod)} CON</span>}</div>
                   <div style={{fontSize:18,fontWeight:900,color:"#4ade80"}}>+{shortRestResult.healing} HP geheilt ✓</div>
                 </div>
                 <button onClick={closeShort} style={{width:"100%",background:"rgba(34,197,94,0.15)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>Fertig</button>
@@ -361,8 +318,7 @@
               <h1 style={{fontSize:28,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ D&amp;D 5e Sheet</h1>
               <div style={{display:"flex",gap:6,marginTop:4}}>
                 {THEMES.map(t=>(
-                  <button key={t.id} onClick={()=>onThemeChange(t.id)} title={t.label}
-                    style={{width:20,height:20,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
+                  <button key={t.id} onClick={()=>onThemeChange(t.id)} title={t.label} style={{width:20,height:20,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
                 ))}
               </div>
             </div>
@@ -489,7 +445,7 @@
       const preparedSpells=[];
       for(let lvl=0;lvl<=9;lvl++){
         (ch.spells[lvl]||[]).forEach(sp=>{
-          if((lvl===0||sp.prepared)&&sp.name&&sp.name.trim()!=="") preparedSpells.push({name:sp.name,level:lvl});
+          if((lvl===0||sp.prepared)&&sp.name&&sp.name.trim()!=="")preparedSpells.push({name:sp.name,level:lvl});
         });
       }
 
@@ -635,12 +591,7 @@
             </div>
           )}
 
-          <RestModals
-            restModal={restModal} setRestModal={setRestModal}
-            ch={ch} upCh={upCh} totalLevel={totalLevel}
-            deathSaves={deathSaves} setDeathSaves={setDeathSaves}
-            theme={theme}
-          />
+          <RestModals restModal={restModal} setRestModal={setRestModal} ch={ch} upCh={upCh} totalLevel={totalLevel} deathSaves={deathSaves} setDeathSaves={setDeathSaves} theme={theme}/>
 
           <div style={{position:"sticky",top:0,zIndex:40,backdropFilter:"blur(12px)",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -652,8 +603,7 @@
             </div>
             <div style={{display:"flex",gap:6}}>
               {THEMES.map(t=>(
-                <button key={t.id} onClick={()=>changeTheme(t.id)} title={t.label}
-                  style={{width:16,height:16,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
+                <button key={t.id} onClick={()=>changeTheme(t.id)} title={t.label} style={{width:16,height:16,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
               ))}
             </div>
           </div>
@@ -708,7 +658,6 @@
                     <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
                   </div>
 
-                  {/* Attribute */}
                   <div style={{display:"grid",gridTemplateColumns:"56px repeat(6,1fr)",gap:8}}>
                     <div style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div>
@@ -723,7 +672,6 @@
                     ))}
                   </div>
 
-                  {/* Rettungswürfe */}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
                     <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:2,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
                     {SAVES.map(k=>(
@@ -735,7 +683,6 @@
                     ))}
                   </div>
 
-                  {/* Rast-Knöpfe */}
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                       <span>☕ Kurze Rast</span>
@@ -747,7 +694,6 @@
                     </button>
                   </div>
 
-                  {/* Features */}
                   {(()=>{
                     const resist=activeF.filter(f=>f.type==="resistance");
                     const adv=activeF.filter(f=>f.type==="advantage");
@@ -759,7 +705,7 @@
                     const acBonus=activeF.filter(f=>f.type==="ac_bonus");
                     const statBon=activeF.filter(f=>f.type==="stat_bonus");
                     const passive=activeF.filter(f=>f.type==="passive"||f.type==="other");
-                    if(activeF.length===0) return null;
+                    if(activeF.length===0)return null;
                     const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);
                     const Tag=({color,bg,border,shape,children})=>(<span style={{background:bg,border:`2px solid ${border}`,borderRadius:shape==="sharp"?6:20,padding:"4px 12px",fontSize:12,fontWeight:700,color,display:"inline-flex",alignItems:"center",gap:5,boxShadow:`0 0 8px ${border}55`}}>{children}</span>);
                     const kw=f=>f.keyword||f.name||"?";
@@ -780,7 +726,6 @@
                     );
                   })()}
 
-                  {/* Angriffe & Zauber */}
                   <div style={S.card}>
                     <div style={S.section}>⚔ Angriffe & Zauber</div>
                     {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(
@@ -964,13 +909,9 @@
                       <div style={{display:"flex",gap:10,alignItems:"center"}}>
                         {lvl>0&&<div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"rgba(255,255,255,0.4)"}}>
                           Slots:
-                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][0]}
-                            onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[v,n.spellSlots[lvl][1]];return n;});}}
-                            style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
+                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][0]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[v,n.spellSlots[lvl][1]];return n;});}} style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
                           /
-                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][1]}
-                            onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[n.spellSlots[lvl][0],v];return n;});}}
-                            style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
+                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][1]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[n.spellSlots[lvl][0],v];return n;});}} style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
                         </div>}
                         <button onClick={()=>upCh(n=>{n.spells[lvl].push({name:"",prepared:false});return n;})} style={{...S.btnGhost,fontSize:12,padding:"4px 10px"}}>+ Zauber</button>
                       </div>
