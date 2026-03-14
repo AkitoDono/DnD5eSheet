@@ -708,6 +708,7 @@
                     <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
                   </div>
 
+                  {/* Attribute */}
                   <div style={{display:"grid",gridTemplateColumns:"56px repeat(6,1fr)",gap:8}}>
                     <div style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div>
@@ -722,6 +723,7 @@
                     ))}
                   </div>
 
+                  {/* Rettungswürfe */}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
                     <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:2,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
                     {SAVES.map(k=>(
@@ -733,6 +735,7 @@
                     ))}
                   </div>
 
+                  {/* Rast-Knöpfe */}
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                       <span>☕ Kurze Rast</span>
@@ -744,6 +747,7 @@
                     </button>
                   </div>
 
+                  {/* Features */}
                   {(()=>{
                     const resist=activeF.filter(f=>f.type==="resistance");
                     const adv=activeF.filter(f=>f.type==="advantage");
@@ -776,6 +780,7 @@
                     );
                   })()}
 
+                  {/* Angriffe & Zauber */}
                   <div style={S.card}>
                     <div style={S.section}>⚔ Angriffe & Zauber</div>
                     {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(
