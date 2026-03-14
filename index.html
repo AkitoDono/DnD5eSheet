@@ -547,21 +547,21 @@
 
       const SkillsSidebar=()=>(
         <div style={{...S.card,padding:"10px 8px",minWidth:0}}>
-          <div style={{fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:8,textAlign:"center"}}>FERTIGKEITEN</div>
-          <div style={{display:"flex",flexDirection:"column",gap:2}}>
+          <div style={{fontSize:20,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:8,textAlign:"center"}}>FERTIGKEITEN</div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
             {SKILLS.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(s=>{
               const mod=skillMod(s.name);
               const hasProfOrExp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
               return(
-                <div key={s.name} style={{display:"flex",alignItems:"center",gap:5,padding:"2px 4px",borderRadius:6,background:hasProfOrExp?`${theme.accent}0d`:"transparent"}}>
-                  <span style={{fontSize:11,fontWeight:800,minWidth:24,textAlign:"right",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
-                  <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:ch.skillExpertise[s.name]?theme.accent:ch.skillProficiencies[s.name]?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.15)",border:`1px solid ${ch.skillExpertise[s.name]?theme.accent:"rgba(255,255,255,0.2)"}`}}/>
-                  <span style={{fontSize:10,color:"rgba(255,255,255,0.7)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.3}}>{s.name}</span>
+                <div key={s.name} style={{display:"flex",alignItems:"center",gap:7,padding:"4px 6px",borderRadius:6,background:hasProfOrExp?`${theme.accent}0d`:"transparent"}}>
+                  <span style={{fontSize:20,fontWeight:800,minWidth:36,textAlign:"right",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
+                  <span style={{width:10,height:10,borderRadius:"50%",flexShrink:0,background:ch.skillExpertise[s.name]?theme.accent:ch.skillProficiencies[s.name]?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.15)",border:`1px solid ${ch.skillExpertise[s.name]?theme.accent:"rgba(255,255,255,0.2)"}`}}/>
+                  <span style={{fontSize:14,color:"rgba(255,255,255,0.7)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",lineHeight:1.3}}>{s.name}</span>
                 </div>
               );
             })}
           </div>
-          <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",fontSize:10,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>
+          <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",fontSize:13,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>
             <span style={{color:"rgba(255,255,255,0.5)"}}>●</span> Geübt &nbsp;<span style={{color:theme.accent}}>●</span> Expertise
           </div>
         </div>
@@ -685,9 +685,9 @@
                       <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginTop:2}}>{[ch.race,ch.background,ch.alignment].filter(Boolean).join(" · ")}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
                         {[["Init",fmtMod(statMod(effStat("dex")))],["Spd",ch.speed+"ft"]].map(([l,v])=>(
-                          <div key={l} style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"5px 10px",textAlign:"center",border:`1px solid ${theme.border}`}}>
-                            <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div>
-                            <div style={{fontSize:15,fontWeight:800,color:theme.accent}}>{v}</div>
+                          <div key={l} style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"9px 18px",textAlign:"center",border:`1px solid ${theme.border}`}}>
+                            <div style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div>
+                            <div style={{fontSize:27,fontWeight:800,color:theme.accent}}>{v}</div>
                           </div>
                         ))}
                       </div>
@@ -708,7 +708,6 @@
                     <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
                   </div>
 
-                  {/* Attribute */}
                   <div style={{display:"grid",gridTemplateColumns:"56px repeat(6,1fr)",gap:8}}>
                     <div style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div>
@@ -723,7 +722,6 @@
                     ))}
                   </div>
 
-                  {/* Rettungswürfe */}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
                     <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:2,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
                     {SAVES.map(k=>(
@@ -735,7 +733,6 @@
                     ))}
                   </div>
 
-                  {/* Rast-Knöpfe */}
                   <div style={{display:"flex",gap:8}}>
                     <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
                       <span>☕ Kurze Rast</span>
@@ -747,7 +744,6 @@
                     </button>
                   </div>
 
-                  {/* Features */}
                   {(()=>{
                     const resist=activeF.filter(f=>f.type==="resistance");
                     const adv=activeF.filter(f=>f.type==="advantage");
@@ -780,7 +776,6 @@
                     );
                   })()}
 
-                  {/* Angriffe & Zauber */}
                   <div style={S.card}>
                     <div style={S.section}>⚔ Angriffe & Zauber</div>
                     {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(
