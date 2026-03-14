@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>D&D 5e Sheet</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -16,6 +16,21 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+    .stat-grid-6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; }
+    .stat-grid-rk { display: grid; grid-template-columns: 52px repeat(6,1fr); gap: 6px; }
+    @media (max-width: 480px) {
+      .stat-grid-6 { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .stat-grid-rk { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .rk-box-desktop { display: none !important; }
+      .rk-box-mobile { display: flex !important; }
+      .overview-grid { grid-template-columns: 1fr !important; }
+      .skills-sidebar { display: none !important; }
+      .skills-mobile { display: block !important; }
+    }
+    .rk-box-mobile { display: none; }
+    .skills-mobile { display: none; }
+    @media (min-width: 481px) { .skills-mobile { display: none !important; } }
   </style>
 </head>
 <body>
@@ -86,8 +101,7 @@
       name:"",race:"",background:"",alignment:"",
       classes:[{name:"",subclass:"",level:1}],
       xp:0,maxHP:10,currentHP:10,tempHP:0,ac:10,speed:30,
-      inspiration:false,hitDice:"1d8",
-      usedHitDice:0,
+      inspiration:false,hitDice:"1d8",usedHitDice:0,
       stats:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
       saveProficiencies:{str:false,dex:false,con:false,int:false,wis:false,cha:false},
       skillProficiencies:Object.fromEntries(SKILLS.map(s=>[s.name,false])),
@@ -157,15 +171,15 @@
               Auto-Umrechnung
             </label>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:8}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:6}}>
             {COINS_META.map(c=>(
-              <div key={c.key} style={{background:c.bg,border:`1px solid ${c.border}`,borderRadius:12,padding:10,textAlign:"center"}}>
-                <div style={{fontSize:11,fontWeight:800,color:c.color,letterSpacing:"0.05em"}}>{c.label}</div>
-                <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginBottom:4}}>{c.name}</div>
-                <div style={{fontSize:20,fontWeight:800,color:"white"}}>{currency[c.key]||0}</div>
-                <div style={{display:"flex",gap:4,marginTop:6}}>
-                  <button onClick={()=>onUpdate(autoConv?cpToCurr(currToCP(currency)+COIN_RATES[c.key]):{...currency,[c.key]:(currency[c.key]||0)+1})} style={{flex:1,background:"rgba(34,197,94,0.2)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,padding:"2px 0",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>+</button>
-                  <button onClick={()=>onUpdate(autoConv?cpToCurr(Math.max(0,currToCP(currency)-COIN_RATES[c.key])):{...currency,[c.key]:Math.max(0,(currency[c.key]||0)-1)})} style={{flex:1,background:"rgba(239,68,68,0.2)",color:"#f87171",border:"1px solid rgba(239,68,68,0.3)",borderRadius:8,padding:"2px 0",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>−</button>
+              <div key={c.key} style={{background:c.bg,border:`1px solid ${c.border}`,borderRadius:12,padding:"8px 4px",textAlign:"center"}}>
+                <div style={{fontSize:10,fontWeight:800,color:c.color,letterSpacing:"0.05em"}}>{c.label}</div>
+                <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",marginBottom:2}}>{c.name}</div>
+                <div style={{fontSize:18,fontWeight:800,color:"white"}}>{currency[c.key]||0}</div>
+                <div style={{display:"flex",gap:3,marginTop:4}}>
+                  <button onClick={()=>onUpdate(autoConv?cpToCurr(currToCP(currency)+COIN_RATES[c.key]):{...currency,[c.key]:(currency[c.key]||0)+1})} style={{flex:1,background:"rgba(34,197,94,0.2)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:6,padding:"2px 0",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>+</button>
+                  <button onClick={()=>onUpdate(autoConv?cpToCurr(Math.max(0,currToCP(currency)-COIN_RATES[c.key])):{...currency,[c.key]:Math.max(0,(currency[c.key]||0)-1)})} style={{flex:1,background:"rgba(239,68,68,0.2)",color:"#f87171",border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,padding:"2px 0",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>−</button>
                 </div>
               </div>
             ))}
@@ -239,18 +253,17 @@
       };
       const doLongRest=()=>{
         upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=0;for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}return n;});
-        setDeathSaves({success:0,fail:0});
-        setRestModal(null);
+        setDeathSaves({success:0,fail:0});setRestModal(null);
       };
       if(!restModal)return null;
       return(
         <div style={{position:"fixed",inset:0,zIndex:55,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.85)"}} onClick={restModal==="short"?closeShort:()=>setRestModal(null)}>
-          <div style={{...S.card,maxWidth:360,width:"90%",padding:24}} onClick={e=>e.stopPropagation()}>
+          <div style={{...S.card,maxWidth:360,width:"92%",padding:24}} onClick={e=>e.stopPropagation()}>
             {restModal==="long"&&<>
               <div style={{fontSize:18,fontWeight:900,color:"#60a5fa",marginBottom:6}}>🌙 Lange Rast</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden. Folgendes wird wiederhergestellt:</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden.</div>
               <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>
-                {[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel",`Alle TW zurück (${totalLevel}/${totalLevel})`],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(
+                {[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel","Alle TW zurück"],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(
                   <div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 10px",background:"rgba(96,165,250,0.05)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}>
                     <span style={{color:"rgba(255,255,255,0.7)"}}>{label}</span>
                     <span style={{color:"#60a5fa",fontWeight:700}}>{desc}</span>
@@ -264,25 +277,24 @@
             </>}
             {restModal==="short"&&<>
               <div style={{fontSize:18,fontWeight:900,color:"#fbbf24",marginBottom:6}}>☕ Kurze Rast</div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:14,lineHeight:1.6}}>Eine kurze Rast dauert mindestens 1 Stunde. Du kannst Trefferwürfel ausgeben, um HP zu heilen.</div>
+              <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:14,lineHeight:1.6}}>Mindestens 1 Stunde. Trefferwürfel ausgeben um HP zu heilen.</div>
               {!shortRestResult?<>
                 <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}>
-                  <div style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>Trefferwürfel ausgeben:</div>
+                  <div style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>TW ausgeben:</div>
                   <div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}>
                     <button onClick={()=>setShortRestDice(d=>Math.max(0,d-1))} style={{...S.btnGhost,padding:"4px 10px",fontSize:16}}>−</button>
                     <span style={{fontSize:20,fontWeight:900,color:"#fbbf24",minWidth:28,textAlign:"center"}}>{shortRestDice}</span>
                     <button onClick={()=>setShortRestDice(d=>Math.min(availHD,d+1))} style={{...S.btnGhost,padding:"4px 10px",fontSize:16}}>+</button>
                   </div>
                 </div>
-                <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginBottom:12,textAlign:"right"}}>Verfügbar: {availHD}/{totalLevel} · Würfeltyp: {dieType}</div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginBottom:12,textAlign:"right"}}>Verfügbar: {availHD}/{totalLevel} · {dieType}</div>
                 {shortRestDice>0&&<>
                   <div style={{padding:"10px 14px",background:"rgba(251,191,36,0.07)",borderRadius:10,border:"1px solid rgba(251,191,36,0.2)",marginBottom:12}}>
-                    <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:4}}>📋 Dein Wurf:</div>
-                    <div style={{fontSize:15,fontWeight:800,color:"#fbbf24"}}>Würfle {shortRestDice}×{dieType} und addiere alle Ergebnisse</div>
-                    {conMod!==0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginTop:4}}>+ {shortRestDice}×{fmtMod(conMod)} CON = {conMod>0?"+":""}{shortRestDice*conMod} extra</div>}
+                    <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:4}}>Würfle {shortRestDice}×{dieType}</div>
+                    {conMod!==0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>+ {shortRestDice}×{fmtMod(conMod)} CON = {conMod>0?"+":""}{shortRestDice*conMod} extra</div>}
                   </div>
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>Summe deiner Würfel eingeben</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>Summe eingeben</div>
                     <input type="number" min={shortRestDice} value={shortRestInput} onChange={e=>setShortRestInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doShortRest()} placeholder={`Mind. ${shortRestDice}`} style={{...S.input,fontSize:22,fontWeight:900,textAlign:"center",padding:"10px 14px"}}/>
                   </div>
                 </>}
@@ -293,7 +305,7 @@
               </>:<>
                 <div style={{padding:"14px",background:"rgba(251,191,36,0.07)",borderRadius:12,border:"1px solid rgba(251,191,36,0.2)",marginBottom:16}}>
                   <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:6}}>Dein Wurf ({shortRestResult.dice}×{dieType}):</div>
-                  <div style={{fontSize:22,fontWeight:900,color:"#fbbf24",marginBottom:4}}>{shortRestResult.rolled}{shortRestResult.conMod!==0&&<span style={{fontSize:14,color:"rgba(255,255,255,0.4)"}}> + {shortRestResult.dice}×{fmtMod(shortRestResult.conMod)} CON</span>}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:"#fbbf24",marginBottom:4}}>{shortRestResult.rolled}</div>
                   <div style={{fontSize:18,fontWeight:900,color:"#4ade80"}}>+{shortRestResult.healing} HP geheilt ✓</div>
                 </div>
                 <button onClick={closeShort} style={{width:"100%",background:"rgba(34,197,94,0.15)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>Fertig</button>
@@ -312,10 +324,10 @@
       const totalLevel=c=>(c.classes||[]).reduce((s,cl)=>s+(cl.level||0),0)||1;
       const classLabel=c=>(c.classes||[]).map(cl=>`${cl.name} ${cl.level}`).filter(x=>x.trim()!==" 1").join(" / ")||"Unbekannte Klasse";
       return(
-        <div style={{minHeight:"100vh",background:theme.bg,color:"white",padding:20}}>
+        <div style={{minHeight:"100vh",background:theme.bg,color:"white",padding:"20px 16px"}}>
           <div style={{maxWidth:480,margin:"0 auto"}}>
             <div style={{marginBottom:28,display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-              <h1 style={{fontSize:28,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ D&amp;D 5e Sheet</h1>
+              <h1 style={{fontSize:26,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ D&amp;D 5e Sheet</h1>
               <div style={{display:"flex",gap:6,marginTop:4}}>
                 {THEMES.map(t=>(
                   <button key={t.id} onClick={()=>onThemeChange(t.id)} title={t.label} style={{width:20,height:20,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
@@ -502,7 +514,7 @@
       const tabs=[["overview","Übersicht"],["core","Charakter"],["skills","Fertigkeiten"],["combat","Kampf"],["spells","Zauber"],["inventory","Inventar"],["features","Features"],["notes","Notizen"]];
 
       const SkillsSidebar=()=>(
-        <div style={{...S.card,padding:"10px 8px",minWidth:0}}>
+        <div className="skills-sidebar" style={{...S.card,padding:"10px 8px",minWidth:0}}>
           <div style={{fontSize:20,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:8,textAlign:"center"}}>FERTIGKEITEN</div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             {SKILLS.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(s=>{
@@ -518,6 +530,28 @@
             })}
           </div>
           <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",fontSize:13,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>
+            <span style={{color:"rgba(255,255,255,0.5)"}}>●</span> Geübt &nbsp;<span style={{color:theme.accent}}>●</span> Expertise
+          </div>
+        </div>
+      );
+
+      const SkillsMobile=()=>(
+        <div style={{...S.card}}>
+          <div style={{fontSize:15,fontWeight:800,color:theme.accent,marginBottom:10}}>FERTIGKEITEN</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4}}>
+            {SKILLS.slice().sort((a,b)=>a.name.localeCompare(b.name,"de")).map(s=>{
+              const mod=skillMod(s.name);
+              const hasProfOrExp=ch.skillProficiencies[s.name]||ch.skillExpertise[s.name];
+              return(
+                <div key={s.name} style={{display:"flex",alignItems:"center",gap:6,padding:"4px 6px",borderRadius:6,background:hasProfOrExp?`${theme.accent}0d`:"transparent"}}>
+                  <span style={{fontSize:13,fontWeight:800,minWidth:28,textAlign:"right",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
+                  <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,background:ch.skillExpertise[s.name]?theme.accent:ch.skillProficiencies[s.name]?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.15)",border:`1px solid ${ch.skillExpertise[s.name]?theme.accent:"rgba(255,255,255,0.2)"}`}}/>
+                  <span style={{fontSize:11,color:"rgba(255,255,255,0.7)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}>
             <span style={{color:"rgba(255,255,255,0.5)"}}>●</span> Geübt &nbsp;<span style={{color:theme.accent}}>●</span> Expertise
           </div>
         </div>
@@ -593,47 +627,46 @@
 
           <RestModals restModal={restModal} setRestModal={setRestModal} ch={ch} upCh={upCh} totalLevel={totalLevel} deathSaves={deathSaves} setDeathSaves={setDeathSaves} theme={theme}/>
 
-          <div style={{position:"sticky",top:0,zIndex:40,backdropFilter:"blur(12px)",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{position:"sticky",top:0,zIndex:40,backdropFilter:"blur(12px)",background:"rgba(255,255,255,0.03)",borderBottom:"1px solid rgba(255,255,255,0.07)",padding:"10px 12px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
               <button onClick={()=>setScreen("select")} style={{background:"transparent",border:"none",color:"rgba(255,255,255,0.4)",cursor:"pointer",fontSize:20,padding:0}}>←</button>
               <div>
-                <div style={{fontSize:16,fontWeight:800,color:theme.accent}}>⚔ {ch.name||"Neuer Charakter"}</div>
+                <div style={{fontSize:15,fontWeight:800,color:theme.accent}}>⚔ {ch.name||"Neuer Charakter"}</div>
                 {saved&&<div style={{fontSize:11,color:"#4ade80",marginTop:1}}>✓ Gespeichert</div>}
               </div>
             </div>
-            <div style={{display:"flex",gap:6}}>
+            <div style={{display:"flex",gap:5}}>
               {THEMES.map(t=>(
                 <button key={t.id} onClick={()=>changeTheme(t.id)} title={t.label} style={{width:16,height:16,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>
               ))}
             </div>
           </div>
 
-          <div style={{position:"relative",zIndex:1,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:4,padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+          <div style={{position:"relative",zIndex:1,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,padding:"8px 10px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
             {tabs.map(([id,label])=>(
-              <button key={id} onClick={()=>setTab(id)} style={{padding:"8px 6px",fontSize:12,fontWeight:700,borderRadius:10,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(255,255,255,0.07)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",background:tab===id?`${theme.accent}18`:"rgba(255,255,255,0.03)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>
+              <button key={id} onClick={()=>setTab(id)} style={{padding:"7px 4px",fontSize:11,fontWeight:700,borderRadius:8,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(255,255,255,0.07)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",background:tab===id?`${theme.accent}18`:"rgba(255,255,255,0.03)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>
                 {label}
               </button>
             ))}
           </div>
 
-          <div style={{position:"relative",zIndex:1,padding:16,maxWidth:900,margin:"0 auto"}}>
+          <div style={{position:"relative",zIndex:1,padding:"12px 12px",maxWidth:900,margin:"0 auto"}}>
 
             {tab==="overview"&&(
-              <div style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:14,alignItems:"start"}}>
+              <div className="overview-grid" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:14,alignItems:"start"}}>
                 <div style={{display:"flex",flexDirection:"column",gap:14}}>
-
-                  <div style={{display:"flex",gap:14,alignItems:"flex-start"}}>
+                  <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
                     <div style={{flexShrink:0}}>
-                      <div onClick={()=>document.getElementById("char-img-upload").click()} style={{width:108,height:136,borderRadius:16,overflow:"hidden",cursor:"pointer",border:`2px solid ${hpRatio<=0.15?"#ef4444":hpRatio<=0.5?"#f59e0b":theme.border}`,background:"rgba(255,255,255,0.04)"}}>
-                        {charImage?<img src={charImage} alt="Char" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.15)"}}>🧙<div style={{fontSize:10,marginTop:6,textAlign:"center"}}>Bild hinzufügen</div></div>}
+                      <div onClick={()=>document.getElementById("char-img-upload").click()} style={{width:90,height:114,borderRadius:14,overflow:"hidden",cursor:"pointer",border:`2px solid ${hpRatio<=0.15?"#ef4444":hpRatio<=0.5?"#f59e0b":theme.border}`,background:"rgba(255,255,255,0.04)"}}>
+                        {charImage?<img src={charImage} alt="Char" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,0.15)"}}>🧙<div style={{fontSize:10,marginTop:6,textAlign:"center"}}>Bild</div></div>}
                       </div>
                       <input id="char-img-upload" type="file" accept="image/*" style={{display:"none"}} onChange={handleImageUpload}/>
                     </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:22,fontWeight:900,color:"white"}}>{ch.name||"Unbenannt"}</div>
-                      <div style={{fontSize:14,fontWeight:700,color:theme.accent,marginTop:3}}>{ch.classes.map(c=>`${c.name}${c.subclass?` (${c.subclass})`:""} ${c.level}`).join(" / ")}</div>
-                      <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",marginTop:2}}>{[ch.race,ch.background,ch.alignment].filter(Boolean).join(" · ")}</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:10}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:20,fontWeight:900,color:"white"}}>{ch.name||"Unbenannt"}</div>
+                      <div style={{fontSize:13,fontWeight:700,color:theme.accent,marginTop:2}}>{ch.classes.map(c=>`${c.name}${c.subclass?` (${c.subclass})`:""} ${c.level}`).join(" / ")}</div>
+                      <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{[ch.race,ch.background,ch.alignment].filter(Boolean).join(" · ")}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
                         {[["Init",fmtMod(statMod(effStat("dex")))],["Spd",ch.speed+"ft"]].map(([l,v])=>(
                           <div key={l} style={{background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"9px 18px",textAlign:"center",border:`1px solid ${theme.border}`}}>
                             <div style={{fontSize:18,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div>
@@ -658,8 +691,8 @@
                     <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
                   </div>
 
-                  <div style={{display:"grid",gridTemplateColumns:"56px repeat(6,1fr)",gap:8}}>
-                    <div style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+                  <div className="stat-grid-rk">
+                    <div className="rk-box-desktop" style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
                       <div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div>
                       <div style={{fontSize:26,fontWeight:900,color:theme.accent,lineHeight:1}}>{totalAC}</div>
                     </div>
@@ -671,16 +704,22 @@
                       </div>
                     ))}
                   </div>
+                  <div className="rk-box-mobile" style={{...S.statBox,border:`1px solid ${theme.accent}55`,background:`${theme.accent}0d`,flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"12px 16px"}}>
+                    <div style={{fontSize:12,color:theme.accent,fontWeight:800}}>RÜSTUNGSKLASSE</div>
+                    <div style={{fontSize:36,fontWeight:900,color:theme.accent,lineHeight:1}}>{totalAC}</div>
+                  </div>
 
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
-                    <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:2,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
-                    {SAVES.map(k=>(
-                      <div key={k} style={{...S.statBox,background:ch.saveProficiencies[k]?`${theme.accent}0d`:"rgba(255,255,255,0.03)",border:`1px solid ${ch.saveProficiencies[k]?`${theme.accent}55`:theme.border}`}}>
-                        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:800}}>{STAT_NAMES[k]}</div>
-                        <div style={{fontSize:17,fontWeight:800,color:ch.saveProficiencies[k]?theme.accent:"rgba(255,255,255,0.7)"}}>{fmtMod(saveMod(k))}</div>
-                        {ch.saveProficiencies[k]&&<div style={{fontSize:9,color:theme.accent,fontWeight:700}}>✓ Prof.</div>}
-                      </div>
-                    ))}
+                  <div>
+                    <div style={{fontSize:11,fontWeight:800,color:theme.accent,letterSpacing:"0.07em",marginBottom:6,padding:"4px 8px",background:`${theme.accent}12`,borderRadius:8,border:`1px solid ${theme.accent}33`,textAlign:"center"}}>RETTUNGSWÜRFE</div>
+                    <div className="stat-grid-6">
+                      {SAVES.map(k=>(
+                        <div key={k} style={{...S.statBox,background:ch.saveProficiencies[k]?`${theme.accent}0d`:"rgba(255,255,255,0.03)",border:`1px solid ${ch.saveProficiencies[k]?`${theme.accent}55`:theme.border}`}}>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)",fontWeight:800}}>{STAT_NAMES[k]}</div>
+                          <div style={{fontSize:17,fontWeight:800,color:ch.saveProficiencies[k]?theme.accent:"rgba(255,255,255,0.7)"}}>{fmtMod(saveMod(k))}</div>
+                          {ch.saveProficiencies[k]&&<div style={{fontSize:9,color:theme.accent,fontWeight:700}}>✓ Prof.</div>}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   <div style={{display:"flex",gap:8}}>
@@ -715,8 +754,8 @@
                         <div style={S.section}>✨ Features & Boni</div>
                         <div style={{display:"flex",flexDirection:"column",gap:12}}>
                           {(extraAtk.length>0||atkBonus.length>0)&&<Section label="⚔ ANGRIFFE & ANGRIFFSBONUS">{extraAtk.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp">⚔ +{f.value||1} Angriff{f.keyword?` · ${f.keyword}`:""}</Tag>)}{atkBonus.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp">🎯 {kw(f)}{val(f)}</Tag>)}</Section>}
-                          {(sneakAtk.length>0||bonusDmg.length>0)&&<Section label="🎲 BONUSSCHADEN & SNEAK ATTACK">{sneakAtk.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🗡 {kw(f)}{val(f)}</Tag>)}{bonusDmg.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🎲 {kw(f)} +{f.value}</Tag>)}</Section>}
-                          {(acBonus.length>0||statBon.length>0)&&<Section label="🛡 RK & ATTRIBUTBONI">{acBonus.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">🛡 RK +{f.value}{f.keyword?` · ${f.keyword}`:""}</Tag>)}{statBon.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">💪 {STAT_NAMES[f.target]||f.target} +{f.value}</Tag>)}</Section>}
+                          {(sneakAtk.length>0||bonusDmg.length>0)&&<Section label="🎲 BONUSSCHADEN">{sneakAtk.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🗡 {kw(f)}{val(f)}</Tag>)}{bonusDmg.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🎲 {kw(f)} +{f.value}</Tag>)}</Section>}
+                          {(acBonus.length>0||statBon.length>0)&&<Section label="🛡 RK & ATTRIBUTBONI">{acBonus.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">🛡 RK +{f.value}</Tag>)}{statBon.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">💪 {STAT_NAMES[f.target]||f.target} +{f.value}</Tag>)}</Section>}
                           {resist.length>0&&<Section label="🛡 RESISTENZEN">{resist.map((f,i)=><Tag key={i} color="#60a5fa" bg="rgba(96,165,250,0.15)" border="#60a5fa" shape="round">🛡 {kw(f)}</Tag>)}</Section>}
                           {adv.length>0&&<Section label="🟢 VORTEILE">{adv.map((f,i)=><Tag key={i} color="#4ade80" bg="rgba(74,222,128,0.15)" border="#4ade80" shape="round">▲ {kw(f)}</Tag>)}</Section>}
                           {disadv.length>0&&<Section label="🔴 NACHTEILE">{disadv.map((f,i)=><Tag key={i} color="#f87171" bg="rgba(248,113,113,0.15)" border="#f87171" shape="sharp">▼ {kw(f)}</Tag>)}</Section>}
@@ -731,37 +770,25 @@
                     {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(
                       <div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:13,padding:"16px 0"}}>Keine Waffen ausgerüstet und keine vorbereiteten Zauber</div>
                     ):<div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {equippedWeapons.map((w,i)=>{
-                        const relBonusDmg=bonusDmgF.filter(f=>{if(f.type==="sneak_attack")return(w.weapon.props||[]).some(p=>["Finesse","Leicht"].includes(p))||w.weapon.scale==="DEX";return true;});
-                        const infoParts=[];
-                        if(w.weapon.damageType)infoParts.push({label:w.weapon.damageType,color:"#94a3b8"});
-                        if((w.weapon.props||[]).length>0)infoParts.push({label:(w.weapon.props||[]).join(", "),color:"rgba(255,255,255,0.3)"});
-                        if(w.weapon.range)infoParts.push({label:"📏 "+w.weapon.range,color:"rgba(255,255,255,0.35)"});
-                        if(relBonusDmg.length>0)relBonusDmg.forEach(f=>infoParts.push({label:`+${f.value} ${f.name}`,color:theme.accent}));
-                        return(
-                          <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
-                            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px"}}>
-                              <span style={{fontSize:18}}>⚔</span>
-                              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{w.name||"Waffe"}</div></div>
-                              <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:16}}>{fmtMod(weaponAtkBonus(w))}</div></div>
-                              <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
-                              <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:14}}>{w.weapon.damage||"—"}{w.weapon.bonus?<span style={{color:theme.accent}}>+{w.weapon.bonus}</span>:""}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.4)",marginTop:1}}>{w.weapon.damageType||""}</div></div>
-                            </div>
-                            <div style={{display:"flex",flexWrap:"wrap",gap:6,padding:"6px 14px 10px",borderTop:"1px solid rgba(255,255,255,0.05)"}}>
-                              <span style={{fontSize:11,fontWeight:700,color:"#fbbf24",background:"rgba(251,191,36,0.1)",borderRadius:6,padding:"2px 10px",border:"1px solid rgba(251,191,36,0.3)"}}>{w.weapon.damage||"—"} {w.weapon.damageType}</span>
-                              {infoParts.map((p,j)=><span key={j} style={{fontSize:11,fontWeight:600,color:p.color,background:"rgba(255,255,255,0.05)",borderRadius:20,padding:"2px 8px",border:"1px solid rgba(255,255,255,0.07)"}}>{p.label}</span>)}
-                            </div>
+                      {equippedWeapons.map((w,i)=>(
+                        <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                            <span style={{fontSize:16}}>⚔</span>
+                            <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name||"Waffe"}</div></div>
+                            <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:15}}>{fmtMod(weaponAtkBonus(w))}</div></div>
+                            <div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/>
+                            <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:13}}>{w.weapon.damage||"—"}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{w.weapon.damageType||""}</div></div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                       {ch.attacks.map((a,i)=>(
                         <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
-                          <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px"}}>
-                            <span style={{fontSize:18}}>🗡</span>
-                            <div style={{flex:1,fontWeight:700,fontSize:14}}>{a.name||"Angriff"}</div>
-                            <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80"}}>{a.bonus||"—"}</div></div>
-                            <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
-                            <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:14}}>{a.damage||"—"}</div><div style={{fontSize:10,color:"rgba(255,255,255,0.4)",marginTop:1}}>{a.type||""}</div></div>
+                          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                            <span style={{fontSize:16}}>🗡</span>
+                            <div style={{flex:1,fontWeight:700,fontSize:13}}>{a.name||"Angriff"}</div>
+                            <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80"}}>{a.bonus||"—"}</div></div>
+                            <div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/>
+                            <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:13}}>{a.damage||"—"}</div></div>
                           </div>
                         </div>
                       ))}
@@ -769,22 +796,25 @@
                         <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginTop:4,marginBottom:2}}>✨ VORBEREITETE ZAUBER</div>
                         {preparedSpells.map((sp,i)=>(
                           <div key={i} style={{background:"rgba(192,132,252,0.06)",borderRadius:12,border:"1px solid rgba(192,132,252,0.2)",overflow:"hidden"}}>
-                            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px"}}>
-                              <span style={{fontSize:18}}>✨</span>
-                              <div style={{flex:1,fontWeight:700,fontSize:14}}>{sp.name}</div>
-                              <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>{sp.level===0?"Trick":"Grad"}</div><div style={{fontWeight:800,color:"#c084fc",fontSize:15}}>{sp.level===0?"∞":sp.level}</div></div>
-                              <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
-                              <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>Zauberangriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:15}}>{fmtMod(ch.spellAttackBonus||0)}</div></div>
-                              <div style={{width:1,height:32,background:"rgba(255,255,255,0.08)"}}/>
-                              <div style={{textAlign:"center"}}><div style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>SG</div><div style={{fontWeight:800,color:"#f59e0b",fontSize:15}}>{ch.spellSaveDC||8}</div></div>
+                            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                              <span style={{fontSize:16}}>✨</span>
+                              <div style={{flex:1,fontWeight:700,fontSize:13}}>{sp.name}</div>
+                              <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>{sp.level===0?"Trick":"Grad"}</div><div style={{fontWeight:800,color:"#c084fc",fontSize:14}}>{sp.level===0?"∞":sp.level}</div></div>
+                              <div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/>
+                              <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:14}}>{fmtMod(ch.spellAttackBonus||0)}</div></div>
+                              <div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/>
+                              <div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>SG</div><div style={{fontWeight:800,color:"#f59e0b",fontSize:14}}>{ch.spellSaveDC||8}</div></div>
                             </div>
                           </div>
                         ))}
                       </>}
                     </div>}
                   </div>
-                </div>
 
+                  {/* Fertigkeiten: nur auf Mobile sichtbar */}
+                  <div className="skills-mobile"><SkillsMobile/></div>
+
+                </div>
                 <div style={{position:"sticky",top:80}}><SkillsSidebar/></div>
               </div>
             )}
@@ -807,10 +837,10 @@
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:10}}>
                     {ch.classes.map((c,i)=>(
-                      <div key={i} style={{display:"flex",gap:10,alignItems:"flex-end",background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"10px 12px",border:`1px solid ${theme.border}`}}>
+                      <div key={i} style={{display:"flex",gap:8,alignItems:"flex-end",background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"10px 12px",border:`1px solid ${theme.border}`}}>
                         <div style={{flex:1}}><Label>Klasse</Label><AutoTextarea value={c.name} onChange={e=>upCh(n=>{n.classes[i].name=e.target.value;return n;})} placeholder="Mönch"/></div>
                         <div style={{flex:1}}><Label>Subklasse</Label><AutoTextarea value={c.subclass} onChange={e=>upCh(n=>{n.classes[i].subclass=e.target.value;return n;})} placeholder="Offene Hand"/></div>
-                        <div style={{width:64}}><Label>Level</Label><input type="number" min="1" max="20" value={c.level} onChange={e=>upCh(n=>{n.classes[i].level=+e.target.value;return n;})} style={{...S.input,textAlign:"center"}}/></div>
+                        <div style={{width:56}}><Label>Level</Label><input type="number" min="1" max="20" value={c.level} onChange={e=>upCh(n=>{n.classes[i].level=+e.target.value;return n;})} style={{...S.input,textAlign:"center",padding:"6px 4px"}}/></div>
                         {ch.classes.length>1&&<button onClick={()=>upCh(n=>{n.classes.splice(i,1);return n;})} style={{...S.btnDanger,padding:"6px 10px"}}>✕</button>}
                       </div>
                     ))}
@@ -819,12 +849,12 @@
                 </div>
                 <div style={S.card}>
                   <div style={S.section}>💪 Attribute</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:10}}>
+                  <div className="stat-grid-6">
                     {SAVES.map(k=>{const bonus=statBonuses[k]||0;return(
                       <div key={k} style={{...S.statBox,border:`1px solid ${bonus!==0?`${theme.accent}66`:theme.border}`,background:bonus!==0?`${theme.accent}0d`:"rgba(255,255,255,0.04)"}}>
                         <div style={{fontSize:9,color:"rgba(255,255,255,0.4)",fontWeight:800}}>{STAT_NAMES[k]}</div>
-                        <div style={{fontSize:20,fontWeight:900,color:theme.accent,margin:"3px 0"}}>{fmtMod(statMod(effStat(k)))}</div>
-                        <input type="number" min="1" max="30" value={ch.stats[k]} onChange={e=>up(`stats.${k}`,+e.target.value)} style={{...S.input,width:48,textAlign:"center",fontSize:12,padding:"3px 6px"}}/>
+                        <div style={{fontSize:18,fontWeight:900,color:theme.accent,margin:"3px 0"}}>{fmtMod(statMod(effStat(k)))}</div>
+                        <input type="number" min="1" max="30" value={ch.stats[k]} onChange={e=>up(`stats.${k}`,+e.target.value)} style={{...S.input,width:"100%",textAlign:"center",fontSize:12,padding:"3px 4px"}}/>
                         {bonus!==0&&<div style={{fontSize:9,color:theme.accent,marginTop:3}}>{fmtMod(bonus)} Feat.</div>}
                       </div>
                     );})}
@@ -832,10 +862,10 @@
                 </div>
                 <div style={S.card}>
                   <div style={S.section}>🎲 Rettungswürfe</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:8}}>
+                  <div className="stat-grid-6">
                     {SAVES.map(s=>(<div key={s} style={{...S.statBox}}>
                       <div style={{fontSize:9,color:"rgba(255,255,255,0.4)",fontWeight:700}}>{STAT_NAMES[s]}</div>
-                      <div style={{fontSize:18,fontWeight:800,color:"white",margin:"3px 0"}}>{fmtMod(saveMod(s))}</div>
+                      <div style={{fontSize:16,fontWeight:800,color:"white",margin:"3px 0"}}>{fmtMod(saveMod(s))}</div>
                       <Check path={`saveProficiencies.${s}`} label="Prof."/>
                     </div>))}
                   </div>
@@ -845,11 +875,11 @@
               {tab==="skills"&&(
                 <div style={{display:"flex",flexDirection:"column",gap:6}}>
                   {SKILLS.map(s=>{const bonus=skillBonuses[s.name]||0;const mod=skillMod(s.name);return(
-                    <div key={s.name} style={{display:"flex",alignItems:"center",gap:12,...S.cardSm,border:`1px solid ${bonus!==0?`${theme.accent}44`:theme.border}`,padding:"10px 14px"}}>
-                      <span style={{fontSize:17,fontWeight:900,width:36,textAlign:"center",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.85)"}}>{s.name} <span style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>({s.en})</span> <span style={{fontSize:11,color:"rgba(255,255,255,0.25)"}}>· {STAT_NAMES[s.stat]}</span>{bonus!==0&&<span style={{fontSize:11,color:theme.accent,marginLeft:4}}>({fmtMod(bonus)} Feat.)</span>}</div>
-                        <div style={{display:"flex",gap:12,marginTop:4}}><Check path={`skillProficiencies.${s.name}`} label="Geübt"/><Check path={`skillExpertise.${s.name}`} label="Expertise"/></div>
+                    <div key={s.name} style={{display:"flex",alignItems:"center",gap:10,...S.cardSm,border:`1px solid ${bonus!==0?`${theme.accent}44`:theme.border}`,padding:"10px 12px"}}>
+                      <span style={{fontSize:16,fontWeight:900,width:32,textAlign:"center",color:mod>=0?"#4ade80":"#f87171",flexShrink:0}}>{fmtMod(mod)}</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.85)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.name} <span style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>· {STAT_NAMES[s.stat]}</span>{bonus!==0&&<span style={{fontSize:10,color:theme.accent,marginLeft:4}}>({fmtMod(bonus)})</span>}</div>
+                        <div style={{display:"flex",gap:10,marginTop:3}}><Check path={`skillProficiencies.${s.name}`} label="Geübt"/><Check path={`skillExpertise.${s.name}`} label="Expertise"/></div>
                       </div>
                     </div>
                   );})}
@@ -857,12 +887,12 @@
               )}
 
               {tab==="combat"&&<>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                   {[["Max TP","maxHP"],["Akt. TP","currentHP"],["Temp TP","tempHP"],["Basis-RK","ac"],["Speed ft","speed"]].map(([l,p])=>(
-                    <div key={p} style={S.card}><Label>{l}</Label><input type="number" value={ch[p]} onChange={e=>up(p,+e.target.value)} style={{...S.input,fontSize:22,fontWeight:900,background:"transparent",border:"none",padding:"4px 0"}}/></div>
+                    <div key={p} style={S.card}><Label>{l}</Label><input type="number" value={ch[p]} onChange={e=>up(p,+e.target.value)} style={{...S.input,fontSize:20,fontWeight:900,background:"transparent",border:"none",padding:"4px 0"}}/></div>
                   ))}
                   {[["Initiative",fmtMod(statMod(effStat("dex")))],["Übungsbonus",fmtMod(pb)],["Passive Wahr.",passivePerc]].map(([l,v])=>(
-                    <div key={l} style={S.card}><div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div><div style={{fontSize:22,fontWeight:900,color:theme.accent}}>{v}</div></div>
+                    <div key={l} style={S.card}><div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div><div style={{fontSize:20,fontWeight:900,color:theme.accent}}>{v}</div></div>
                   ))}
                 </div>
                 <div style={S.card}>
@@ -873,20 +903,20 @@
                   {ch.attacks.length===0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.2)",fontStyle:"italic",textAlign:"center",padding:"12px 0"}}>Keine manuellen Angriffe</div>}
                   {ch.attacks.map((a,i)=>(
                     <div key={i} style={{...S.cardSm,background:"rgba(255,255,255,0.03)",marginBottom:10,padding:12}}>
-                      <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8}}>
-                        <div style={{flex:2}}><Label>Name</Label><AutoTextarea value={a.name} onChange={e=>upCh(n=>{n.attacks[i].name=e.target.value;return n;})} placeholder="z.B. Krallenangriff"/></div>
-                        <div style={{width:64}}><Label>Angriff</Label><AutoTextarea value={a.bonus} onChange={e=>upCh(n=>{n.attacks[i].bonus=e.target.value;return n;})} placeholder="+5"/></div>
-                        <div style={{width:80}}><Label>Schaden</Label><AutoTextarea value={a.damage} onChange={e=>upCh(n=>{n.attacks[i].damage=e.target.value;return n;})} placeholder="1d6+3"/></div>
+                      <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8,flexWrap:"wrap"}}>
+                        <div style={{flex:"1 1 100px"}}><Label>Name</Label><AutoTextarea value={a.name} onChange={e=>upCh(n=>{n.attacks[i].name=e.target.value;return n;})} placeholder="z.B. Krallenangriff"/></div>
+                        <div style={{width:56}}><Label>Angriff</Label><AutoTextarea value={a.bonus} onChange={e=>upCh(n=>{n.attacks[i].bonus=e.target.value;return n;})} placeholder="+5"/></div>
+                        <div style={{width:72}}><Label>Schaden</Label><AutoTextarea value={a.damage} onChange={e=>upCh(n=>{n.attacks[i].damage=e.target.value;return n;})} placeholder="1d6+3"/></div>
                         <button onClick={()=>upCh(n=>{n.attacks.splice(i,1);return n;})} style={{...S.btnDanger,padding:"6px 10px"}}>✕</button>
                       </div>
                       <div style={{display:"flex",gap:8}}>
-                        <div style={{width:120}}><Label>Schadenstyp</Label>
+                        <div style={{flex:1}}><Label>Schadenstyp</Label>
                           <select value={a.type} onChange={e=>upCh(n=>{n.attacks[i].type=e.target.value;return n;})} style={{...S.input,fontSize:12,padding:"4px 8px"}}>
                             <option value="">— wählen —</option>
                             {DAMAGE_TYPES.map(d=><option key={d}>{d}</option>)}
                           </select>
                         </div>
-                        <div style={{flex:1}}><Label>Zusatzinfos</Label><AutoTextarea value={a.notes||""} onChange={e=>upCh(n=>{n.attacks[i].notes=e.target.value;return n;})} placeholder="z.B. 1d6 Bonusschaden"/></div>
+                        <div style={{flex:1}}><Label>Zusatzinfos</Label><AutoTextarea value={a.notes||""} onChange={e=>upCh(n=>{n.attacks[i].notes=e.target.value;return n;})} placeholder="z.B. 1d6 Bonus"/></div>
                       </div>
                     </div>
                   ))}
@@ -904,21 +934,21 @@
                 </div>
                 {[0,1,2,3,4,5,6,7,8,9].map(lvl=>(
                   <div key={lvl} style={S.card}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:6}}>
                       <div style={{...S.section,margin:0}}>{lvl===0?"Zaubertricks":`Grad ${lvl}`}</div>
-                      <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                        {lvl>0&&<div style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:"rgba(255,255,255,0.4)"}}>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        {lvl>0&&<div style={{display:"flex",alignItems:"center",gap:4,fontSize:12,color:"rgba(255,255,255,0.4)"}}>
                           Slots:
-                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][0]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[v,n.spellSlots[lvl][1]];return n;});}} style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
+                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][0]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[v,n.spellSlots[lvl][1]];return n;});}} style={{...S.input,width:36,textAlign:"center",padding:"2px 4px",fontSize:12}}/>
                           /
-                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][1]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[n.spellSlots[lvl][0],v];return n;});}} style={{...S.input,width:40,textAlign:"center",padding:"3px 6px",fontSize:12}}/>
+                          <input type="number" min="0" max="9" value={ch.spellSlots[lvl][1]} onChange={e=>{const v=Math.max(0,Math.min(9,parseInt(e.target.value)||0));upCh(n=>{n.spellSlots[lvl]=[n.spellSlots[lvl][0],v];return n;});}} style={{...S.input,width:36,textAlign:"center",padding:"2px 4px",fontSize:12}}/>
                         </div>}
                         <button onClick={()=>upCh(n=>{n.spells[lvl].push({name:"",prepared:false});return n;})} style={{...S.btnGhost,fontSize:12,padding:"4px 10px"}}>+ Zauber</button>
                       </div>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       {ch.spells[lvl].map((sp,i)=>(
-                        <div key={i} style={{display:"flex",alignItems:"center",gap:10}}>
+                        <div key={i} style={{display:"flex",alignItems:"center",gap:8}}>
                           {lvl>0&&<input type="checkbox" checked={sp.prepared} onChange={e=>upCh(n=>{n.spells[lvl][i].prepared=e.target.checked;return n;})} style={{accentColor:theme.accent}}/>}
                           <AutoTextarea value={sp.name} onChange={e=>upCh(n=>{n.spells[lvl][i].name=e.target.value;return n;})} placeholder="Zaubername..." style={{flex:1}}/>
                           <button onClick={()=>upCh(n=>{n.spells[lvl].splice(i,1);return n;})} style={{...S.btnDanger,padding:"4px 10px",fontSize:12}}>✕</button>
@@ -942,25 +972,23 @@
                   ):<div style={{display:"flex",flexDirection:"column",gap:8}}>
                     {ch.inventory.map((it,i)=>(
                       <div key={i} style={{...S.cardSm,border:`1px solid ${it.equipped?`${theme.accent}55`:theme.border}`,padding:0,overflow:"hidden"}}>
-                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",flexWrap:"wrap"}}>
                           {(it.type==="weapon"||it.type==="armor"||it.type==="shield"||it.type==="magic")&&(
-                            <button onClick={()=>upCh(n=>{n.inventory[i].equipped=!n.inventory[i].equipped;return n;})} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:18,padding:0,opacity:it.equipped?1:0.3}}>
+                            <button onClick={()=>upCh(n=>{n.inventory[i].equipped=!n.inventory[i].equipped;return n;})} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:16,padding:0,opacity:it.equipped?1:0.3}}>
                               {it.type==="weapon"?"⚔":it.type==="armor"?"🛡":it.type==="shield"?"🔰":"✨"}
                             </button>
                           )}
-                          {(it.type==="potion"||it.type==="misc")&&<span style={{fontSize:18,opacity:0.5}}>{it.type==="potion"?"🧪":"📦"}</span>}
-                          <select value={it.type} onChange={e=>upCh(n=>{n.inventory[i].type=e.target.value;n.inventory[i].equipped=false;return n;})} style={{...S.input,width:"auto",fontSize:11,padding:"3px 8px"}}>
+                          {(it.type==="potion"||it.type==="misc")&&<span style={{fontSize:16,opacity:0.5}}>{it.type==="potion"?"🧪":"📦"}</span>}
+                          <select value={it.type} onChange={e=>upCh(n=>{n.inventory[i].type=e.target.value;n.inventory[i].equipped=false;return n;})} style={{...S.input,width:"auto",fontSize:11,padding:"2px 6px"}}>
                             {ITEM_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
                           </select>
-                          <input type="text" value={it.name} onChange={e=>upCh(n=>{n.inventory[i].name=e.target.value;return n;})} placeholder="Gegenstandsname" style={{...S.input,flex:1}}/>
-                          <input type="number" min="1" value={it.qty} onChange={e=>upCh(n=>{n.inventory[i].qty=+e.target.value;return n;})} style={{...S.input,width:52,textAlign:"center"}} title="Anzahl"/>
-                          <input type="number" min="0" step="0.5" value={it.weight} onChange={e=>upCh(n=>{n.inventory[i].weight=+e.target.value;return n;})} style={{...S.input,width:56,textAlign:"center"}} title="Gewicht"/>
-                          <span style={{fontSize:11,color:"rgba(255,255,255,0.25)"}}>lb</span>
-                          <button onClick={()=>setExpandedItem(expandedItem===i?null:i)} style={{background:"transparent",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:13,padding:"0 4px"}}>{expandedItem===i?"▲":"▼"}</button>
-                          <button onClick={()=>{upCh(n=>{n.inventory.splice(i,1);return n;});if(expandedItem===i)setExpandedItem(null);}} style={{...S.btnDanger,padding:"4px 8px",fontSize:13}}>✕</button>
+                          <input type="text" value={it.name} onChange={e=>upCh(n=>{n.inventory[i].name=e.target.value;return n;})} placeholder="Name" style={{...S.input,flex:1,minWidth:80}}/>
+                          <input type="number" min="1" value={it.qty} onChange={e=>upCh(n=>{n.inventory[i].qty=+e.target.value;return n;})} style={{...S.input,width:44,textAlign:"center",padding:"4px"}} title="Anzahl"/>
+                          <button onClick={()=>setExpandedItem(expandedItem===i?null:i)} style={{background:"transparent",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:12,padding:"0 3px"}}>{expandedItem===i?"▲":"▼"}</button>
+                          <button onClick={()=>{upCh(n=>{n.inventory.splice(i,1);return n;});if(expandedItem===i)setExpandedItem(null);}} style={{...S.btnDanger,padding:"4px 8px",fontSize:12}}>✕</button>
                         </div>
-                        {it.equipped&&<div style={{padding:"2px 12px 6px",fontSize:11,color:theme.accent,fontWeight:600}}>✓ Ausgerüstet</div>}
-                        {expandedItem===i&&<div style={{padding:"0 12px 12px"}}><ItemDetail it={it} i={i}/></div>}
+                        {it.equipped&&<div style={{padding:"2px 10px 5px",fontSize:11,color:theme.accent,fontWeight:600}}>✓ Ausgerüstet</div>}
+                        {expandedItem===i&&<div style={{padding:"0 10px 10px"}}><ItemDetail it={it} i={i}/></div>}
                       </div>
                     ))}
                     <div style={{textAlign:"right",fontSize:11,color:"rgba(255,255,255,0.25)",paddingTop:4}}>
@@ -982,16 +1010,16 @@
                   <div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",padding:"40px 0",fontSize:13}}>Noch keine Features</div>
                 ):ch.featureList.map((f,i)=>(
                   <div key={i} style={{...S.card,opacity:f.active!==false?1:0.45}}>
-                    <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
+                    <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                       <input type="checkbox" checked={f.active!==false} onChange={e=>upCh(n=>{n.featureList[i].active=e.target.checked;return n;})} style={{accentColor:theme.accent,marginTop:4}}/>
                       <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                        <div><Label>Schlagwort (Übersicht)</Label><AutoTextarea value={f.keyword||""} onChange={e=>upCh(n=>{n.featureList[i].keyword=e.target.value;return n;})} placeholder="z.B. Sneak Attack"/></div>
+                        <div><Label>Schlagwort</Label><AutoTextarea value={f.keyword||""} onChange={e=>upCh(n=>{n.featureList[i].keyword=e.target.value;return n;})} placeholder="z.B. Sneak Attack"/></div>
                         <div><Label>Typ</Label>
                           <select value={f.type} onChange={e=>upCh(n=>{n.featureList[i].type=e.target.value;n.featureList[i].target="";return n;})} style={S.input}>
                             {FEATURE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
                           </select>
                         </div>
-                        <div style={{gridColumn:"1/-1"}}><Label>Ausführliche Beschreibung</Label><AutoTextarea value={f.desc||""} onChange={e=>upCh(n=>{n.featureList[i].desc=e.target.value;return n;})} placeholder="Warum hast du dieses Feature? Wie funktioniert es?" minRows={2}/></div>
+                        <div style={{gridColumn:"1/-1"}}><Label>Beschreibung</Label><AutoTextarea value={f.desc||""} onChange={e=>upCh(n=>{n.featureList[i].desc=e.target.value;return n;})} placeholder="Wie funktioniert es?" minRows={2}/></div>
                         {f.type!=="passive"&&f.type!=="other"&&f.type!=="resistance"&&f.type!=="advantage"&&f.type!=="disadvantage"&&(
                           <div><Label>{f.type==="extra_attack"?"Anzahl":f.type==="bonus_damage"||f.type==="sneak_attack"?"Würfel":"Bonus +X"}</Label>
                             <AutoTextarea value={f.value} onChange={e=>upCh(n=>{n.featureList[i].value=e.target.value;return n;})} placeholder={f.type==="extra_attack"?"1":f.type==="bonus_damage"||f.type==="sneak_attack"?"2d6":"2"}/>
@@ -1023,7 +1051,7 @@
 
               {tab==="notes"&&<>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                  {[["🧠 Persönlichkeitsmerkmale","personalityTraits"],["💡 Ideale","ideals"],["🔗 Bindungen","bonds"],["⚠️ Schwächen","flaws"]].map(([label,path])=>(
+                  {[["🧠 Persönlichkeit","personalityTraits"],["💡 Ideale","ideals"],["🔗 Bindungen","bonds"],["⚠️ Schwächen","flaws"]].map(([label,path])=>(
                     <div key={path} style={S.card}>
                       <div style={{...S.section,fontSize:13}}>{label}</div>
                       <AT path={path} placeholder="..." minRows={3}/>
