@@ -184,6 +184,316 @@ function InfoModal({ onClose, theme }) {
 // SUBRACE MODAL
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+// FREE CHOICE MODAL
+// ═══════════════════════════════════════════════════════
+
+const ALL_LANGUAGES = [
+  "Gemeinsprache","Zwergisch","Elfisch","Riesisch","Gnomisch","Goblinisch","Orkisch",
+  "Abyssisch","Celestisch","Drakonisch","Tiefensprache","Infernalisch","Sylvanisch",
+  "Unterdunkel","Primordialisch","Drachisch","Halblingisch","Gnollisch","Koboldisch",
+];
+
+const ALL_SKILLS_LIST = [
+  "Akrobatik","Arkane Kunde","Athletik","Auftreten","Einschüchtern","Geschichte",
+  "Heimlichkeit","Medizin","Mit Tieren umgehen","Motiv erkennen","Natur","Überleben",
+  "Überzeugung","Taschendiebstahl","Täuschen","Wahrnehmung","Religion","Untersuchen",
+];
+
+const STAT_KEYS_ALL  = ["str","dex","con","int","wis","cha"];
+const STAT_LABELS_FC = { str:"STR",dex:"DEX",con:"CON",int:"INT",wis:"WIS",cha:"CHA" };
+const STAT_COLORS_FC = { str:"#ef4444",dex:"#4ade80",con:"#f97316",int:"#818cf8",wis:"#86efac",cha:"#ec4899" };
+
+// Detect what free choices a character creation triggers
+function detectFreeChoices(race, subrace, background) {
+  const choices = [];
+  const raceName = race?.name || "";
+  const srName   = subrace?.name || "";
+
+  // Standard-Mensch: alle Attribute +1 (kein Modal nötig, automatisch)
+  // Varianten-Mensch: 2× Attribut +1 frei + 1 Fertigkeit
+  if (srName.includes("Varianten-Mensch")) {
+    choices.push({ id:"vm_stats", type:"stat_free", count:2, label:"Attributsteigerung (Varianten-Mensch)", desc:"Wähle 2 verschiedene Attribute, die je +1 erhalten.", max1perStat:true });
+    choices.push({ id:"vm_skill", type:"skill_free", count:1, label:"Fertigkeit (Varianten-Mensch)", desc:"Wähle 1 Fertigkeit als geübt." });
+  }
+  // Mensch (Standard): +1 alle → kein Modal, schon automatisch
+
+  // Halb-Elf: 2× frei +1 + 2 Fertigkeiten
+  if (raceName === "Halb-Elf") {
+    choices.push({ id:"halfelf_stats", type:"stat_free", count:2, label:"Attributsteigerung (Halb-Elf)", desc:"Wähle 2 verschiedene Attribute (nicht CHA), die je +1 erhalten.", exclude:["cha"] });
+    choices.push({ id:"halfelf_skills", type:"skill_free", count:2, label:"Fertigkeiten (Skill Versatility)", desc:"Wähle 2 Fertigkeiten als geübt." });
+  }
+
+  // Hochelf: 1 Sprache
+  if (srName.includes("Hochelf")) {
+    choices.push({ id:"highelf_lang", type:"language_free", count:1, label:"Sprache (Hochelf)", desc:"Hochelfen lernen eine weitere Sprache ihrer Wahl." });
+  }
+
+  // Mensch Standard: 1 weitere Sprache
+  if (raceName === "Mensch" && !srName.includes("Varianten")) {
+    choices.push({ id:"human_lang", type:"language_free", count:1, label:"Sprache (Mensch)", desc:"Menschen lernen eine weitere Sprache ihrer Wahl." });
+  }
+
+  // Halb-Elf: 1 weitere Sprache
+  if (raceName === "Halb-Elf") {
+    choices.push({ id:"halfelf_lang", type:"language_free", count:1, label:"Sprache (Halb-Elf)", desc:"Halb-Elfen sprechen eine weitere Sprache ihrer Wahl." });
+  }
+
+  // Gnom Hochelf zusätzliche Sprache: durch Hochelf trait
+  // Tiefling: keine freien Wahlen
+
+  return choices;
+}
+
+function FreeChoiceModal({ choices, currentStats, currentSkillProfs, onConfirm, onClose, theme }) {
+  // Build initial state for each choice
+  const initState = () => {
+    const s = {};
+    choices.forEach(c => {
+      if (c.type === "stat_free")     s[c.id] = {}; // {str:0, dex:0, ...}
+      if (c.type === "skill_free")    s[c.id] = []; // ["Akrobatik", ...]
+      if (c.type === "language_free") s[c.id] = []; // ["Elfisch", ...]
+      if (c.type === "custom_text")   s[c.id] = "";
+    });
+    return s;
+  };
+  const [values, setValues] = useState(initState);
+  const [customInputs, setCustomInputs] = useState({}); // id -> string for custom entry
+
+  const upVal = (id, val) => setValues(v => ({ ...v, [id]: val }));
+
+  // Validation: each choice must be fully filled
+  const isChoiceComplete = (c) => {
+    const val = values[c.id];
+    if (c.type === "stat_free") {
+      const total = Object.values(val).reduce((s,v)=>s+(v||0),0);
+      return total === c.count;
+    }
+    if (c.type === "skill_free")    return (val||[]).length === c.count;
+    if (c.type === "language_free") return (val||[]).length === c.count;
+    if (c.type === "custom_text")   return (val||"").trim().length > 0;
+    return true;
+  };
+  const allComplete = choices.every(isChoiceComplete);
+
+  const handleConfirm = () => {
+    if (!allComplete) return;
+    onConfirm(values);
+  };
+
+  const inp = { background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.12)",
+    borderRadius:10, padding:"7px 10px", color:"white", fontSize:13, outline:"none",
+    width:"100%", fontFamily:"inherit" };
+
+  return (
+    <div style={{ position:"fixed",inset:0,zIndex:110,display:"flex",alignItems:"center",
+      justifyContent:"center",background:"rgba(0,0,0,0.9)",backdropFilter:"blur(8px)",padding:16 }}
+      onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        maxWidth:500,width:"100%",maxHeight:"92vh",overflowY:"auto",
+        background:"#0f1117",border:`2px solid ${theme.accent}55`,borderRadius:20,
+        padding:"24px 20px",
+        boxShadow:`0 0 60px ${theme.accent}22,0 24px 60px rgba(0,0,0,0.8)`,
+        animation:"modalIn 0.3s cubic-bezier(0.22,1,0.36,1) forwards",
+        position:"relative",
+      }}>
+        {/* Header */}
+        <div style={{ display:"flex",alignItems:"center",gap:14,marginBottom:6 }}>
+          <div style={{ width:48,height:48,borderRadius:12,flexShrink:0,
+            background:`${theme.accent}18`,border:`2px solid ${theme.accent}55`,
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:24 }}>🎲</div>
+          <div>
+            <div style={{ fontSize:20,fontWeight:900,color:theme.accent }}>Freie Auswahl</div>
+            <div style={{ fontSize:12,color:"rgba(255,255,255,0.35)" }}>
+              Deine Rasse gibt dir noch {choices.length} freie Wahl{choices.length!==1?"en":""}
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize:13,color:"rgba(255,255,255,0.4)",lineHeight:1.6,marginBottom:20,
+          paddingBottom:16,borderBottom:"1px solid rgba(255,255,255,0.08)" }}>
+          Wähle aus den Vorschlägen oder trage eigene Werte ein. Alle Felder müssen ausgefüllt sein.
+        </div>
+
+        <div style={{ display:"flex",flexDirection:"column",gap:18 }}>
+          {choices.map((c, ci) => {
+            const complete = isChoiceComplete(c);
+            return (
+              <div key={c.id} style={{
+                background:"rgba(255,255,255,0.03)",
+                border:`2px solid ${complete?theme.accent+"55":"rgba(255,255,255,0.08)"}`,
+                borderRadius:14,padding:"14px 16px",transition:"border 0.2s",
+              }}>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6 }}>
+                  <div style={{ fontSize:14,fontWeight:800,color:complete?theme.accent:"rgba(255,255,255,0.7)" }}>
+                    {complete?"✓ ":""}{c.label}
+                  </div>
+                  {c.count > 1 && (
+                    <span style={{ fontSize:11,fontWeight:800,
+                      background:`${theme.accent}18`,color:theme.accent,
+                      border:`1px solid ${theme.accent}44`,borderRadius:20,padding:"2px 8px" }}>
+                      {c.type==="stat_free"
+                        ? `${Object.values(values[c.id]||{}).reduce((s,v)=>s+(v||0),0)}/${c.count} Punkte`
+                        : `${(values[c.id]||[]).length}/${c.count} gewählt`}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize:12,color:"rgba(255,255,255,0.35)",marginBottom:12 }}>{c.desc}</div>
+
+                {/* STAT FREE CHOICE */}
+                {c.type === "stat_free" && (() => {
+                  const val = values[c.id] || {};
+                  const used = Object.values(val).reduce((s,v)=>s+(v||0),0);
+                  const avail = c.count - used;
+                  const excluded = c.exclude || [];
+                  return (
+                    <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8 }}>
+                      {STAT_KEYS_ALL.filter(k => !excluded.includes(k)).map(k => {
+                        const cur = val[k] || 0;
+                        const base = currentStats?.[k] || 10;
+                        return (
+                          <div key={k} style={{ textAlign:"center",borderRadius:10,padding:"8px 4px",
+                            background:cur>0?`${STAT_COLORS_FC[k]}15`:"rgba(255,255,255,0.04)",
+                            border:`1px solid ${cur>0?STAT_COLORS_FC[k]+"55":"rgba(255,255,255,0.1)"}`,
+                            transition:"all 0.15s" }}>
+                            <div style={{ fontSize:10,fontWeight:800,color:STAT_COLORS_FC[k] }}>{STAT_LABELS_FC[k]}</div>
+                            <div style={{ fontSize:18,fontWeight:900,color:"rgba(255,255,255,0.7)",margin:"2px 0" }}>
+                              {base+cur}
+                              {cur>0&&<span style={{color:"#4ade80",fontSize:11}}> +{cur}</span>}
+                            </div>
+                            <div style={{ display:"flex",gap:3 }}>
+                              <button onClick={()=>{if(cur>0){const nv={...val,[k]:cur-1};upVal(c.id,nv);}}}
+                                disabled={cur===0}
+                                style={{ flex:1,background:"rgba(239,68,68,0.2)",color:"#f87171",
+                                  border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,
+                                  padding:"2px 0",fontSize:12,cursor:cur===0?"not-allowed":"pointer",
+                                  fontFamily:"inherit",opacity:cur===0?0.3:1 }}>−</button>
+                              <button onClick={()=>{if(avail>0&&(c.max1perStat?cur<1:cur<c.count)){const nv={...val,[k]:cur+1};upVal(c.id,nv);}}}
+                                disabled={avail===0||(c.max1perStat?cur>=1:cur>=c.count)}
+                                style={{ flex:1,background:"rgba(34,197,94,0.2)",color:"#4ade80",
+                                  border:"1px solid rgba(34,197,94,0.3)",borderRadius:6,
+                                  padding:"2px 0",fontSize:12,fontFamily:"inherit",
+                                  cursor:(avail===0||(c.max1perStat?cur>=1:cur>=c.count))?"not-allowed":"pointer",
+                                  opacity:(avail===0||(c.max1perStat?cur>=1:cur>=c.count))?0.3:1 }}>+</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* SKILL FREE CHOICE */}
+                {c.type === "skill_free" && (() => {
+                  const chosen = values[c.id] || [];
+                  const alreadyProf = Object.keys(currentSkillProfs||{}).filter(k=>(currentSkillProfs||{})[k]);
+                  return (
+                    <div>
+                      <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
+                        {ALL_SKILLS_LIST.map(sk => {
+                          const isChosen   = chosen.includes(sk);
+                          const isProf     = alreadyProf.includes(sk);
+                          const canAdd     = !isChosen && !isProf && chosen.length < c.count;
+                          return (
+                            <button key={sk} onClick={()=>{
+                              if(isChosen) upVal(c.id, chosen.filter(s=>s!==sk));
+                              else if(canAdd) upVal(c.id,[...chosen,sk]);
+                            }} style={{
+                              fontSize:12,padding:"4px 10px",borderRadius:20,cursor:isProf?"not-allowed":"pointer",
+                              fontFamily:"inherit",fontWeight:700,transition:"all 0.15s",
+                              background:isChosen?`${theme.accent}22`:isProf?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.06)",
+                              color:isChosen?theme.accent:isProf?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.55)",
+                              border:`1px solid ${isChosen?`${theme.accent}66`:isProf?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.12)"}`,
+                              opacity:(!canAdd&&!isChosen&&!isProf)?0.4:1,
+                            }}>
+                              {isChosen?"✓ ":isProf?"✓ (bereits) ":""}{sk}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* Custom entry */}
+                      <CustomEntry id={c.id} placeholder="Oder eigene Fertigkeit eingeben..."
+                        onAdd={v=>{if(chosen.length<c.count&&!chosen.includes(v))upVal(c.id,[...chosen,v]);}}
+                        theme={theme} inp={inp}/>
+                    </div>
+                  );
+                })()}
+
+                {/* LANGUAGE FREE CHOICE */}
+                {c.type === "language_free" && (() => {
+                  const chosen = values[c.id] || [];
+                  return (
+                    <div>
+                      <div style={{ display:"flex",flexWrap:"wrap",gap:6,marginBottom:10 }}>
+                        {ALL_LANGUAGES.map(lang => {
+                          const isChosen = chosen.includes(lang);
+                          const canAdd   = !isChosen && chosen.length < c.count;
+                          return (
+                            <button key={lang} onClick={()=>{
+                              if(isChosen) upVal(c.id,chosen.filter(l=>l!==lang));
+                              else if(canAdd) upVal(c.id,[...chosen,lang]);
+                            }} style={{
+                              fontSize:12,padding:"4px 10px",borderRadius:20,cursor:"pointer",
+                              fontFamily:"inherit",fontWeight:700,transition:"all 0.15s",
+                              background:isChosen?`${theme.accent}22`:"rgba(255,255,255,0.06)",
+                              color:isChosen?theme.accent:"rgba(255,255,255,0.55)",
+                              border:`1px solid ${isChosen?`${theme.accent}66`:"rgba(255,255,255,0.12)"}`,
+                              opacity:(!canAdd&&!isChosen)?0.4:1,
+                            }}>
+                              {isChosen?"✓ ":""}{lang}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <CustomEntry id={c.id} placeholder="Oder eigene Sprache eingeben..."
+                        onAdd={v=>{if(chosen.length<c.count&&!chosen.includes(v))upVal(c.id,[...chosen,v]);}}
+                        theme={theme} inp={inp}/>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Confirm */}
+        <button onClick={handleConfirm} disabled={!allComplete} style={{
+          width:"100%",marginTop:20,
+          background:allComplete?`linear-gradient(135deg,${theme.accent}cc,${theme.accent}77)`:"rgba(255,255,255,0.06)",
+          color:allComplete?"white":"rgba(255,255,255,0.2)",
+          border:"none",borderRadius:12,padding:"13px 0",
+          fontWeight:900,cursor:allComplete?"pointer":"not-allowed",
+          fontSize:15,fontFamily:"inherit",transition:"all 0.2s",
+        }}>
+          {allComplete ? "✓ Auswahl bestätigen & Charakter erstellen" : "Bitte alle Felder ausfüllen"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Small helper: custom text entry with + button
+function CustomEntry({ id, placeholder, onAdd, theme, inp }) {
+  const [val, setVal] = useState("");
+  const submit = () => {
+    const t = val.trim();
+    if (t) { onAdd(t); setVal(""); }
+  };
+  return (
+    <div style={{ display:"flex",gap:6,marginTop:4 }}>
+      <input type="text" value={val} onChange={e=>setVal(e.target.value)}
+        onKeyDown={e=>e.key==="Enter"&&submit()}
+        placeholder={placeholder}
+        style={{...inp,flex:1,fontSize:12,padding:"5px 10px"}}/>
+      <button onClick={submit} disabled={!val.trim()} style={{
+        background:`${theme.accent}18`,border:`1px solid ${theme.accent}55`,
+        borderRadius:8,padding:"5px 12px",cursor:val.trim()?"pointer":"not-allowed",
+        color:theme.accent,fontWeight:800,fontSize:13,fontFamily:"inherit",
+        opacity:val.trim()?1:0.4,
+      }}>+</button>
+    </div>
+  );
+}
+
 function SubraceModal({ race, selectedSubrace, onSelect, onClose, theme }) {
   if (!race) return null;
   return (
@@ -663,9 +973,452 @@ const WIZARD_STEPS = [
   { id:"background", label:"Hintergrund",emoji:"📖"  },
   { id:"attributes", label:"Attribute",  emoji:"💪"  },
   { id:"alignment",  label:"Gesinnung",  emoji:"☯️"  },
+  { id:"equipment",  label:"Ausrüstung", emoji:"🛡️"  },
   { id:"name",       label:"Name",       emoji:"✏️"  },
   { id:"summary",    label:"Übersicht",  emoji:"📋"  },
 ];
+
+// ═══════════════════════════════════════════════════════
+// EQUIPMENT DATA
+// ═══════════════════════════════════════════════════════
+
+const ARMOR_PROFICIENCY = {
+  "Barbar":                  ["keine","leicht","mittel","schild"],
+  "Barde":                   ["keine","leicht","schild"],
+  "Kleriker":                ["keine","leicht","mittel","schwer","schild"],
+  "Druide":                  ["keine","leicht","mittel","schild"],
+  "Kämpfer":                 ["keine","leicht","mittel","schwer","schild"],
+  "Mönch":                   ["keine"],
+  "Paladin":                 ["keine","leicht","mittel","schwer","schild"],
+  "Waldläufer":              ["keine","leicht","mittel","schild"],
+  "Schurke":                 ["keine","leicht","schild"],
+  "Zauberer (Magier)":       ["keine"],
+  "Hexenmeister":            ["keine","leicht"],
+  "Zauberwirker (Sorcerer)": ["keine"],
+};
+
+// AC calculation per armor type
+const ARMOR_CATALOG = [
+  // Keine Rüstung
+  { id:"unarmored",    name:"Keine Rüstung",        type:"keine",  baseAC:10, addDex:true, maxDex:null, stealthDisadv:false, weight:0,  cost:"—",    emoji:"👕", desc:"Basis-RK 10 + DEX-Mod" },
+  // Leichte Rüstungen
+  { id:"padded",       name:"Gepolsterte Rüstung",  type:"leicht", baseAC:11, addDex:true, maxDex:null, stealthDisadv:true,  weight:8,  cost:"5 GP",  emoji:"🧥", desc:"RK 11 + DEX-Mod · Nachteil Heimlichkeit" },
+  { id:"leather",      name:"Lederrüstung",         type:"leicht", baseAC:11, addDex:true, maxDex:null, stealthDisadv:false, weight:10, cost:"10 GP", emoji:"🥋", desc:"RK 11 + DEX-Mod" },
+  { id:"studdedLeather",name:"Genietete Lederrüstung",type:"leicht",baseAC:12,addDex:true, maxDex:null, stealthDisadv:false, weight:13, cost:"45 GP", emoji:"🦺", desc:"RK 12 + DEX-Mod" },
+  // Mittlere Rüstungen
+  { id:"hide",         name:"Fellrüstung",          type:"mittel", baseAC:12, addDex:true, maxDex:2,    stealthDisadv:false, weight:12, cost:"10 GP", emoji:"🐻", desc:"RK 12 + DEX-Mod (max +2)" },
+  { id:"chainShirt",   name:"Kettenhemd",           type:"mittel", baseAC:13, addDex:true, maxDex:2,    stealthDisadv:false, weight:20, cost:"50 GP", emoji:"⛓", desc:"RK 13 + DEX-Mod (max +2)" },
+  { id:"scaleMail",    name:"Schuppenrüstung",      type:"mittel", baseAC:14, addDex:true, maxDex:2,    stealthDisadv:true,  weight:45, cost:"50 GP", emoji:"🐉", desc:"RK 14 + DEX-Mod (max +2) · Nachteil Heimlichkeit" },
+  { id:"breastplate",  name:"Brustpanzer",          type:"mittel", baseAC:14, addDex:true, maxDex:2,    stealthDisadv:false, weight:20, cost:"400 GP",emoji:"🛡", desc:"RK 14 + DEX-Mod (max +2)" },
+  { id:"halfPlate",    name:"Halbplatte",           type:"mittel", baseAC:15, addDex:true, maxDex:2,    stealthDisadv:true,  weight:40, cost:"750 GP",emoji:"⚔", desc:"RK 15 + DEX-Mod (max +2) · Nachteil Heimlichkeit" },
+  // Schwere Rüstungen
+  { id:"ringMail",     name:"Ringgeflecht",         type:"schwer", baseAC:14, addDex:false,maxDex:null, stealthDisadv:true,  weight:40, cost:"30 GP", emoji:"💍", desc:"RK 14 · Nachteil Heimlichkeit" },
+  { id:"chainMail",    name:"Kettenrüstung",        type:"schwer", baseAC:16, addDex:false,maxDex:null, stealthDisadv:true,  weight:55, cost:"75 GP", emoji:"⛓", desc:"RK 16 · Nachteil Heimlichkeit · STR 13 nötig" },
+  { id:"splintMail",   name:"Schienenpanzer",       type:"schwer", baseAC:17, addDex:false,maxDex:null, stealthDisadv:true,  weight:60, cost:"200 GP",emoji:"🏰", desc:"RK 17 · Nachteil Heimlichkeit · STR 15 nötig" },
+  { id:"plateMail",    name:"Plattenpanzer",        type:"schwer", baseAC:18, addDex:false,maxDex:null, stealthDisadv:true,  weight:65, cost:"1500 GP",emoji:"👑",desc:"RK 18 · Nachteil Heimlichkeit · STR 15 nötig" },
+];
+
+const SHIELD_ITEM = { id:"shield", name:"Schild", baseAC:2, weight:6, cost:"10 GP", emoji:"🔰", desc:"+2 RK · Belegt eine Hand" };
+
+const WEAPON_CATALOG = [
+  // Einfache Nahkampfwaffen
+  { id:"club",        name:"Keule",          category:"einfach", range:"nah",  damage:"1d4",  type:"Wucht", props:["Leicht"],                      weight:2,  cost:"1 SP", emoji:"🏏", scale:"STR" },
+  { id:"dagger",      name:"Dolch",          category:"einfach", range:"nah",  damage:"1d4",  type:"Stich", props:["Finesse","Leicht","Wurfwaffe"], weight:1,  cost:"2 GP", emoji:"🗡️", scale:"STR oder DEX" },
+  { id:"greatclub",   name:"Großkeule",      category:"einfach", range:"nah",  damage:"1d8",  type:"Wucht", props:["Zweihändig"],                  weight:10, cost:"2 SP", emoji:"🪵", scale:"STR" },
+  { id:"handaxe",     name:"Handaxt",        category:"einfach", range:"nah",  damage:"1d6",  type:"Hieb",  props:["Leicht","Wurfwaffe"],          weight:2,  cost:"5 GP", emoji:"🪓", scale:"STR" },
+  { id:"javelin",     name:"Wurfspeer",      category:"einfach", range:"nah",  damage:"1d6",  type:"Stich", props:["Wurfwaffe"],                   weight:2,  cost:"5 SP", emoji:"🏹", scale:"STR" },
+  { id:"mace",        name:"Streitkolben",   category:"einfach", range:"nah",  damage:"1d6",  type:"Wucht", props:[],                             weight:4,  cost:"5 GP", emoji:"🔨", scale:"STR" },
+  { id:"quarterstaff",name:"Kampfstab",      category:"einfach", range:"nah",  damage:"1d6",  type:"Wucht", props:["Vielseitig (1d8)"],           weight:4,  cost:"2 SP", emoji:"🥢", scale:"STR" },
+  { id:"spear",       name:"Speer",          category:"einfach", range:"nah",  damage:"1d6",  type:"Stich", props:["Wurfwaffe","Vielseitig (1d8)"],weight:3,  cost:"1 GP", emoji:"⚔️", scale:"STR" },
+  // Einfache Fernkampfwaffen
+  { id:"shortbow",    name:"Kurzbogen",      category:"einfach", range:"fern", damage:"1d6",  type:"Stich", props:["Zweihändig"],                  weight:2,  cost:"25 GP",emoji:"🏹", scale:"DEX" },
+  { id:"crossbow_light",name:"Leichte Armbrust",category:"einfach",range:"fern",damage:"1d8",type:"Stich", props:["Zweihändig","Ladezeit"],       weight:5,  cost:"25 GP",emoji:"🎯", scale:"DEX" },
+  // Kriegswaffen Nahkampf
+  { id:"battleaxe",   name:"Streitaxt",      category:"kriegs",  range:"nah",  damage:"1d8",  type:"Hieb",  props:["Vielseitig (1d10)"],          weight:4,  cost:"10 GP",emoji:"🪓", scale:"STR" },
+  { id:"flail",       name:"Flegel",         category:"kriegs",  range:"nah",  damage:"1d8",  type:"Wucht", props:[],                             weight:2,  cost:"10 GP",emoji:"⚒️", scale:"STR" },
+  { id:"glaive",      name:"Gleve",          category:"kriegs",  range:"nah",  damage:"1d10", type:"Hieb",  props:["Schwer","Reichweite","Zweihändig"],weight:6,cost:"20 GP",emoji:"🗡️",scale:"STR" },
+  { id:"greataxe",    name:"Großaxt",        category:"kriegs",  range:"nah",  damage:"1d12", type:"Hieb",  props:["Schwer","Zweihändig"],         weight:7,  cost:"30 GP",emoji:"🪓", scale:"STR" },
+  { id:"greatsword",  name:"Großschwert",    category:"kriegs",  range:"nah",  damage:"2d6",  type:"Hieb",  props:["Schwer","Zweihändig"],         weight:6,  cost:"50 GP",emoji:"⚔️", scale:"STR" },
+  { id:"longsword",   name:"Langschwert",    category:"kriegs",  range:"nah",  damage:"1d8",  type:"Hieb",  props:["Vielseitig (1d10)"],          weight:3,  cost:"15 GP",emoji:"🗡️", scale:"STR" },
+  { id:"rapier",      name:"Rapier",         category:"kriegs",  range:"nah",  damage:"1d8",  type:"Stich", props:["Finesse"],                    weight:2,  cost:"25 GP",emoji:"🤺", scale:"STR oder DEX" },
+  { id:"scimitar",    name:"Krummsäbel",     category:"kriegs",  range:"nah",  damage:"1d6",  type:"Hieb",  props:["Finesse","Leicht"],           weight:3,  cost:"25 GP",emoji:"🌙", scale:"STR oder DEX" },
+  { id:"shortsword",  name:"Kurzschwert",    category:"kriegs",  range:"nah",  damage:"1d6",  type:"Stich", props:["Finesse","Leicht"],           weight:2,  cost:"10 GP",emoji:"🗡️", scale:"STR oder DEX" },
+  { id:"warhammer",   name:"Kriegshammer",   category:"kriegs",  range:"nah",  damage:"1d8",  type:"Wucht", props:["Vielseitig (1d10)"],          weight:2,  cost:"15 GP",emoji:"🔨", scale:"STR" },
+  { id:"handcrossbow",name:"Handarmrust",    category:"kriegs",  range:"fern", damage:"1d6",  type:"Stich", props:["Leicht","Ladezeit"],          weight:3,  cost:"75 GP",emoji:"🎯", scale:"DEX" },
+  { id:"longbow",     name:"Langbogen",      category:"kriegs",  range:"fern", damage:"1d8",  type:"Stich", props:["Schwer","Zweihändig"],        weight:2,  cost:"50 GP",emoji:"🏹", scale:"DEX" },
+  // Monk weapons (simple + shortsword already covered)
+  { id:"unarmed",     name:"Unbewaffnet",    category:"einfach", range:"nah",  damage:"1",    type:"Wucht", props:["Finesse"],                    weight:0,  cost:"—",    emoji:"👊", scale:"STR oder DEX" },
+];
+
+// Which weapon categories each class can use
+const WEAPON_PROFICIENCY = {
+  "Barbar":                  ["einfach","kriegs"],
+  "Barde":                   ["einfach","handcrossbow","longsword","rapier","shortsword"],
+  "Kleriker":                ["einfach","schild"],
+  "Druide":                  ["club","dagger","javelin","mace","quarterstaff","scimitar","shortbow","shortsword","spear","sling"],
+  "Kämpfer":                 ["einfach","kriegs"],
+  "Mönch":                   ["einfach","shortsword"],
+  "Paladin":                 ["einfach","kriegs"],
+  "Waldläufer":              ["einfach","kriegs"],
+  "Schurke":                 ["einfach","handcrossbow","longsword","rapier","shortsword"],
+  "Zauberer (Magier)":       ["dagger","dart","quarterstaff","crossbow_light","shortbow"],
+  "Hexenmeister":            ["einfach"],
+  "Zauberwirker (Sorcerer)": ["dagger","dart","quarterstaff","crossbow_light","shortbow"],
+};
+
+// Class-specific equipment recommendations – two PHB-style packages each
+const EQUIPMENT_RECOMMENDATIONS = {
+  "Barbar": {
+    armorNote:"Barbaren haben Unarmored Defense: RK = 10 + DEX + CON ohne Rüstung. Rüstung ist meist schlechter!",
+    preferUnarmored: true,
+    armorPriority:["unarmored","hide","chainShirt"],
+    shieldNote:"Schild + Unarmored Defense funktioniert, blockiert aber Zweihänder.",
+    packages:[
+      { id:"a", label:"Paket A – Zweihänder", gold:0,  weaponIds:["greataxe","handaxe","handaxe","javelin"], desc:"Großaxt · 2× Handaxt · 4× Wurfspeer" },
+      { id:"b", label:"Paket B – Vielseitig", gold:0,  weaponIds:["battleaxe","handaxe","javelin"],          desc:"Streitaxt · Handaxt · 4× Wurfspeer" },
+    ],
+  },
+  "Barde": {
+    armorNote:"Barden tragen leichte Rüstung. Genietetes Leder ist ideal.",
+    armorPriority:["studdedLeather","leather","unarmored"],
+    shieldNote:"Schild möglich, blockiert aber Instrument/Fokus.",
+    packages:[
+      { id:"a", label:"Paket A – Nahkämpfer",  gold:0,  weaponIds:["rapier"],             desc:"Rapier · Diplomat-Beutel · Kostüm" },
+      { id:"b", label:"Paket B – Fernkämpfer", gold:0,  weaponIds:["longsword","dagger"],  desc:"Langschwert · Dolch · Entertainer-Beutel" },
+      { id:"c", label:"Paket C – Flexibel",    gold:15, weaponIds:["dagger"],              desc:"Dolch · 15 GP statt Ausrüstung" },
+    ],
+  },
+  "Kleriker": {
+    armorNote:"Kleriker dürfen je nach Domain schwere Rüstung tragen. Schild ist sehr empfehlenswert.",
+    armorPriority:["chainMail","chainShirt","breastplate","scaleMail"],
+    shieldNote:"Schild sehr empfehlenswert – gibt +2 RK.",
+    packages:[
+      { id:"a", label:"Paket A – Mace + Schild",   gold:0,  weaponIds:["mace"],        desc:"Streitkolben · Kettenhemd · Schild · Heiliges Symbol" },
+      { id:"b", label:"Paket B – Warhammer",        gold:0,  weaponIds:["warhammer"],   desc:"Kriegshammer · Schuppenrüstung · Heiliges Symbol" },
+      { id:"c", label:"Paket C – Gold",             gold:125,weaponIds:[],              desc:"125 GP statt Ausrüstung" },
+    ],
+  },
+  "Druide": {
+    armorNote:"Druiden tragen keine Metall-Rüstung. Fellrüstung ist die beste Option.",
+    armorPriority:["hide","leather","unarmored"],
+    shieldNote:"Holzschild möglich (kein Metall).",
+    packages:[
+      { id:"a", label:"Paket A – Stab",   gold:0,  weaponIds:["quarterstaff"], desc:"Kampfstab · Lederrüstung · Diplomatenbeutel" },
+      { id:"b", label:"Paket B – Säbel",  gold:0,  weaponIds:["scimitar"],     desc:"Krummsäbel · Lederrüstung · Erkundungsbeutel" },
+    ],
+  },
+  "Kämpfer": {
+    armorNote:"Kämpfer beherrschen alle Rüstungen. Kettenrüstung zum Start ist solide.",
+    armorPriority:["chainMail","breastplate","halfPlate","plateMail"],
+    shieldNote:"Schild + Einhandwaffe = klassischer Verteidiger-Build.",
+    packages:[
+      { id:"a", label:"Paket A – Nahkampf",    gold:0,  weaponIds:["longsword","shortbow"],  desc:"Langschwert · Schild · Kurzbogen · 20 Pfeile" },
+      { id:"b", label:"Paket B – Zweihänder",  gold:0,  weaponIds:["greatsword","shortbow"],  desc:"Großschwert · Leichte Armbrust · 20 Bolzen" },
+      { id:"c", label:"Paket C – Gold",        gold:175,weaponIds:[],                         desc:"175 GP statt Ausrüstung" },
+    ],
+  },
+  "Mönch": {
+    armorNote:"Mönche haben Unarmored Defense: RK = 10 + DEX + WIS. Rüstung deaktiviert diese Fähigkeit!",
+    preferUnarmored: true,
+    armorPriority:["unarmored"],
+    shieldNote:"Schild blockiert Mönch-Fähigkeiten – nicht empfohlen.",
+    packages:[
+      { id:"a", label:"Paket A – Stab",   gold:0, weaponIds:["quarterstaff","dagger"], desc:"Kampfstab · Dolch · Erkundungsbeutel" },
+      { id:"b", label:"Paket B – Dolche", gold:0, weaponIds:["shortsword","dagger"],   desc:"Kurzschwert · Dolch · Erkundungsbeutel" },
+    ],
+  },
+  "Paladin": {
+    armorNote:"Paladine sind für schwere Rüstung gebaut. Kettenrüstung zum Start, dann Plattenpanzer.",
+    armorPriority:["chainMail","halfPlate","plateMail","breastplate"],
+    shieldNote:"Schild sehr empfehlenswert.",
+    packages:[
+      { id:"a", label:"Paket A – Schwerter",  gold:0,   weaponIds:["longsword","javelin"],   desc:"Langschwert · Schild · 5× Wurfspeer · Heiliges Symbol" },
+      { id:"b", label:"Paket B – Warhammer",  gold:0,   weaponIds:["warhammer","javelin"],   desc:"Kriegshammer · Schild · 5× Wurfspeer · Heiliges Symbol" },
+      { id:"c", label:"Paket C – Gold",       gold:150, weaponIds:[],                        desc:"150 GP statt Ausrüstung" },
+    ],
+  },
+  "Waldläufer": {
+    armorNote:"Waldläufer bevorzugen mittlere Rüstung für Balance zwischen Schutz und Beweglichkeit.",
+    armorPriority:["scaleMail","chainShirt","studdedLeather","hide"],
+    shieldNote:"Schild möglich, aber Bogen-Builds bevorzugen beide Hände frei.",
+    packages:[
+      { id:"a", label:"Paket A – Bogenschütze",   gold:0, weaponIds:["longbow","shortsword","shortsword"], desc:"Langbogen · 20 Pfeile · 2× Kurzschwert" },
+      { id:"b", label:"Paket B – Zweikampf",      gold:0, weaponIds:["longsword","shortbow"],              desc:"Langschwert · Kurzbogen · 20 Pfeile" },
+      { id:"c", label:"Paket C – Gold",           gold:150,weaponIds:[],                                  desc:"150 GP statt Ausrüstung" },
+    ],
+  },
+  "Schurke": {
+    armorNote:"Schurken brauchen Beweglichkeit. Genietetes Leder ist die beste Wahl.",
+    armorPriority:["studdedLeather","leather","unarmored"],
+    shieldNote:"Schild selten sinnvoll für Schurken.",
+    packages:[
+      { id:"a", label:"Paket A – Rapier",          gold:0, weaponIds:["rapier","shortbow","dagger"],           desc:"Rapier · Kurzbogen · 20 Pfeile · Dolch · Einbruchswerkzeug" },
+      { id:"b", label:"Paket B – Zwei Klingen",    gold:0, weaponIds:["shortsword","shortbow","dagger","dagger"],desc:"2× Kurzschwert · Kurzbogen · 20 Pfeile · Einbruchswerkzeug" },
+      { id:"c", label:"Paket C – Gold",            gold:100,weaponIds:[],                                       desc:"100 GP statt Ausrüstung" },
+    ],
+  },
+  "Zauberer (Magier)": {
+    armorNote:"Magier tragen keine Rüstung. Hoher DEX-Wert ist wichtig für die Basis-RK.",
+    armorPriority:["unarmored"],
+    shieldNote:"Kein Schild möglich.",
+    packages:[
+      { id:"a", label:"Paket A – Stab",        gold:0,  weaponIds:["quarterstaff"],  desc:"Kampfstab · Zauberbuchbeutel · Zauberbuch · Tintenfass & Feder" },
+      { id:"b", label:"Paket B – Dolch",       gold:0,  weaponIds:["dagger","dagger"],desc:"2× Dolch · Gelehrtenbeutel · Zauberbuch" },
+      { id:"c", label:"Paket C – Gold",        gold:135,weaponIds:[],                desc:"135 GP statt Ausrüstung" },
+    ],
+  },
+  "Hexenmeister": {
+    armorNote:"Hexenmeister tragen leichte Rüstung. Lederrüstung ist die Standardwahl.",
+    armorPriority:["studdedLeather","leather","unarmored"],
+    shieldNote:"Schild möglich bei leichter Rüstung.",
+    packages:[
+      { id:"a", label:"Paket A – Armbrust",  gold:0, weaponIds:["crossbow_light","dagger","dagger"], desc:"Leichte Armbrust · 20 Bolzen · 2× Dolch · Schulterbeutel" },
+      { id:"b", label:"Paket B – Stab",      gold:0, weaponIds:["quarterstaff","dagger","dagger"],   desc:"Kampfstab · 2× Dolch · Diplomatenbeutel" },
+    ],
+  },
+  "Zauberwirker (Sorcerer)": {
+    armorNote:"Sorcerer tragen keine Rüstung. DEX + guter CON sind wichtig.",
+    armorPriority:["unarmored"],
+    shieldNote:"Kein Schild möglich.",
+    packages:[
+      { id:"a", label:"Paket A – Armbrust",  gold:0,  weaponIds:["crossbow_light","dagger","dagger"], desc:"Leichte Armbrust · 20 Bolzen · 2× Dolch · Erkundungsbeutel" },
+      { id:"b", label:"Paket B – Gold",      gold:100,weaponIds:["dagger","dagger"],                   desc:"2× Dolch · 100 GP statt Ausrüstung" },
+    ],
+  },
+};
+
+// Calculate AC for a given armor + shield + stats + class
+function calcAC(armorId, hasShield, stats, className) {
+  const armor = ARMOR_CATALOG.find(a => a.id === armorId) || ARMOR_CATALOG[0];
+  const dexMod = Math.floor(((stats?.dex || 10) - 10) / 2);
+  const conMod = Math.floor(((stats?.con || 10) - 10) / 2);
+  const wisMod = Math.floor(((stats?.wis || 10) - 10) / 2);
+  const shieldBonus = hasShield ? 2 : 0;
+
+  let ac = armor.baseAC;
+
+  if (armorId === "unarmored") {
+    if (className === "Barbar") {
+      ac = 10 + dexMod + conMod;
+    } else if (className === "Mönch") {
+      ac = 10 + dexMod + wisMod;
+    } else {
+      ac = 10 + dexMod;
+    }
+  } else if (armor.addDex) {
+    const effectiveDex = armor.maxDex !== null ? Math.min(dexMod, armor.maxDex) : dexMod;
+    ac = armor.baseAC + effectiveDex;
+  }
+
+  return ac + shieldBonus;
+}
+
+// ═══════════════════════════════════════════════════════
+// WIZARD EQUIPMENT STEP
+// ═══════════════════════════════════════════════════════
+
+function WizardEquipmentStep({ cls, stats, theme, selectedEquipment, onEquipmentChange }) {
+  const className = cls?.name || "";
+  const rec = EQUIPMENT_RECOMMENDATIONS[className] || EQUIPMENT_RECOMMENDATIONS["Kämpfer"];
+  const allowedTypes = ARMOR_PROFICIENCY[className] || ["keine"];
+  const canUseShield = allowedTypes.includes("schild");
+
+  const [selectedArmor,   setSelectedArmor]   = useState(selectedEquipment?.armorId    || rec.armorPriority?.[0] || "unarmored");
+  const [hasShield,       setHasShield]       = useState(selectedEquipment?.hasShield  || false);
+  const [selectedPackage, setSelectedPackage] = useState(selectedEquipment?.packageId  || rec.packages?.[0]?.id  || "a");
+
+  const packages = rec.packages || [];
+  const currentPackage = packages.find(p => p.id === selectedPackage) || packages[0];
+
+  // Notify parent whenever anything changes
+  useEffect(() => {
+    onEquipmentChange({
+      armorId:   selectedArmor,
+      hasShield,
+      weaponIds: currentPackage?.weaponIds || [],
+      packageId: selectedPackage,
+      gold:      currentPackage?.gold || 0,
+    });
+  }, [selectedArmor, hasShield, selectedPackage]);
+
+  const currentAC = calcAC(selectedArmor, hasShield, stats, className);
+  const selectedArmorObj = ARMOR_CATALOG.find(a => a.id === selectedArmor) || ARMOR_CATALOG[0];
+  const availableArmors  = ARMOR_CATALOG.filter(a => {
+    if (a.id === "unarmored") return true;
+    return allowedTypes.includes(a.type);
+  });
+
+  const dexMod = Math.floor(((stats?.dex || 10) - 10) / 2);
+  const conMod = Math.floor(((stats?.con || 10) - 10) / 2);
+  const wisMod = Math.floor(((stats?.wis || 10) - 10) / 2);
+
+  return (
+    <div className="wizard-fade" style={{ display:"flex", flexDirection:"column", gap:16 }}>
+      <div style={{ fontSize:18, fontWeight:900, color:theme.accent, marginBottom:2 }}>🛡️ Ausrüstung wählen</div>
+      <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)" }}>
+        Wähle deine Startausrüstung. Jede Klasse hat zwei Pakete zur Auswahl – eines mit mehr Waffen, eines mit mehr Gold.
+      </div>
+
+      {/* Klassenhinweis */}
+      <div style={{ background:`${theme.accent}0d`, border:`1px solid ${theme.accent}33`,
+        borderRadius:12, padding:"10px 14px", fontSize:13, color:"rgba(255,255,255,0.7)", lineHeight:1.6 }}>
+        💡 {rec.armorNote}
+        {(className==="Barbar"||className==="Mönch") && stats && (
+          <div style={{ marginTop:5, fontWeight:800, color:theme.accent }}>
+            {className==="Barbar"
+              ? `Unarmored Defense: 10 + DEX(${dexMod>=0?"+":""}${dexMod}) + CON(${conMod>=0?"+":""}${conMod}) = RK ${10+dexMod+conMod}`
+              : `Unarmored Defense: 10 + DEX(${dexMod>=0?"+":""}${dexMod}) + WIS(${wisMod>=0?"+":""}${wisMod}) = RK ${10+dexMod+wisMod}`}
+          </div>
+        )}
+      </div>
+
+      {/* Live RK */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:20,
+        background:"rgba(255,255,255,0.04)", borderRadius:16,
+        border:`2px solid ${theme.accent}55`, padding:"14px 20px" }}>
+        <div style={{ textAlign:"center" }}>
+          <div style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.3)", letterSpacing:"0.07em" }}>RÜSTUNGSKLASSE</div>
+          <div style={{ fontSize:48, fontWeight:900, color:theme.accent, lineHeight:1.1 }}>{currentAC}</div>
+          <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:2 }}>
+            {selectedArmorObj.name}{hasShield?" + Schild":""}
+          </div>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:5, fontSize:12, color:"rgba(255,255,255,0.45)" }}>
+          <div>🎯 DEX {dexMod>=0?"+":""}{dexMod}</div>
+          {className==="Barbar" && <div>💪 CON {conMod>=0?"+":""}{conMod}</div>}
+          {className==="Mönch"  && <div>🧘 WIS {wisMod>=0?"+":""}{wisMod}</div>}
+          {hasShield             && <div>🔰 +2 Schild</div>}
+        </div>
+      </div>
+
+      {/* WEAPON PACKAGES */}
+      <div>
+        <div style={{ fontSize:11, fontWeight:800, color:theme.accent, letterSpacing:"0.07em", marginBottom:8 }}>
+          ⚔ AUSRÜSTUNGSPAKET <span style={{ fontWeight:600, color:"rgba(255,255,255,0.3)" }}>– wähle genau eines</span>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {packages.map(pkg => {
+            const isChosen = selectedPackage === pkg.id;
+            const weapons  = (pkg.weaponIds || []).map(wid => WEAPON_CATALOG.find(w => w.id === wid)).filter(Boolean);
+            // Deduplicate for display (e.g. 2× Dolch)
+            const weaponDisplay = (() => {
+              const counts = {};
+              weapons.forEach(w => { counts[w.name] = (counts[w.name]||0)+1; });
+              return Object.entries(counts).map(([name,cnt]) => cnt>1?`${cnt}× ${name}`:name).join(" · ");
+            })();
+            return (
+              <div key={pkg.id} onClick={() => setSelectedPackage(pkg.id)}
+                className="card-hover"
+                style={{ borderRadius:14, padding:"14px 16px", cursor:"pointer",
+                  background: isChosen ? `${theme.accent}18` : "rgba(255,255,255,0.03)",
+                  border:`2px solid ${isChosen ? theme.accent : "rgba(255,255,255,0.09)"}`,
+                  transition:"all 0.15s" }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                  <div style={{ fontWeight:900, fontSize:14, color: isChosen ? theme.accent : "white" }}>
+                    {pkg.label}
+                  </div>
+                  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    {isChosen && <span style={{ color:theme.accent, fontSize:18 }}>✓</span>}
+                  </div>
+                </div>
+                <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)", marginBottom: weapons.length ? 8 : 0 }}>
+                  {pkg.desc}
+                </div>
+                {weapons.length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+                    {Object.entries((() => { const c={}; weapons.forEach(w=>{c[w.id]=(c[w.id]||{w,cnt:0}); c[w.id].cnt++;}); return c; })()).map(([id,{w,cnt}]) => (
+                      <span key={id} style={{ fontSize:11, fontWeight:700,
+                        background: isChosen ? `${theme.accent}18` : "rgba(255,255,255,0.07)",
+                        border:`1px solid ${isChosen ? `${theme.accent}44` : "rgba(255,255,255,0.12)"}`,
+                        borderRadius:20, padding:"2px 9px",
+                        color: isChosen ? theme.accent : "rgba(255,255,255,0.6)" }}>
+                        {w.emoji} {cnt>1?`${cnt}× `:""}{w.name}
+                        <span style={{ opacity:0.6, marginLeft:4 }}>{w.damage} {w.type}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ARMOR */}
+      <div>
+        <div style={{ fontSize:11, fontWeight:800, color:theme.accent, letterSpacing:"0.07em", marginBottom:8 }}>🛡 RÜSTUNG</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+          {availableArmors.map(armor => {
+            const isSelected = selectedArmor === armor.id;
+            const previewAC  = calcAC(armor.id, hasShield, stats, className);
+            const isRec      = (rec.armorPriority||[]).indexOf(armor.id) === 0;
+            return (
+              <div key={armor.id} onClick={() => setSelectedArmor(armor.id)}
+                className="card-hover"
+                style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+                  borderRadius:12, cursor:"pointer",
+                  background: isSelected ? `${theme.accent}18` : "rgba(255,255,255,0.03)",
+                  border:`2px solid ${isSelected ? theme.accent : isRec ? `${theme.accent}44` : "rgba(255,255,255,0.08)"}`,
+                  transition:"all 0.15s" }}>
+                <span style={{ fontSize:20, flexShrink:0 }}>{armor.emoji}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                    <span style={{ fontWeight:800, fontSize:13, color: isSelected ? theme.accent : "white" }}>{armor.name}</span>
+                    {isRec && !isSelected && (
+                      <span style={{ fontSize:10, fontWeight:800, color:"#4ade80",
+                        background:"rgba(74,222,128,0.12)", border:"1px solid rgba(74,222,128,0.3)",
+                        borderRadius:20, padding:"1px 7px" }}>✦ EMPFOHLEN</span>
+                    )}
+                    {armor.stealthDisadv && (
+                      <span style={{ fontSize:10, color:"#f87171",
+                        background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.25)",
+                        borderRadius:20, padding:"1px 7px", fontWeight:700 }}>⚠ Heimlichkeit</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:1 }}>
+                    {armor.desc} · {armor.cost}
+                  </div>
+                </div>
+                <div style={{ textAlign:"center", flexShrink:0 }}>
+                  <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontWeight:700 }}>RK</div>
+                  <div style={{ fontSize:22, fontWeight:900,
+                    color: isSelected ? theme.accent : "rgba(255,255,255,0.6)" }}>{previewAC}</div>
+                </div>
+                {isSelected && <span style={{ color:theme.accent, fontSize:18, flexShrink:0 }}>✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SHIELD */}
+      {canUseShield && (
+        <div onClick={() => setHasShield(v => !v)} className="card-hover"
+          style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+            borderRadius:12, cursor:"pointer",
+            background: hasShield ? `${theme.accent}18` : "rgba(255,255,255,0.03)",
+            border:`2px solid ${hasShield ? theme.accent : "rgba(255,255,255,0.08)"}`,
+            transition:"all 0.15s" }}>
+          <span style={{ fontSize:20 }}>🔰</span>
+          <div style={{ flex:1 }}>
+            <div style={{ fontWeight:800, fontSize:13, color: hasShield ? theme.accent : "white" }}>Schild</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>+2 RK · Belegt eine Hand · 10 GP</div>
+            {rec.shieldNote && (
+              <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2, fontStyle:"italic" }}>
+                💡 {rec.shieldNote}
+              </div>
+            )}
+          </div>
+          <div style={{ textAlign:"center", flexShrink:0 }}>
+            <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontWeight:700 }}>BONUS</div>
+            <div style={{ fontSize:22, fontWeight:900, color: hasShield ? theme.accent : "rgba(255,255,255,0.5)" }}>+2</div>
+          </div>
+          {hasShield && <span style={{ color:theme.accent, fontSize:18, flexShrink:0 }}>✓</span>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function WizardProgressBar({ step, total, theme }) {
   return (
@@ -1190,7 +1943,7 @@ function AttributeExplainer({ theme, chosenClass, onStatsChange }) {
   );
 }
 
-function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledStats }) {
+function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledStats, selectedEquipment }) {
   const missing = [];
   if (!data.name?.trim()) missing.push("Name");
   if (!data.race) missing.push("Rasse");
@@ -1218,6 +1971,19 @@ function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledS
           { label:"Hintergrund", value:data.background?.name || "—", emoji:data.background?.emoji || "📖",
             sub: data.background ? data.background.proficiencies?.join(", ") : null },
           { label:"Gesinnung", value:data.alignment?.name || "—", emoji:data.alignment?.emoji || "☯️" },
+          ...(selectedEquipment ? [{
+            label:"Ausrüstung",
+            value: (() => {
+              const a = ARMOR_CATALOG.find(x=>x.id===selectedEquipment.armorId);
+              const parts = [a?.name||"Keine Rüstung"];
+              if(selectedEquipment.hasShield) parts.push("Schild");
+              return parts.join(" + ");
+            })(),
+            emoji:"🛡️",
+            sub: selectedEquipment.weaponIds?.length
+              ? selectedEquipment.weaponIds.map(wid=>WEAPON_CATALOG.find(w=>w.id===wid)?.name).filter(Boolean).join(", ")
+              : null
+          }] : []),
         ].map(row => (
           <div key={row.label} style={{ display:"flex", alignItems:"center", gap:12,
             background:"rgba(255,255,255,0.04)", borderRadius:12,
@@ -1565,7 +2331,9 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
   const [subraceModalRace, setSubraceModalRace] = useState(null);
   const [customRaces, setCustomRaces] = useState(() => loadCustomRaces());
   const [showCustomRaceModal, setShowCustomRaceModal] = useState(false);
+  const [freeChoiceModal, setFreeChoiceModal] = useState(null); // {choices, pendingCharData}
   const [editingCustomRace, setEditingCustomRace] = useState(null);
+  const [selectedEquipment, setSelectedEquipment] = useState(null);
 
   const allRaces = [...WIZARD_RACES, ...customRaces];
 
@@ -1766,7 +2534,7 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
 
     const raceName = race?.name || "";
     const raceFeatures = RACE_FEATURES[raceName] || [];
-    raceFeatures.forEach(f => featureList.push({ ...DEFAULT_FEATURE, ...f, active: true }));
+    raceFeatures.forEach(f => featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE, ...f, active: true })));
 
     // Hügelzwerg: +1 HP pro Stufe als passive Note
     if (sr?.name?.includes("Hügelzwerg")) {
@@ -1779,16 +2547,59 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
 
     // Halbork: Einschüchtern bereits in Fertigkeiten – ggf. als Feature vermerken
     // Barbar Rage als Feature
+    const monkLevel = cls?.name === "Mönch" ? (charData?.classes?.[0]?.level || 1) : 1;
     const CLASS_FEATURES = {
-      "Barbar":   [{ keyword:"Kampfrausch (Rage)", type:"passive", note:"Bonus-Aktion; Vorteil STR-Angriffe; Resistenz Hieb/Stich/Wucht; endet nach Runde ohne Angriff/Schaden", desc:"Als Bonus-Aktion kannst du in den Kampfrausch eintreten. Du hast Vorteil auf STR-Würfe, +2 Schadensbonus, und Resistenz gegen Hieb-, Stich- und Wuchtschaden. Endet wenn du keinen Angriff machst oder keinen Schaden nimmst." }],
-      "Schurke":  [{ keyword:"Meucheln (Sneak Attack)", type:"sneak_attack", value:"1W6", note:"1× pro Runde; braucht Vorteil oder verbündeten Angreifer", desc:"Einmal pro Runde kannst du 1W6 Extraschaden verursachen wenn du Vorteil hast oder ein Verbündeter deinen Feind bedrängt." }],
-      "Mönch":    [{ keyword:"Ki-Punkte", type:"passive", note:"2 Ki-Punkte auf Stufe 1; für Flurry of Blows, Patient Defense, Step of the Wind", desc:"Du hast Ki-Punkte die du für besondere Fähigkeiten ausgeben kannst. Sie werden nach einer kurzen oder langen Rast aufgefüllt." }],
-      "Paladin":  [{ keyword:"Göttlicher Schlag (Divine Smite)", type:"passive", note:"Bonus-Schaden durch Zauberslots bei Treffern", desc:"Wenn du einen Angriff triffst, kannst du einen Zauberslot verbrauchen um 2W8 (+1W8 pro Slot über dem 1.) extra Strahlenschaden zuzufügen." }],
-      "Hexenmeister": [{ keyword:"Eldritch Blast", type:"passive", note:"Immer verfügbar; 1W10 Kraft-Schaden; 1 Strahl", desc:"Dein stärkster Zaubertrick: 1W10 Kraftschaden auf 36 Meter Reichweite." }],
+      "Barbar": [
+        { keyword:"Kampfrausch (Rage)", type:"limited_use", maxUses:2, resetOn:"long",
+          note:"Bonus-Aktion · Vorteil STR-Angriffe · +2 Schaden · Resistenz Hieb/Stich/Wucht",
+          desc:"Als Bonus-Aktion kannst du in den Kampfrausch eintreten. Du hast Vorteil auf STR-Würfe, +2 Schadensbonus, und Resistenz gegen Hieb-, Stich- und Wuchtschaden. Endet wenn du keinen Angriff machst oder keinen Schaden nimmst." },
+      ],
+      "Schurke": [
+        { keyword:"Meucheln (Sneak Attack)", type:"sneak_attack", value:"1W6",
+          note:"1× pro Runde · braucht Vorteil oder verbündeten Angreifer",
+          desc:"Einmal pro Runde kannst du 1W6 Extraschaden verursachen wenn du Vorteil hast oder ein Verbündeter deinen Feind bedrängt." },
+      ],
+      "Mönch": [
+        { keyword:"Ki-Pool", type:"ki_pool", maxUses: monkLevel, resetOn:"short",
+          note:`${monkLevel} Ki-Punkte (= Level) · Reset nach kurzer oder langer Rast`,
+          desc:"Ki ist deine innere Energie. Du gibst Ki-Punkte aus um besondere Fähigkeiten zu aktivieren." },
+        // Level-2 Ki-Fähigkeiten direkt als ki_ability eintragen
+        { keyword:"Flurry of Blows",  type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Nach einem Angriff: 2 zusätzliche unbewaffnete Angriffe als Bonus-Aktion." },
+        { keyword:"Patient Defense",  type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Nimm die Dodge-Aktion als Bonus-Aktion (Angreifer haben Nachteil auf dich)." },
+        { keyword:"Step of the Wind", type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Dash oder Disengage als Bonus-Aktion. Sprungweite verdoppelt." },
+      ],
+      "Paladin": [
+        { keyword:"Göttlicher Schlag (Divine Smite)", type:"passive",
+          note:"Reaktion nach Treffer · kostet Zauberslot · 2W8 + 1W8/Slot Strahlenschaden",
+          desc:"Wenn du einen Angriff triffst, kannst du einen Zauberslot verbrauchen um 2W8 (+1W8 pro Slot über dem 1.) extra Strahlenschaden zuzufügen." },
+      ],
+      "Hexenmeister": [
+        { keyword:"Eldritch Blast", type:"passive",
+          note:"Immer verfügbar · 1W10 Kraftschaden · Reichweite 36 m",
+          desc:"Dein stärkster Zaubertrick: 1W10 Kraftschaden auf 36 Meter Reichweite." },
+      ],
+      "Barde": [
+        { keyword:"Bardic Inspiration", type:"limited_use", maxUses:Math.max(1,Math.floor(((charData?.stats?.cha||10)-10)/2)), resetOn:"long",
+          note:"Bonus-Aktion · W6 Inspirationswürfel · 1 Verbündeter profitiert",
+          desc:"Als Bonus-Aktion kannst du einem Verbündeten in 18 m einen Inspirationswürfel (W6) geben. Er kann ihn auf einen Angriff, Fähigkeitswurf oder Rettungswurf addieren." },
+      ],
+      "Kleriker": [
+        { keyword:"Kanalisierte Gottheit", type:"limited_use", maxUses:1, resetOn:"short",
+          note:"1× pro Kurze Rast · Domain-spezifischer Effekt",
+          desc:"Du kannst göttliche Energie kanalisieren. Der genaue Effekt hängt von deiner Domain ab." },
+      ],
+      "Druide": [
+        { keyword:"Wild Shape", type:"limited_use", maxUses:2, resetOn:"short",
+          note:"2× pro Kurze Rast · Bonus-Aktion · in Tier verwandeln",
+          desc:"Als Bonus-Aktion kannst du dich in ein Tier verwandeln das du schon gesehen hast." },
+      ],
     };
 
     const classFeatures = cls ? (CLASS_FEATURES[cls.name] || []) : [];
-    classFeatures.forEach(f => featureList.push({ ...DEFAULT_FEATURE, ...f, active: true }));
+    classFeatures.forEach(f => featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE, ...f, active: true })));
 
     // ── Zusammenbauen ──────────────────────────────────────────────────────
     const raceName2 = selectedSubrace
@@ -1798,6 +2609,87 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
     const notes = languages.length > 0
       ? `Sprachen: ${[...new Set(languages)].join(", ")}`
       : "";
+
+    // ── Ausrüstung verarbeiten ─────────────────────────────────────────────
+    const eq = selectedEquipment;
+    // ── Ausrüstung ins Inventar – mit korrektem Handsystem ────────────────
+    const inventoryFromEquip = [];
+
+    // Rüstung: immer ausgerüstet (braucht keine Hände)
+    if (eq?.armorId && eq.armorId !== "unarmored") {
+      const armorObj = ARMOR_CATALOG.find(a => a.id === eq.armorId);
+      if (armorObj) inventoryFromEquip.push({
+        ...DEFAULT_ITEM, name: armorObj.name, type:"armor", equipped:true, qty:1,
+        armor:{ ac: armorObj.baseAC, stealthDisadv: armorObj.stealthDisadv, bonus:0 },
+      });
+    }
+
+    // Waffen + Schild: Handsystem – max 2 Hände
+    // Sammle alle Items die Hände brauchen
+    const handItems = [];
+    if (eq?.hasShield) handItems.push({ kind:"shield" });
+    (eq?.weaponIds || []).forEach(wid => {
+      const w = WEAPON_CATALOG.find(x => x.id === wid);
+      if (w) handItems.push({ kind:"weapon", w });
+    });
+
+    // Sortiere: Zweihänder zuerst (damit ein einzelner Zweihänder korrekt ausgerüstet wird),
+    // dann Einhandwaffen, dann Schild
+    handItems.sort((a, b) => {
+      const handsOf = item => {
+        if (item.kind === "shield") return 1;
+        if (item.kind === "weapon") {
+          return (item.w.props||[]).some(p => p === "Zweihändig") ? 2 : 1;
+        }
+        return 0;
+      };
+      return handsOf(b) - handsOf(a);
+    });
+
+    let handsUsed = 0;
+    handItems.forEach(item => {
+      if (item.kind === "shield") {
+        const fits = handsUsed + 1 <= 2;
+        inventoryFromEquip.push({
+          ...DEFAULT_ITEM, name:"Schild", type:"shield", equipped: fits, qty:1,
+          shield:{ acBonus:2 },
+        });
+        if (fits) handsUsed += 1;
+      } else if (item.kind === "weapon") {
+        const w = item.w;
+        const twoH = (w.props||[]).some(p => p === "Zweihändig");
+        const hands = twoH ? 2 : 1;
+        const fits = handsUsed + hands <= 2;
+        inventoryFromEquip.push({
+          ...DEFAULT_ITEM, name: w.name, type:"weapon", equipped: fits, qty:1,
+          weapon:{ damage: w.damage, damageType: w.type, scale: w.scale, bonus:0, props: w.props, range: w.range === "fern" ? "30/120 ft" : "" },
+        });
+        if (fits) handsUsed += hands;
+      }
+    });
+
+    // AC: nur ausgerüstete Items zählen
+    const equippedArmorItem = inventoryFromEquip.find(x => x.type === "armor" && x.equipped);
+    const equippedShieldItem = inventoryFromEquip.find(x => x.type === "shield" && x.equipped);
+    const computedAC = (() => {
+      const dex = Math.floor((stats.dex - 10) / 2);
+      const con = Math.floor((stats.con - 10) / 2);
+      const wis = Math.floor((stats.wis - 10) / 2);
+      const shieldBonus = equippedShieldItem ? (equippedShieldItem.shield?.acBonus || 2) : 0;
+      if (!equippedArmorItem) {
+        // Unarmored
+        if (cls?.name === "Barbar") return 10 + dex + con + shieldBonus;
+        if (cls?.name === "Mönch")  return 10 + dex + wis + shieldBonus;
+        return 10 + dex + shieldBonus;
+      }
+      const baseAC = equippedArmorItem.armor?.ac || 10;
+      const armorObj = ARMOR_CATALOG.find(a => a.name === equippedArmorItem.name);
+      if (armorObj?.addDex) {
+        const effectiveDex = armorObj.maxDex !== null ? Math.min(dex, armorObj.maxDex ?? 99) : dex;
+        return baseAC + effectiveDex + shieldBonus;
+      }
+      return baseAC + shieldBonus;
+    })();
 
     const charData = {
       name:       nameInput.trim() || "Unbenannt",
@@ -1810,17 +2702,55 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
       maxHP:      Math.max(1, maxHP),
       currentHP:  Math.max(1, maxHP),
       speed,
+      ac:         computedAC,
       saveProficiencies,
       skillProficiencies,
       featureList,
       notes,
+      inventory:  inventoryFromEquip,
       ...(spellData ? {
         spellcastingAbility: spellData.ability,
         spellSaveDC:         8 + 2 + Math.floor((stats[spellData.ability.toLowerCase()] - 10) / 2),
         spellAttackBonus:    2 + Math.floor((stats[spellData.ability.toLowerCase()] - 10) / 2),
       } : {}),
     };
+    // ── Freie Auswahlen prüfen ─────────────────────────────────────────────
+    const freeChoices = detectFreeChoices(race, sr, bg);
+    if (freeChoices.length > 0) {
+      setFreeChoiceModal({ choices: freeChoices, pendingCharData: charData });
+      return;
+    }
+
     onFinish(charData);
+  };
+
+  const handleFreeChoiceConfirm = (choiceValues, pendingCharData) => {
+    const updated = JSON.parse(JSON.stringify(pendingCharData));
+    Object.entries(choiceValues).forEach(([id, val]) => {
+      // Stat bonuses
+      if (typeof val === "object" && !Array.isArray(val)) {
+        Object.entries(val).forEach(([k, bonus]) => {
+          if (bonus > 0) updated.stats[k] = (updated.stats[k] || 10) + bonus;
+        });
+        // If CON changed, adjust HP
+        if (val.con > 0) { updated.maxHP += val.con; updated.currentHP += val.con; }
+      }
+      // Skills
+      if (Array.isArray(val) && id.includes("skill")) {
+        val.forEach(sk => { if (updated.skillProficiencies?.[sk] !== undefined) updated.skillProficiencies[sk] = true; });
+      }
+      // Languages – append to notes
+      if (Array.isArray(val) && id.includes("lang")) {
+        const existing = updated.notes || "";
+        const langStr  = val.join(", ");
+        const langLine = `Sprachen (zusätzlich): ${langStr}`;
+        updated.notes = existing
+          ? existing.replace(/Sprachen:.*/, m => m + ", " + langStr) || existing + "\n" + langLine
+          : langLine;
+      }
+    });
+    setFreeChoiceModal(null);
+    onFinish(updated);
   };
 
   const canNext = () => {
@@ -1980,10 +2910,37 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
           </div>
         );
 
+      case "equipment":
+        return (
+          <WizardEquipmentStep
+            cls={data.class}
+            stats={rolledStats ? (() => {
+              const parseS = v => { const n=parseInt(v); return isNaN(n)?10:Math.max(1,Math.min(30,n)); };
+              const base = { str:parseS(rolledStats.str),dex:parseS(rolledStats.dex),con:parseS(rolledStats.con),int:parseS(rolledStats.int),wis:parseS(rolledStats.wis),cha:parseS(rolledStats.cha) };
+              // apply race bonuses for live preview
+              if (data.race?.traits) data.race.traits.forEach(t => {
+                const re=/\b(STR|DEX|CON|INT|WIS|CHA)\s*\+(\d+)/gi; let m;
+                const map={STR:"str",DEX:"dex",CON:"con",INT:"int",WIS:"wis",CHA:"cha"};
+                while((m=re.exec(t))!==null){ const k=map[m[1].toUpperCase()]; if(k) base[k]=(base[k]||10)+parseInt(m[2]); }
+              });
+              if (selectedSubrace?.bonus) {
+                const re=/\b(STR|DEX|CON|INT|WIS|CHA)\s*\+(\d+)/gi; let m;
+                const map={STR:"str",DEX:"dex",CON:"con",INT:"int",WIS:"wis",CHA:"cha"};
+                while((m=re.exec(selectedSubrace.bonus))!==null){ const k=map[m[1].toUpperCase()]; if(k) base[k]=(base[k]||10)+parseInt(m[2]); }
+              }
+              return base;
+            })() : {str:10,dex:10,con:10,int:10,wis:10,cha:10}}
+            theme={theme}
+            selectedEquipment={selectedEquipment}
+            onEquipmentChange={eq => setSelectedEquipment(eq)}
+          />
+        );
+
       case "summary":
         return <WizardSummary data={{...data, name:nameInput}} theme={theme}
           onFinish={handleFinish} onBack={handleBack}
-          selectedSubrace={selectedSubrace} rolledStats={rolledStats} />;
+          selectedSubrace={selectedSubrace} rolledStats={rolledStats}
+          selectedEquipment={selectedEquipment} />;
 
       default: return null;
     }
@@ -2007,6 +2964,17 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
           editRace={editingCustomRace}
           onSave={handleSaveCustomRace}
           onClose={() => { setShowCustomRaceModal(false); setEditingCustomRace(null); }}
+          theme={theme}
+        />
+      )}
+      {/* Freie Auswahl Modal */}
+      {freeChoiceModal && (
+        <FreeChoiceModal
+          choices={freeChoiceModal.choices}
+          currentStats={freeChoiceModal.pendingCharData?.stats}
+          currentSkillProfs={freeChoiceModal.pendingCharData?.skillProficiencies}
+          onConfirm={vals => handleFreeChoiceConfirm(vals, freeChoiceModal.pendingCharData)}
+          onClose={() => setFreeChoiceModal(null)}
           theme={theme}
         />
       )}
@@ -2101,12 +3069,19 @@ const SKILLS = [
 const SAVES      = ["str","dex","con","int","wis","cha"];
 const STAT_NAMES = { str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA" };
 const FEATURE_TYPES = [
-  { value:"extra_attack", label:"⚔ Extra Angriff"    },{ value:"bonus_damage", label:"🎲 Bonusschaden"     },
-  { value:"sneak_attack", label:"🗡 Sneak Attack"     },{ value:"attack_bonus", label:"🎯 Angriffsbonus"    },
-  { value:"ac_bonus",     label:"🛡 RK Bonus"         },{ value:"stat_bonus",   label:"💪 Attributbonus"    },
-  { value:"skill_bonus",  label:"🎓 Fertigkeitsbonus" },{ value:"passive",      label:"✨ Passives Feature"  },
-  { value:"resistance",   label:"🛡 Resistenz"        },{ value:"advantage",    label:"🟢 Vorteil"          },
-  { value:"disadvantage", label:"🔴 Nachteil"         },{ value:"other",        label:"📝 Sonstiges"        },
+  { value:"extra_attack",  label:"⚔ Extra Angriff"       },{ value:"bonus_damage",  label:"🎲 Bonusschaden"      },
+  { value:"sneak_attack",  label:"🗡 Sneak Attack"        },{ value:"attack_bonus",  label:"🎯 Angriffsbonus"     },
+  { value:"ac_bonus",      label:"🛡 RK Bonus"            },{ value:"stat_bonus",    label:"💪 Attributbonus"     },
+  { value:"skill_bonus",   label:"🎓 Fertigkeitsbonus"    },{ value:"passive",       label:"✨ Passives Feature"   },
+  { value:"resistance",    label:"🛡 Resistenz"           },{ value:"advantage",     label:"🟢 Vorteil"           },
+  { value:"disadvantage",  label:"🔴 Nachteil"            },{ value:"limited_use",   label:"🔢 Begrenzte Nutzung" },
+  { value:"ki_pool",       label:"🧘 Ki-Pool / Ressource"  },{ value:"ki_ability",    label:"⚡ Ki-Fähigkeit"         },
+  { value:"other",         label:"📝 Sonstiges"          },
+];
+const RESET_TYPES = [
+  { value:"long",   label:"🌙 Lange Rast"  },
+  { value:"short",  label:"☕ Kurze Rast"  },
+  { value:"manual", label:"✋ Manuell"     },
 ];
 const ITEM_TYPES  = [
   { value:"misc",   label:"📦 Sonstiges" },{ value:"weapon", label:"⚔ Waffe"     },
@@ -2122,7 +3097,117 @@ const DEFAULT_ITEM = {
   armor:{ac:10,stealthDisadv:false,bonus:0},shield:{acBonus:2},
   potion:{healing:"",effect:""},magic:{description:"",bonus:0,attunement:false,attuned:false},desc:""
 };
-const DEFAULT_FEATURE = { name:"",keyword:"",type:"passive",value:"",target:"",note:"",desc:"",active:true };
+// ── Auto-Erkennung: begrenzte Nutzung vs. dauerhaft ──────────────────────
+// Erkennt anhand von Schlüsselwörtern in Note/Desc ob ein Feature limited_use ist
+// ── Bekannte Ressourcen-Pool Definitionen ────────────────────────────────
+const KNOWN_RESOURCE_POOLS = {
+  ki: {
+    keywords: ["ki-punkt", "ki punkt", "ki-pool", "ki pool", "ki-punkte"],
+    type: "ki_pool", resetOn: "short",
+    abilities: [
+      { name:"Flurry of Blows",      cost:1, action:"Bonus-Aktion", minLevel:2, desc:"Nach einem Angriff: 2 zusätzliche unbewaffnete Angriffe als Bonus-Aktion." },
+      { name:"Patient Defense",      cost:1, action:"Bonus-Aktion", minLevel:2, desc:"Nimm die Dodge-Aktion als Bonus-Aktion (Angreifer haben Nachteil auf dich)." },
+      { name:"Step of the Wind",     cost:1, action:"Bonus-Aktion", minLevel:2, desc:"Dash oder Disengage als Bonus-Aktion. Sprungweite verdoppelt." },
+      { name:"Deflect Missiles",     cost:1, action:"Reaktion",     minLevel:3, desc:"Reduziere Fernkampfwaffenschaden um 1W10 + DEX + Level. Bei 0: schleudere Projektil zurück." },
+      { name:"Slow Fall",            cost:0, action:"Reaktion",     minLevel:4, desc:"Reduziere Fallschaden um Level×5 (kein Ki nötig)." },
+      { name:"Stunning Strike",      cost:1, action:"Nach Treffer", minLevel:5, desc:"CON-Rettungswurf oder Ziel ist betäubt bis Ende deines nächsten Zuges." },
+      { name:"Ki-Empowered Strikes", cost:0, action:"Passiv",       minLevel:6, desc:"Unbewaffnete Angriffe gelten als magisch (kein Ki nötig)." },
+      { name:"Evasion",              cost:0, action:"Passiv",       minLevel:7, desc:"Bei Rettungswurf gegen Flächenschaden: Erfolg = kein Schaden, Misserfolg = halber Schaden." },
+      { name:"Stillness of Mind",    cost:0, action:"Aktion",       minLevel:7, desc:"Beende einen Verzauberungs- oder Angst-Effekt auf dir (kein Ki nötig)." },
+    ],
+  },
+  sorcery: {
+    keywords: ["sorcery point", "zauberpunkt", "zauberpunkte", "sorcery-punkt"],
+    type: "ki_pool", resetOn: "long",
+    abilities: [
+      { name:"Twinned Spell",    cost:1, action:"Metamagie", minLevel:1, desc:"Einzelziel-Zauber auf zweites Ziel ausweiten." },
+      { name:"Quickened Spell",  cost:2, action:"Metamagie", minLevel:1, desc:"Zauber der eine Aktion braucht als Bonus-Aktion wirken." },
+      { name:"Heightened Spell", cost:3, action:"Metamagie", minLevel:1, desc:"Ziel hat Nachteil auf ersten Rettungswurf gegen diesen Zauber." },
+      { name:"Careful Spell",    cost:1, action:"Metamagie", minLevel:1, desc:"Bis CHA-Mod Verbündete automatisch erfolgreich bei Rettungswurf." },
+      { name:"Subtle Spell",     cost:1, action:"Metamagie", minLevel:1, desc:"Wirke Zauber ohne verbale oder somatische Komponenten." },
+      { name:"Distant Spell",    cost:1, action:"Metamagie", minLevel:1, desc:"Verdoppele Reichweite (mind. 9 m)." },
+      { name:"Empowered Spell",  cost:1, action:"Metamagie", minLevel:1, desc:"Würfle bis zu CHA-Mod Schadenswürfel neu." },
+    ],
+  },
+  superiority: {
+    keywords: ["superiority die", "überlegenheitswürfel", "überlegenwürfel", "combat superiority"],
+    type: "ki_pool", resetOn: "short",
+    abilities: [
+      { name:"Precision Attack",    cost:1, action:"Nach Angriffswurf", minLevel:3, desc:"Addiere Überlegenheitswürfel (W8) auf Angriffswurf." },
+      { name:"Riposte",             cost:1, action:"Reaktion",          minLevel:3, desc:"Wenn Feind verfehlt: Gegenangriff + Überlegenheitswürfel Schaden." },
+      { name:"Trip Attack",         cost:1, action:"Nach Treffer",      minLevel:3, desc:"+Überlegenheitswürfel Schaden. Ziel STR-Wurf oder Prone." },
+      { name:"Disarming Attack",    cost:1, action:"Nach Treffer",      minLevel:3, desc:"+Überlegenheitswürfel Schaden. Ziel STR-Wurf oder lässt Waffe fallen." },
+      { name:"Commanding Presence", cost:1, action:"Bonus-Aktion",      minLevel:3, desc:"+Überlegenheitswürfel auf Auftreten/Einschüchtern/Täuschen." },
+      { name:"Rally",               cost:1, action:"Bonus-Aktion",      minLevel:3, desc:"Verbündeter gewinnt CHA-Mod + Level temporäre HP." },
+      { name:"Feinting Attack",     cost:1, action:"Bonus-Aktion",      minLevel:3, desc:"Vorteil auf nächsten Angriff + Überlegenheitswürfel Schaden bei Treffer." },
+    ],
+  },
+  bardic:   { keywords:["bardic inspiration","bardische inspiration"], type:"limited_use", resetOn:"long",  abilities:[] },
+  channel:  { keywords:["channel divinity","kanalisierte gottheit"],   type:"limited_use", resetOn:"short", abilities:[] },
+  wildshape:{ keywords:["wild shape","wilder gestaltwandel"],          type:"limited_use", resetOn:"short", abilities:[] },
+};
+
+function autoClassifyFeature(f) {
+  const text = ((f.keyword||"")+" "+(f.note||"")+" "+(f.desc||"")).toLowerCase();
+
+  // ── 1. Schon als Ressourcen-Pool klassifiziert – kiAbilities ergänzen wenn leer ──
+  if (f.type === "ki_pool") {
+    if (!f.kiAbilities || f.kiAbilities.length === 0) {
+      // Suche passenden Pool anhand des Textes
+      for (const pool of Object.values(KNOWN_RESOURCE_POOLS)) {
+        if (pool.type === "ki_pool" && pool.keywords.some(kw => text.includes(kw))) {
+          return { ...f, kiAbilities: pool.abilities, resetOn: f.resetOn || pool.resetOn };
+        }
+      }
+    }
+    return f;
+  }
+  if (f.type === "limited_use") return f;
+
+  // ── 2. Ressourcen-Pool erkennen ──
+  for (const [poolName, pool] of Object.entries(KNOWN_RESOURCE_POOLS)) {
+    if (pool.keywords.some(kw => text.includes(kw))) {
+      const maxUses = f.maxUses || 1;
+      return {
+        ...f,
+        type: pool.type,
+        resetOn: pool.resetOn,
+        maxUses,
+        usesLeft: f.usesLeft ?? maxUses,
+        kiAbilities: pool.abilities.length > 0 ? pool.abilities : undefined,
+      };
+    }
+  }
+
+  // ── 3. Allgemeine Erkennung begrenzte Nutzung ──
+  const limitedPatterns = [
+    /einmal pro (langen?|kurzen?) rast/i,
+    /(\d+)×? pro (langen?|kurzen?) rast/i,
+    /once per (long|short) rest/i,
+    /pro tag/i, /per day/i,
+    /einmal täglich/i,
+    /(\d+)× pro tag/i,
+    /recharges? (on a|after) (long|short)/i,
+    /lädt sich.*rast.*auf/i,
+    /nach.*rast.*zurück/i,
+    /kann.*einmal.*pro/i,
+    /einmal pro runde/i,
+    /once per turn/i,
+  ];
+  const isLimited = limitedPatterns.some(p => p.test(text));
+  if (!isLimited) return f;
+
+  let resetOn = "long";
+  if (/kurzen? rast|short rest/i.test(text)) resetOn = "short";
+
+  let maxUses = 1;
+  const countMatch = text.match(/(\d+)[×x]?\s*pro/i) || text.match(/(\d+)\s*mal/i);
+  if (countMatch) maxUses = Math.min(parseInt(countMatch[1]), 20);
+
+  return { ...f, type:"limited_use", maxUses, usesLeft: f.usesLeft ?? maxUses, resetOn };
+}
+
+const DEFAULT_FEATURE = { name:"",keyword:"",type:"passive",value:"",target:"",note:"",desc:"",active:true,maxUses:1,usesLeft:1,resetOn:"long",kiCost:1,kiAction:"Bonus-Aktion" };
 const DEFAULT = {
   name:"",race:"",background:"",alignment:"",
   classes:[{name:"",subclass:"",level:1}],
@@ -2142,13 +3227,52 @@ const DEFAULT = {
 const statMod   = v => Math.floor((v-10)/2);
 const fmtMod    = v => (v>=0?"+":"")+v;
 const profB     = lvl => Math.ceil(lvl/4)+1;
-const mergeChar = p => ({
-  ...DEFAULT,...p,usedHitDice:p.usedHitDice||0,
-  currency:{...DEFAULT.currency,...(p.currency||{})},
-  inventory:(p.inventory||[]).map(it=>({...DEFAULT_ITEM,...it,weapon:{...DEFAULT_ITEM.weapon,...(it.weapon||{})},armor:{...DEFAULT_ITEM.armor,...(it.armor||{})},shield:{...DEFAULT_ITEM.shield,...(it.shield||{})},potion:{...DEFAULT_ITEM.potion,...(it.potion||{})},magic:{...DEFAULT_ITEM.magic,...(it.magic||{})}})),
-  featureList:(p.featureList||[]).map(f=>({...DEFAULT_FEATURE,...f})),
-  classes:p.classes||DEFAULT.classes,
-});
+// ── Ki-Fähigkeiten auto-sync: fügt fehlende Fähigkeiten fürs aktuelle Level hinzu ──
+function syncKiAbilities(featureList, classes) {
+  const list = [...featureList];
+  const charLevel = (classes||[]).reduce((s,c)=>s+(c.level||0),0)||1;
+
+  // Welcher Pool-Typ ist vorhanden?
+  for (const pool of Object.values(KNOWN_RESOURCE_POOLS)) {
+    if (pool.type !== "ki_pool" || !pool.abilities.length) continue;
+    // Prüfen ob dieser Pool im featureList vorhanden ist
+    const hasPool = list.some(f => f.type==="ki_pool" &&
+      pool.keywords.some(kw => ((f.keyword||"")+" "+(f.desc||"")).toLowerCase().includes(kw)));
+    if (!hasPool) continue;
+
+    // Bestehende ki_ability Keywords sammeln
+    const existing = new Set(list.filter(f=>f.type==="ki_ability").map(f=>(f.keyword||"").toLowerCase()));
+
+    // Neue Fähigkeiten die für dieses Level freigeschaltet sind, aber noch nicht vorhanden
+    for (const ab of pool.abilities) {
+      if (ab.minLevel && charLevel < ab.minLevel) continue; // noch nicht freigeschaltet
+      if (existing.has(ab.name.toLowerCase())) continue;   // schon vorhanden
+      list.push({
+        ...DEFAULT_FEATURE,
+        keyword: ab.name,
+        type: "ki_ability",
+        kiCost: ab.cost,
+        kiAction: ab.action,
+        desc: ab.desc,
+        active: true,
+      });
+    }
+  }
+  return list;
+}
+
+const mergeChar = p => {
+  const base = {
+    ...DEFAULT,...p,usedHitDice:p.usedHitDice||0,
+    currency:{...DEFAULT.currency,...(p.currency||{})},
+    inventory:(p.inventory||[]).map(it=>({...DEFAULT_ITEM,...it,weapon:{...DEFAULT_ITEM.weapon,...(it.weapon||{})},armor:{...DEFAULT_ITEM.armor,...(it.armor||{})},shield:{...DEFAULT_ITEM.shield,...(it.shield||{})},potion:{...DEFAULT_ITEM.potion,...(it.potion||{})},magic:{...DEFAULT_ITEM.magic,...(it.magic||{})}})),
+    featureList:(p.featureList||[]).map(f=>autoClassifyFeature({...DEFAULT_FEATURE,...f})),
+    classes:p.classes||DEFAULT.classes,
+  };
+  // Ki-Fähigkeiten für aktuelles Level synchronisieren
+  base.featureList = syncKiAbilities(base.featureList, base.classes);
+  return base;
+};
 const currToCP  = c=>(c.pp||0)*1000+(c.gp||0)*100+(c.ep||0)*50+(c.sp||0)*10+(c.cp||0);
 const cpToCurr  = total=>{let r=Math.max(0,Math.round(total));const pp=Math.floor(r/1000);r%=1000;const gp=Math.floor(r/100);r%=100;const ep=Math.floor(r/50);r%=50;const sp=Math.floor(r/10);r%=10;return{pp,gp,ep,sp,cp:r};};
 const parseCoins= raw=>{const out={pp:0,gp:0,ep:0,sp:0,cp:0};const re=/(\d+)\s*(pp|gp|ep|sp|cp)/gi;let m;while((m=re.exec(raw))!==null)out[m[2].toLowerCase()]+=parseInt(m[1])||0;return(out.pp+out.gp+out.ep+out.sp+out.cp)>0?out:null;};
@@ -2223,8 +3347,14 @@ function RestModals({restModal,setRestModal,ch,upCh,totalLevel,deathSaves,setDea
   const S={card:{background:theme.card,borderRadius:16,border:`1px solid ${theme.border}`,padding:16},input:{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"6px 10px",color:"white",fontSize:14,outline:"none",width:"100%",fontFamily:"inherit"},btnGhost:{background:"rgba(255,255,255,0.07)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"6px 12px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit"},};
   const dieType=ch.hitDice||"1d8";const conMod=statMod(ch.stats.con);const availHD=Math.max(0,totalLevel-(ch.usedHitDice||0));
   const closeShort=()=>{setRestModal(null);setShortRestDice(0);setShortRestInput("");setShortRestResult(null);};
-  const doShortRest=()=>{if(shortRestDice<=0)return;const rolled=parseInt(shortRestInput);if(isNaN(rolled)||rolled<shortRestDice)return;const healing=Math.max(0,rolled+conMod*shortRestDice);upCh(n=>{n.currentHP=Math.min(n.maxHP,n.currentHP+healing);n.usedHitDice=(n.usedHitDice||0)+shortRestDice;return n;});setShortRestResult({rolled,conMod,healing,dice:shortRestDice});};
-  const doLongRest=()=>{upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=0;for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}return n;});setDeathSaves({success:0,fail:0});setRestModal(null);};
+  const doShortRest=()=>{if(shortRestDice<=0)return;const rolled=parseInt(shortRestInput);if(isNaN(rolled)||rolled<shortRestDice)return;const healing=Math.max(0,rolled+conMod*shortRestDice);upCh(n=>{n.currentHP=Math.min(n.maxHP,n.currentHP+healing);n.usedHitDice=(n.usedHitDice||0)+shortRestDice;// Reset short-rest limited_use features
+    n.featureList=(n.featureList||[]).map(f=>
+      (f.type==="limited_use"&&f.resetOn==="short")||(f.type==="ki_pool")
+        ?{...f,usesLeft:f.maxUses||1}:f);return n;});setShortRestResult({rolled,conMod,healing,dice:shortRestDice});};
+  const doLongRest=()=>{upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=0;for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}// Reset all limited_use features on long rest
+    n.featureList=(n.featureList||[]).map(f=>
+      (f.type==="limited_use"&&(f.resetOn==="long"||f.resetOn==="short"))||(f.type==="ki_pool")
+        ?{...f,usesLeft:f.maxUses||1}:f);return n;});setDeathSaves({success:0,fail:0});setRestModal(null);};
   if(!restModal)return null;
   return(<div style={{position:"fixed",inset:0,zIndex:55,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.85)"}} onClick={restModal==="short"?closeShort:()=>setRestModal(null)}><div style={{...S.card,maxWidth:360,width:"92%",padding:24}} onClick={e=>e.stopPropagation()}>
     {restModal==="long"&&<><div style={{fontSize:18,fontWeight:900,color:"#60a5fa",marginBottom:6}}>🌙 Lange Rast</div><div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden.</div><div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>{[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel","Alle TW zurück"],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(<div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 10px",background:"rgba(96,165,250,0.05)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}><span style={{color:"rgba(255,255,255,0.7)"}}>{label}</span><span style={{color:"#60a5fa",fontWeight:700}}>{desc}</span></div>))}</div><div style={{display:"flex",gap:8}}><button onClick={doLongRest} style={{flex:1,background:"rgba(96,165,250,0.2)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.4)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>🌙 Rasten</button><button onClick={()=>setRestModal(null)} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button></div></>}
@@ -3214,15 +4344,25 @@ function App(){
       // Features hinzufügen
       if(result.newFeatures && result.newFeatures.length>0){
         result.newFeatures.forEach(f=>{
-          if(f.includes("ASI")||f.includes("Attributsteigerung")) return; // ASI schon verarbeitet
+          if(f.includes("ASI")||f.includes("Attributsteigerung")) return;
           n.featureList=n.featureList||[];
-          n.featureList.push({
+          n.featureList.push(autoClassifyFeature({
             ...DEFAULT_FEATURE,
             keyword:f.length>40?f.slice(0,40)+"…":f,
             desc:f, type:"passive", active:true,
-          });
+          }));
         });
       }
+      // Ki-Fähigkeiten für neues Level synchronisieren
+      n.featureList = syncKiAbilities(n.featureList||[], n.classes);
+      // Ki-Pool maxUses auf neues Level setzen
+      n.featureList = n.featureList.map(f => {
+        if (f.type==="ki_pool") {
+          const newLevel = n.classes.reduce((s,c)=>s+(c.level||0),0)||1;
+          return {...f, maxUses: newLevel, usesLeft: Math.min(f.usesLeft??newLevel, newLevel)};
+        }
+        return f;
+      });
       return n;
     });
     setLevelUpModal(null);
@@ -3273,7 +4413,29 @@ function App(){
   const passivePerc=10+skillMod("Wahrnehmung");
   const attackBonusF=activeF.filter(f=>f.type==="attack_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
   const acBonusF=activeF.filter(f=>f.type==="ac_bonus").reduce((s,f)=>s+(parseInt(f.value)||0),0);
-  const totalAC=ch.ac+acBonusF+armorACBonus+shieldACBonus+magicACBonus;
+
+  // Dynamische RK – direkt aus ausgerüsteten Items, korrekte Klassen-Spezialregeln
+  const totalAC = (() => {
+    const dexM = statMod(effStat("dex"));
+    const conM = statMod(effStat("con"));
+    const wisM = statMod(effStat("wis"));
+    const extras = shieldACBonus + magicACBonus + acBonusF;
+    const className = ch.classes?.[0]?.name || "";
+    if (!equippedArmor) {
+      if (className === "Barbar") return 10 + dexM + conM + extras;
+      if (className === "Mönch")  return 10 + dexM + wisM + extras;
+      return 10 + dexM + extras;
+    }
+    const baseAC = equippedArmor.armor?.ac || 10;
+    const bonus  = armorACBonus;
+    const armorCatItem = ARMOR_CATALOG.find(a => a.name === equippedArmor.name);
+    if (armorCatItem?.addDex) {
+      const effectiveDex = (armorCatItem.maxDex !== null && armorCatItem.maxDex !== undefined)
+        ? Math.min(dexM, armorCatItem.maxDex) : dexM;
+      return baseAC + effectiveDex + bonus + extras;
+    }
+    return baseAC + bonus + extras;
+  })();
   const hpRatio=ch.currentHP/Math.max(1,ch.maxHP);
   const hpColor=hpRatio>0.5?"#22c55e":hpRatio>0.25?"#f59e0b":"#ef4444";
   const weaponAtkBonus=w=>{const sc=w.weapon?.scale||"STR";let m=0;if(sc==="STR")m=statMod(effStat("str"));else if(sc==="DEX")m=statMod(effStat("dex"));else if(sc==="STR oder DEX")m=Math.max(statMod(effStat("str")),statMod(effStat("dex")));else if(sc==="INT")m=statMod(effStat("int"));else if(sc==="WIS")m=statMod(effStat("wis"));else if(sc==="CHA")m=statMod(effStat("cha"));return m+pb+(parseInt(w.weapon?.bonus)||0)+attackBonusF;};
@@ -3402,13 +4564,281 @@ function App(){
             <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span>☕ Kurze Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(251,191,36,0.6)"}}>TW: {availableHitDice}/{totalLevel}</span></button>
             <button onClick={()=>setRestModal("long")} style={{flex:1,background:"rgba(96,165,250,0.1)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span>🌙 Lange Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(96,165,250,0.6)"}}>Volle Erholung</span></button>
           </div>
-          {(()=>{const resist=activeF.filter(f=>f.type==="resistance"),adv=activeF.filter(f=>f.type==="advantage"),disadv=activeF.filter(f=>f.type==="disadvantage"),extraAtk=activeF.filter(f=>f.type==="extra_attack"),atkBonus=activeF.filter(f=>f.type==="attack_bonus"),sneakAtk=activeF.filter(f=>f.type==="sneak_attack"),bonusDmg=activeF.filter(f=>f.type==="bonus_damage"),acBonus=activeF.filter(f=>f.type==="ac_bonus"),statBon=activeF.filter(f=>f.type==="stat_bonus"),passive=activeF.filter(f=>f.type==="passive"||f.type==="other");if(activeF.length===0)return null;const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);const Tag=({color,bg,border,shape,children})=>(<span style={{background:bg,border:`2px solid ${border}`,borderRadius:shape==="sharp"?6:20,padding:"4px 12px",fontSize:12,fontWeight:700,color,display:"inline-flex",alignItems:"center",gap:5,boxShadow:`0 0 8px ${border}55`}}>{children}</span>);const kw=f=>f.keyword||f.name||"?";const val=f=>f.value?` ${f.value}`:"";return(<div style={S.card}><div style={S.section}>✨ Features &amp; Boni</div><div style={{display:"flex",flexDirection:"column",gap:12}}>{(extraAtk.length>0||atkBonus.length>0)&&<Section label="⚔ ANGRIFFE & ANGRIFFSBONUS">{extraAtk.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp">⚔ +{f.value||1} Angriff{f.keyword?` · ${f.keyword}`:""}</Tag>)}{atkBonus.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp">🎯 {kw(f)}{val(f)}</Tag>)}</Section>}{(sneakAtk.length>0||bonusDmg.length>0)&&<Section label="🎲 BONUSSCHADEN">{sneakAtk.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🗡 {kw(f)}{val(f)}</Tag>)}{bonusDmg.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp">🎲 {kw(f)} +{f.value}</Tag>)}</Section>}{(acBonus.length>0||statBon.length>0)&&<Section label="🛡 RK & ATTRIBUTBONI">{acBonus.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">🛡 RK +{f.value}</Tag>)}{statBon.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round">💪 {STAT_NAMES[f.target]||f.target} +{f.value}</Tag>)}</Section>}{resist.length>0&&<Section label="🛡 RESISTENZEN">{resist.map((f,i)=><Tag key={i} color="#60a5fa" bg="rgba(96,165,250,0.15)" border="#60a5fa" shape="round">🛡 {kw(f)}</Tag>)}</Section>}{adv.length>0&&<Section label="🟢 VORTEILE">{adv.map((f,i)=><Tag key={i} color="#4ade80" bg="rgba(74,222,128,0.15)" border="#4ade80" shape="round">▲ {kw(f)}</Tag>)}</Section>}{disadv.length>0&&<Section label="🔴 NACHTEILE">{disadv.map((f,i)=><Tag key={i} color="#f87171" bg="rgba(248,113,113,0.15)" border="#f87171" shape="sharp">▼ {kw(f)}</Tag>)}</Section>}{passive.length>0&&<Section label="✨ PASSIVE FEATURES">{passive.map((f,i)=><Tag key={i} color="rgba(255,255,255,0.6)" bg="rgba(255,255,255,0.05)" border="rgba(255,255,255,0.2)" shape="round">✦ {kw(f)}</Tag>)}</Section>}</div></div>);})()}
+          {(()=>{const resist=activeF.filter(f=>f.type==="resistance"),adv=activeF.filter(f=>f.type==="advantage"),disadv=activeF.filter(f=>f.type==="disadvantage"),extraAtk=activeF.filter(f=>f.type==="extra_attack"),atkBonus=activeF.filter(f=>f.type==="attack_bonus"),sneakAtk=activeF.filter(f=>f.type==="sneak_attack"),bonusDmg=activeF.filter(f=>f.type==="bonus_damage"),acBonus=activeF.filter(f=>f.type==="ac_bonus"),statBon=activeF.filter(f=>f.type==="stat_bonus"),passive=activeF.filter(f=>f.type==="passive"||f.type==="other");const nonLU=resist.length+adv.length+disadv.length+extraAtk.length+atkBonus.length+sneakAtk.length+bonusDmg.length+acBonus.length+statBon.length+passive.length;if(nonLU===0)return null;const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);
+              const Tag=({color,bg,border,shape,note,permanent,children})=>(<div style={{background:bg,border:`2px solid ${border}`,borderRadius:shape==="sharp"?8:20,padding:"5px 12px",fontSize:12,fontWeight:700,color,display:"inline-flex",flexDirection:"column",gap:2,boxShadow:`0 0 8px ${border}55`,maxWidth:260}}><div style={{display:"inline-flex",alignItems:"center",justifyContent:"space-between",gap:8}}><span style={{display:"inline-flex",alignItems:"center",gap:5}}>{children}</span><span style={{fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:20,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",flexShrink:0,letterSpacing:"0.03em"}}>∞</span></div>{note&&<span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,0.45)",lineHeight:1.4}}>{note}</span>}</div>);const kw=f=>f.keyword||f.name||"?";const val=f=>f.value?` ${f.value}`:"";return(<div style={S.card}><div style={S.section}>✨ Features &amp; Boni</div><div style={{display:"flex",flexDirection:"column",gap:12}}>
+              {(extraAtk.length>0||atkBonus.length>0)&&<Section label="⚔ ANGRIFFE & ANGRIFFSBONUS">{extraAtk.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp" note={f.note||f.desc||""}>⚔ +{f.value||1} Angriff{f.keyword?` · ${f.keyword}`:""}</Tag>)}{atkBonus.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp" note={f.note||f.desc||""}>🎯 {kw(f)}{val(f)}</Tag>)}</Section>}{(sneakAtk.length>0||bonusDmg.length>0)&&<Section label="🎲 BONUSSCHADEN">{sneakAtk.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp" note={f.note||f.desc||""}>🗡 {kw(f)}{val(f)}</Tag>)}{bonusDmg.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp" note={f.note||f.desc||""}>🎲 {kw(f)} +{f.value}</Tag>)}</Section>}{(acBonus.length>0||statBon.length>0)&&<Section label="🛡 RK & ATTRIBUTBONI">{acBonus.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round" note={f.note||f.desc||""}>🛡 RK +{f.value}</Tag>)}{statBon.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round" note={f.note||f.desc||""}>💪 {STAT_NAMES[f.target]||f.target} +{f.value}</Tag>)}</Section>}{resist.length>0&&<Section label="🛡 RESISTENZEN">{resist.map((f,i)=><Tag key={i} color="#60a5fa" bg="rgba(96,165,250,0.15)" border="#60a5fa" shape="round" note={f.note||f.desc||""}>🛡 {kw(f)}</Tag>)}</Section>}{adv.length>0&&<Section label="🟢 VORTEILE">{adv.map((f,i)=><Tag key={i} color="#4ade80" bg="rgba(74,222,128,0.15)" border="#4ade80" shape="round" note={f.note||f.desc||""}>▲ {kw(f)}</Tag>)}</Section>}{disadv.length>0&&<Section label="🔴 NACHTEILE">{disadv.map((f,i)=><Tag key={i} color="#f87171" bg="rgba(248,113,113,0.15)" border="#f87171" shape="sharp" note={f.note||f.desc||""}>▼ {kw(f)}</Tag>)}</Section>}{passive.length>0&&<Section label="✨ PASSIVE FEATURES">{passive.map((f,i)=><Tag key={i} color="rgba(255,255,255,0.6)" bg="rgba(255,255,255,0.05)" border="rgba(255,255,255,0.2)" shape="round" note={f.note||f.desc||""}>✦ {kw(f)}</Tag>)}</Section>}</div></div>);})()}
+
+          {/* ── KI-POOL & Ki-Fähigkeiten ── */}
+          {ch.featureList.some(f=>f.type==="ki_pool"&&f.active!==false)&&(
+            ch.featureList.filter(f=>f.type==="ki_pool"&&f.active!==false).map((f,fi_)=>{
+              const fi = ch.featureList.indexOf(f);
+              const maxU = f.maxUses ?? ch.classes.reduce((s,c)=>s+(c.level||0),0) ?? 1;
+              const usesLeft = f.usesLeft ?? maxU;
+              const isEmpty = usesLeft <= 0;
+              // Nur aktive ki_ability Features aus der featureList
+              const kiAbils = ch.featureList.filter(x=>x.type==="ki_ability"&&x.active!==false);
+              return (
+                <div key={fi} style={{...S.card,border:`2px solid ${isEmpty?"rgba(248,113,113,0.3)":"rgba(56,189,248,0.4)"}`,background:isEmpty?"rgba(248,113,113,0.05)":"rgba(56,189,248,0.06)"}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontSize:16}}>🧘</span>
+                        <span style={{fontWeight:900,fontSize:15,color:isEmpty?"rgba(255,255,255,0.35)":"#38bdf8"}}>{f.keyword||"Ki-Punkte"}</span>
+                        <span style={{fontSize:11,fontWeight:800,padding:"2px 8px",borderRadius:20,
+                          background:isEmpty?"rgba(248,113,113,0.2)":"rgba(56,189,248,0.2)",
+                          color:isEmpty?"#f87171":"#38bdf8",
+                          border:`1px solid ${isEmpty?"rgba(248,113,113,0.3)":"rgba(56,189,248,0.35)"}`}}>
+                          {usesLeft}/{maxU} Ki
+                        </span>
+                      </div>
+                      {f.note&&<div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{f.note}</div>}
+                    </div>
+                    <div style={{display:"flex",gap:6}}>
+                      <button onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=Math.max(0,(n.featureList[fi].usesLeft??maxU)-1);return n;})}
+                        disabled={isEmpty}
+                        style={{padding:"6px 12px",borderRadius:8,cursor:isEmpty?"not-allowed":"pointer",
+                          fontFamily:"inherit",fontWeight:900,fontSize:12,transition:"all 0.15s",
+                          background:isEmpty?"rgba(255,255,255,0.04)":"rgba(56,189,248,0.15)",
+                          color:isEmpty?"rgba(255,255,255,0.2)":"#38bdf8",
+                          border:`1px solid ${isEmpty?"rgba(255,255,255,0.08)":"rgba(56,189,248,0.35)"}`}}>
+                        −1 Ki
+                      </button>
+                      <button onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=n.featureList[fi].maxUses??maxU;return n;})}
+                        style={{padding:"6px 10px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",
+                          fontWeight:700,fontSize:11,background:"rgba(255,255,255,0.06)",
+                          color:"rgba(255,255,255,0.4)",border:"1px solid rgba(255,255,255,0.12)"}}>↺</button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:kiAbils.length?12:0,alignItems:"center"}}>
+                    {Array.from({length:Math.min(maxU,20)}).map((_,di)=>(
+                      <div key={di} onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=maxU-di;return n;})}
+                        style={{width:16,height:16,borderRadius:"50%",cursor:"pointer",flexShrink:0,transition:"all 0.15s",
+                          background:di<usesLeft?"#38bdf8":"rgba(255,255,255,0.1)",
+                          border:`2px solid ${di<usesLeft?"#38bdf8":"rgba(255,255,255,0.15)"}`,
+                          boxShadow:di<usesLeft?"0 0 6px rgba(56,189,248,0.7)":"none"}}/>
+                    ))}
+                    {maxU>20&&<span style={{fontSize:10,color:"rgba(255,255,255,0.3)"}}>…+{maxU-20}</span>}
+                  </div>
+                  {kiAbils.length>0&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      <div style={{fontSize:10,fontWeight:800,color:"rgba(56,189,248,0.7)",letterSpacing:"0.07em",marginBottom:2}}>KI-FÄHIGKEITEN</div>
+                      {kiAbils.map((ab,ai)=>{
+                        const kiIdx = ch.featureList.indexOf(ab);
+                        const cost = ab.kiCost||1;
+                        const canUse = usesLeft >= cost;
+                        return (
+                          <div key={ai} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 10px",borderRadius:10,transition:"all 0.15s",
+                            background:canUse?"rgba(56,189,248,0.06)":"rgba(255,255,255,0.02)",
+                            border:`1px solid ${canUse?"rgba(56,189,248,0.25)":"rgba(255,255,255,0.06)"}`}}>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
+                                <span style={{fontWeight:800,fontSize:13,color:canUse?"white":"rgba(255,255,255,0.35)"}}>{ab.keyword||ab.name||"?"}</span>
+                                <span style={{fontSize:10,fontWeight:800,padding:"1px 6px",borderRadius:20,
+                                  background:canUse?"rgba(56,189,248,0.2)":"rgba(255,255,255,0.06)",
+                                  color:canUse?"#38bdf8":"rgba(255,255,255,0.25)",
+                                  border:`1px solid ${canUse?"rgba(56,189,248,0.35)":"rgba(255,255,255,0.08)"}`}}>
+                                  {cost} Ki
+                                </span>
+                                {ab.kiAction&&<span style={{fontSize:10,color:"rgba(255,255,255,0.35)",fontWeight:600}}>{ab.kiAction}</span>}
+                              </div>
+                              {ab.desc&&<div style={{fontSize:11,color:"rgba(255,255,255,0.45)",lineHeight:1.5}}>{ab.desc}</div>}
+                            </div>
+                            <button onClick={()=>canUse&&upCh(n=>{n.featureList[fi].usesLeft=Math.max(0,(n.featureList[fi].usesLeft??maxU)-cost);return n;})}
+                              disabled={!canUse}
+                              style={{flexShrink:0,padding:"5px 10px",borderRadius:8,cursor:canUse?"pointer":"not-allowed",
+                                fontFamily:"inherit",fontWeight:800,fontSize:11,transition:"all 0.15s",whiteSpace:"nowrap",
+                                background:canUse?"rgba(56,189,248,0.2)":"rgba(255,255,255,0.04)",
+                                color:canUse?"#38bdf8":"rgba(255,255,255,0.2)",
+                                border:`1px solid ${canUse?"rgba(56,189,248,0.4)":"rgba(255,255,255,0.06)"}`}}>
+                              {canUse?"Einsetzen":"✗"}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {kiAbils.length===0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.25)",fontStyle:"italic"}}>Keine Ki-Fähigkeiten aktiv. Im Features-Tab unter „Ki-Fähigkeiten" hinzufügen.</div>}
+                </div>
+              );
+            })
+          )}
+
+          {/* ── BEGRENZTE NUTZUNG – eigenständiger Block ── */}
+          {ch.featureList.some(f=>f.type==="limited_use"&&f.active!==false)&&(
+            <div style={S.card}>
+              <div style={S.section}>🔢 Begrenzte Nutzung</div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {ch.featureList.map((f,fi)=>{
+                  if(f.type!=="limited_use"||f.active===false) return null;
+                  const usesLeft = f.usesLeft ?? f.maxUses ?? 1;
+                  const maxU = f.maxUses ?? 1;
+                  const isEmpty = usesLeft <= 0;
+                  const resetLbl = RESET_TYPES.find(r=>r.value===f.resetOn)?.label || "🌙 Lange Rast";
+                  return (
+                    <div key={fi} style={{
+                      display:"flex", alignItems:"center", gap:12, padding:"12px 14px",
+                      borderRadius:12,
+                      border:`2px solid ${isEmpty?"rgba(248,113,113,0.4)":`${theme.accent}55`}`,
+                      background:isEmpty?"rgba(248,113,113,0.07)":`${theme.accent}0d`,
+                      transition:"all 0.2s",
+                    }}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:800,color:isEmpty?"rgba(255,255,255,0.35)":"white",marginBottom:2,display:"flex",alignItems:"center",gap:8}}>
+                          <span>{f.keyword||f.name||"?"}</span>
+                          <span style={{fontSize:10,fontWeight:900,padding:"2px 7px",borderRadius:20,
+                            background:isEmpty?"rgba(248,113,113,0.2)":"rgba(251,191,36,0.15)",
+                            color:isEmpty?"#f87171":"#fbbf24",
+                            border:`1px solid ${isEmpty?"rgba(248,113,113,0.3)":"rgba(251,191,36,0.3)"}`,
+                            flexShrink:0,
+                          }}>🔢 {maxU}×</span>
+                        </div>
+                        {(f.note||f.desc)&&(
+                          <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:8,lineHeight:1.5}}>
+                            {f.note||f.desc}
+                          </div>
+                        )}
+                        <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+                          {Array.from({length:Math.min(maxU,20)}).map((_,di)=>(
+                            <div key={di}
+                              onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=maxU-di;return n;})}
+                              style={{
+                                width:16,height:16,borderRadius:"50%",cursor:"pointer",
+                                flexShrink:0,transition:"all 0.15s",
+                                background:di<usesLeft?theme.accent:"rgba(255,255,255,0.1)",
+                                border:`2px solid ${di<usesLeft?theme.accent:"rgba(255,255,255,0.15)"}`,
+                                boxShadow:di<usesLeft?`0 0 6px ${theme.accent}88`:"none",
+                              }}/>
+                          ))}
+                          <span style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginLeft:4,fontWeight:600}}>
+                            {usesLeft}/{maxU} · {resetLbl}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0}}>
+                        <button
+                          onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=Math.max(0,(n.featureList[fi].usesLeft??maxU)-1);return n;})}
+                          disabled={isEmpty}
+                          style={{
+                            padding:"8px 14px",borderRadius:9,cursor:isEmpty?"not-allowed":"pointer",
+                            fontFamily:"inherit",fontWeight:900,fontSize:13,
+                            whiteSpace:"nowrap",transition:"all 0.15s",
+                            background:isEmpty?"rgba(255,255,255,0.04)":"rgba(248,113,113,0.18)",
+                            color:isEmpty?"rgba(255,255,255,0.2)":"#f87171",
+                            border:`1px solid ${isEmpty?"rgba(255,255,255,0.08)":"rgba(248,113,113,0.4)"}`,
+                          }}>
+                          {isEmpty?"✗ Aufgebraucht":"▼ Verwenden"}
+                        </button>
+                        <button
+                          onClick={()=>upCh(n=>{n.featureList[fi].usesLeft=n.featureList[fi].maxUses||1;return n;})}
+                          style={{
+                            padding:"5px 10px",borderRadius:8,cursor:"pointer",
+                            fontFamily:"inherit",fontWeight:700,fontSize:11,
+                            background:"rgba(255,255,255,0.06)",
+                            color:"rgba(255,255,255,0.45)",
+                            border:"1px solid rgba(255,255,255,0.12)",
+                          }}>
+                          ↺ Reset
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }).filter(Boolean)}
+              </div>
+            </div>
+          )}
           <div style={S.card}>
             <div style={S.section}>⚔ Angriffe &amp; Zauber</div>
             {equippedWeapons.length===0&&ch.attacks.length===0&&preparedSpells.length===0?(<div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",fontSize:13,padding:"16px 0"}}>Keine Waffen ausgerüstet und keine vorbereiteten Zauber</div>):<div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {equippedWeapons.map((w,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`}}><div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}><span style={{fontSize:16}}>⚔</span><div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name||"Waffe"}</div></div><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:15}}>{fmtMod(weaponAtkBonus(w))}</div></div><div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:13}}>{w.weapon.damage||"—"}</div><div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{w.weapon.damageType||""}</div></div></div></div>))}
-              {ch.attacks.map((a,i)=>(<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`}}><div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}><span style={{fontSize:16}}>🗡</span><div style={{flex:1,fontWeight:700,fontSize:13}}>{a.name||"Angriff"}</div><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80"}}>{a.bonus||"—"}</div></div><div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Schaden</div><div style={{fontWeight:700,fontSize:13}}>{a.damage||"—"}</div></div></div></div>))}
-              {preparedSpells.length>0&&<><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginTop:4,marginBottom:2}}>✨ VORBEREITETE ZAUBER</div>{preparedSpells.map((sp,i)=>(<div key={i} style={{background:"rgba(192,132,252,0.06)",borderRadius:12,border:"1px solid rgba(192,132,252,0.2)"}}><div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}><span style={{fontSize:16}}>✨</span><div style={{flex:1,fontWeight:700,fontSize:13}}>{sp.name}</div><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>{sp.level===0?"Trick":"Grad"}</div><div style={{fontWeight:800,color:"#c084fc",fontSize:14}}>{sp.level===0?"∞":sp.level}</div></div><div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Angriff</div><div style={{fontWeight:800,color:"#4ade80",fontSize:14}}>{fmtMod(ch.spellAttackBonus||0)}</div></div><div style={{width:1,height:28,background:"rgba(255,255,255,0.08)"}}/><div style={{textAlign:"center"}}><div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>SG</div><div style={{fontWeight:800,color:"#f59e0b",fontSize:14}}>{ch.spellSaveDC||8}</div></div></div></div>))}</>}
+              {equippedWeapons.map((w,i)=>{
+                const atkB = weaponAtkBonus(w);
+                const props = w.weapon?.props||[];
+                const range = w.weapon?.range;
+                const scale = w.weapon?.scale;
+                const bonus = w.weapon?.bonus;
+                return (<div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
+                  {/* Top row */}
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                    <span style={{fontSize:16}}>⚔</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:800,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name||"Waffe"}</div>
+                      {scale&&<div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:1}}>{scale}</div>}
+                    </div>
+                    <div style={{textAlign:"center",background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>ATK</div>
+                      <div style={{fontWeight:900,color:"#4ade80",fontSize:15}}>{fmtMod(atkB)}</div>
+                    </div>
+                    <div style={{width:1,height:36,background:"rgba(255,255,255,0.08)"}}/>
+                    <div style={{textAlign:"center",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>DMG</div>
+                      <div style={{fontWeight:800,fontSize:13,color:"#f87171"}}>{w.weapon.damage||"—"}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{w.weapon.damageType||""}</div>
+                    </div>
+                  </div>
+                  {/* Info row */}
+                  {(props.length>0||range||bonus>0)&&(
+                    <div style={{padding:"0 12px 8px",display:"flex",gap:5,flexWrap:"wrap"}}>
+                      {bonus>0&&<span style={{fontSize:10,fontWeight:700,color:"#c084fc",background:"rgba(192,132,252,0.1)",border:"1px solid rgba(192,132,252,0.25)",borderRadius:6,padding:"2px 7px"}}>+{bonus} mag.</span>}
+                      {range&&<span style={{fontSize:10,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",borderRadius:6,padding:"2px 7px"}}>{range}</span>}
+                      {props.map(p=><span key={p} style={{fontSize:10,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",borderRadius:6,padding:"2px 7px"}}>{p}</span>)}
+                    </div>
+                  )}
+                </div>);
+              })}
+              {ch.attacks.map((a,i)=>(
+                <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,overflow:"hidden"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                    <span style={{fontSize:16}}>🗡</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:800,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name||"Angriff"}</div>
+                      {a.type&&<div style={{fontSize:10,color:"rgba(255,255,255,0.3)",marginTop:1}}>{a.type}</div>}
+                    </div>
+                    <div style={{textAlign:"center",background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>ATK</div>
+                      <div style={{fontWeight:900,color:"#4ade80",fontSize:15}}>{a.bonus||"—"}</div>
+                    </div>
+                    <div style={{width:1,height:36,background:"rgba(255,255,255,0.08)"}}/>
+                    <div style={{textAlign:"center",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>DMG</div>
+                      <div style={{fontWeight:800,fontSize:13,color:"#f87171"}}>{a.damage||"—"}</div>
+                    </div>
+                  </div>
+                  {a.notes&&<div style={{padding:"0 12px 8px",fontSize:11,color:"rgba(255,255,255,0.4)",fontStyle:"italic"}}>{a.notes}</div>}
+                </div>
+              ))}
+              {preparedSpells.length>0&&<>
+                <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginTop:4,marginBottom:4}}>✨ VORBEREITETE ZAUBER</div>
+                {preparedSpells.map((sp,i)=>(
+                  <div key={i} style={{background:"rgba(192,132,252,0.06)",borderRadius:12,border:"1px solid rgba(192,132,252,0.2)",overflow:"hidden"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px"}}>
+                      <span style={{fontSize:16}}>✨</span>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontWeight:800,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{sp.name}</div>
+                        <div style={{fontSize:10,color:"rgba(192,132,252,0.6)",marginTop:1}}>{sp.level===0?"Zaubertrick":`${sp.level}. Grad`}</div>
+                      </div>
+                      <div style={{textAlign:"center",background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>ATK</div>
+                        <div style={{fontWeight:900,color:"#4ade80",fontSize:14}}>{fmtMod(ch.spellAttackBonus||0)}</div>
+                      </div>
+                      <div style={{width:1,height:36,background:"rgba(255,255,255,0.08)"}}/>
+                      <div style={{textAlign:"center",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>SG</div>
+                        <div style={{fontWeight:900,color:"#f59e0b",fontSize:14}}>{ch.spellSaveDC||8}</div>
+                      </div>
+                      <div style={{width:1,height:36,background:"rgba(255,255,255,0.08)"}}/>
+                      <div style={{textAlign:"center",background:"rgba(192,132,252,0.1)",border:"1px solid rgba(192,132,252,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                        <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>Grad</div>
+                        <div style={{fontWeight:900,color:"#c084fc",fontSize:14}}>{sp.level===0?"∞":sp.level}</div>
+                      </div>
+                    </div>
+                    {ch.spellcastingAbility&&(
+                      <div style={{padding:"0 12px 7px",fontSize:10,color:"rgba(255,255,255,0.3)"}}>
+                        Zaubermerkmal: <span style={{color:"rgba(192,132,252,0.7)",fontWeight:700}}>{ch.spellcastingAbility}</span>
+                        {" · "}Slots verbleibend: <span style={{color:"rgba(255,255,255,0.5)",fontWeight:700}}>{sp.level===0?"∞":(ch.spellSlots[sp.level]?.[0]??0)+"/"+( ch.spellSlots[sp.level]?.[1]??0)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </>}
             </div>}
           </div>
           <div className="skills-mobile"><SkillsMobile/></div>
@@ -3428,7 +4858,94 @@ function App(){
 
         {tab==="combat"&&<>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>{[["Max TP","maxHP"],["Akt. TP","currentHP"],["Temp TP","tempHP"],["Basis-RK","ac"],["Speed ft","speed"]].map(([l,p])=>(<div key={p} style={S.card}><Label>{l}</Label><input type="number" value={ch[p]} onChange={e=>up(p,+e.target.value)} style={{...S.input,fontSize:20,fontWeight:900,background:"transparent",border:"none",padding:"4px 0"}}/></div>))}{[["Initiative",fmtMod(statMod(effStat("dex")))],["Übungsbonus",fmtMod(pb)],["Passive Wahr.",passivePerc]].map(([l,v])=>(<div key={l} style={S.card}><div style={{fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:700}}>{l}</div><div style={{fontSize:20,fontWeight:900,color:theme.accent}}>{v}</div></div>))}</div>
-          <div style={S.card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={S.section}>🗡 Manuelle Angriffe</div><button onClick={()=>upCh(n=>{n.attacks.push({name:"",bonus:"",damage:"",type:"",notes:""});return n;})} style={{...S.btnGhost,fontSize:12,padding:"5px 12px"}}>+ Hinzufügen</button></div>{ch.attacks.length===0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.2)",fontStyle:"italic",textAlign:"center",padding:"12px 0"}}>Keine manuellen Angriffe</div>}{ch.attacks.map((a,i)=>(<div key={i} style={{...S.cardSm,background:"rgba(255,255,255,0.03)",marginBottom:10,padding:12}}><div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8,flexWrap:"wrap"}}><div style={{flex:"1 1 100px"}}><Label>Name</Label><AutoTextarea value={a.name} onChange={e=>upCh(n=>{n.attacks[i].name=e.target.value;return n;})} placeholder="z.B. Krallenangriff"/></div><div style={{width:56}}><Label>Angriff</Label><AutoTextarea value={a.bonus} onChange={e=>upCh(n=>{n.attacks[i].bonus=e.target.value;return n;})} placeholder="+5"/></div><div style={{width:72}}><Label>Schaden</Label><AutoTextarea value={a.damage} onChange={e=>upCh(n=>{n.attacks[i].damage=e.target.value;return n;})} placeholder="1d6+3"/></div><button onClick={()=>upCh(n=>{n.attacks.splice(i,1);return n;})} style={{...S.btnDanger,padding:"6px 10px"}}>✕</button></div><div style={{display:"flex",gap:8}}><div style={{flex:1}}><Label>Schadenstyp</Label><select value={a.type} onChange={e=>upCh(n=>{n.attacks[i].type=e.target.value;return n;})} style={{...S.input,fontSize:12,padding:"4px 8px"}}><option value="">— wählen —</option>{DAMAGE_TYPES.map(d=><option key={d}>{d}</option>)}</select></div><div style={{flex:1}}><Label>Zusatzinfos</Label><AutoTextarea value={a.notes||""} onChange={e=>upCh(n=>{n.attacks[i].notes=e.target.value;return n;})} placeholder="z.B. 1d6 Bonus"/></div></div></div>))}</div>
+
+          {/* ── Waffen aus Inventar + manuelle Angriffe ── */}
+          <div style={S.card}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+              <div style={S.section}>⚔ Angriffe</div>
+              <button onClick={()=>upCh(n=>{n.attacks.push({name:"",bonus:"",damage:"",type:"",notes:""});return n;})} style={{...S.btnGhost,fontSize:12,padding:"5px 12px"}}>+ Passiver Angriff</button>
+            </div>
+
+            {/* Waffen aus Inventar */}
+            {equippedWeapons.length>0&&<>
+              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:6}}>⚔ AUS INVENTAR (AUSGERÜSTET)</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+                {equippedWeapons.map((w,i)=>(
+                  <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,padding:"10px 12px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <span style={{fontSize:16}}>⚔</span>
+                      <div style={{flex:1,fontWeight:700,fontSize:13}}>{w.name||"Waffe"}</div>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <div style={{textAlign:"center",background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>ATK</div>
+                          <div style={{fontWeight:900,color:"#4ade80",fontSize:15}}>{fmtMod(weaponAtkBonus(w))}</div>
+                        </div>
+                        <div style={{textAlign:"center",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>DMG</div>
+                          <div style={{fontWeight:700,fontSize:13,color:"#f87171"}}>{w.weapon.damage||"—"}</div>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{w.weapon.damageType||""}</div>
+                        </div>
+                      </div>
+                    </div>
+                    {(w.weapon.props?.length>0||w.weapon.range)&&<div style={{marginTop:6,display:"flex",gap:5,flexWrap:"wrap"}}>
+                      {w.weapon.range&&<span style={{fontSize:10,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",borderRadius:6,padding:"2px 7px"}}>{w.weapon.range}</span>}
+                      {(w.weapon.props||[]).map(p=><span key={p} style={{fontSize:10,color:"rgba(255,255,255,0.35)",background:"rgba(255,255,255,0.05)",borderRadius:6,padding:"2px 7px"}}>{p}</span>)}
+                    </div>}
+                  </div>
+                ))}
+              </div>
+            </>}
+
+            {/* Manuelle / passive Angriffe */}
+            {ch.attacks.length>0&&<>
+              <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:6}}>🗡 PASSIVE ANGRIFFE (z.B. Krallen, Unarmed)</div>
+              <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+                {ch.attacks.map((a,i)=>(
+                  <div key={i} style={{background:"rgba(255,255,255,0.04)",borderRadius:12,border:`1px solid ${theme.border}`,padding:"10px 12px"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:a.name?6:0}}>
+                      <span style={{fontSize:16}}>🗡</span>
+                      <div style={{flex:1,fontWeight:700,fontSize:13}}>{a.name||"Angriff"}</div>
+                      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                        <div style={{textAlign:"center",background:"rgba(74,222,128,0.1)",border:"1px solid rgba(74,222,128,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>ATK</div>
+                          <div style={{fontWeight:900,color:"#4ade80",fontSize:15}}>{a.bonus||"—"}</div>
+                        </div>
+                        <div style={{textAlign:"center",background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:8,padding:"4px 10px"}}>
+                          <div style={{fontSize:9,color:"rgba(255,255,255,0.3)"}}>DMG</div>
+                          <div style={{fontWeight:700,fontSize:13,color:"#f87171"}}>{a.damage||"—"}</div>
+                          {a.type&&<div style={{fontSize:9,color:"rgba(255,255,255,0.4)"}}>{a.type}</div>}
+                        </div>
+                        <button onClick={()=>upCh(n=>{n.attacks.splice(i,1);return n;})} style={{...S.btnDanger,padding:"4px 8px",fontSize:12}}>✕</button>
+                      </div>
+                    </div>
+                    {/* Edit row */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 56px 72px",gap:6,marginTop:8}}>
+                      <div><Label>Name</Label><AutoTextarea value={a.name} onChange={e=>upCh(n=>{n.attacks[i].name=e.target.value;return n;})} placeholder="z.B. Kratzenangriff"/></div>
+                      <div><Label>ATK</Label><AutoTextarea value={a.bonus} onChange={e=>upCh(n=>{n.attacks[i].bonus=e.target.value;return n;})} placeholder="+5"/></div>
+                      <div><Label>Schaden</Label><AutoTextarea value={a.damage} onChange={e=>upCh(n=>{n.attacks[i].damage=e.target.value;return n;})} placeholder="1d4+3"/></div>
+                    </div>
+                    <div style={{display:"flex",gap:6,marginTop:6}}>
+                      <div style={{flex:1}}><Label>Typ</Label><select value={a.type} onChange={e=>upCh(n=>{n.attacks[i].type=e.target.value;return n;})} style={{...S.input,fontSize:12,padding:"4px 8px"}}><option value="">—</option>{DAMAGE_TYPES.map(d=><option key={d}>{d}</option>)}</select></div>
+                      <div style={{flex:1}}><Label>Notiz</Label><AutoTextarea value={a.notes||""} onChange={e=>upCh(n=>{n.attacks[i].notes=e.target.value;return n;})} placeholder="z.B. einmal/Runde"/></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>}
+
+            {/* Empty state with tip */}
+            {equippedWeapons.length===0&&ch.attacks.length===0&&(
+              <div style={{textAlign:"center",padding:"20px 16px",background:"rgba(255,255,255,0.02)",borderRadius:12,border:"1px dashed rgba(255,255,255,0.1)"}}>
+                <div style={{fontSize:28,marginBottom:8}}>⚔</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.35)",marginBottom:12}}>
+                  Noch keine Angriffe. Rüste eine Waffe aus dem Inventar aus, oder füge einen passiven Angriff hinzu (z.B. Tabaxi-Krallen, Unarmed Strike).
+                </div>
+                <button onClick={()=>upCh(n=>{n.attacks.push({name:"",bonus:"",damage:"",type:"",notes:""});return n;})} style={{...S.btnGhost,fontSize:12,padding:"7px 16px"}}>
+                  + Passiven Angriff eintragen
+                </button>
+              </div>
+            )}
+          </div>
         </>}
 
         {tab==="spells"&&<>
@@ -3438,12 +4955,385 @@ function App(){
 
         {tab==="inventory"&&<>
           <div style={S.card}><Wallet currency={ch.currency} onUpdate={c=>upCh(n=>{n.currency=c;return n;})} theme={theme}/></div>
-          <div style={S.card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={S.section}>🎒 Inventar</div><button onClick={()=>{upCh(n=>{n.inventory.push({...DEFAULT_ITEM});return n;});setExpandedItem(ch.inventory.length);}} style={{...S.btnPrimary,fontSize:12,padding:"6px 14px"}}>+ Gegenstand</button></div>{ch.inventory.length===0?(<div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",padding:"32px 0",fontSize:13}}>Inventar ist leer</div>):<div style={{display:"flex",flexDirection:"column",gap:8}}>{ch.inventory.map((it,i)=>(<div key={i} style={{...S.cardSm,border:`1px solid ${it.equipped?`${theme.accent}55`:theme.border}`,padding:0,overflow:"hidden"}}><div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 10px",flexWrap:"wrap"}}>{(it.type==="weapon"||it.type==="armor"||it.type==="shield"||it.type==="magic")&&(<button onClick={()=>upCh(n=>{n.inventory[i].equipped=!n.inventory[i].equipped;return n;})} style={{background:"transparent",border:"none",cursor:"pointer",fontSize:16,padding:0,opacity:it.equipped?1:0.3}}>{it.type==="weapon"?"⚔":it.type==="armor"?"🛡":it.type==="shield"?"🔰":"✨"}</button>)}{(it.type==="potion"||it.type==="misc")&&<span style={{fontSize:16,opacity:0.5}}>{it.type==="potion"?"🧪":"📦"}</span>}<select value={it.type} onChange={e=>upCh(n=>{n.inventory[i].type=e.target.value;n.inventory[i].equipped=false;return n;})} style={{...S.input,width:"auto",fontSize:11,padding:"2px 6px"}}>{ITEM_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select><input type="text" value={it.name} onChange={e=>upCh(n=>{n.inventory[i].name=e.target.value;return n;})} placeholder="Name" style={{...S.input,flex:1,minWidth:80}}/><input type="number" min="1" value={it.qty} onChange={e=>upCh(n=>{n.inventory[i].qty=+e.target.value;return n;})} style={{...S.input,width:44,textAlign:"center",padding:"4px"}} title="Anzahl"/><button onClick={()=>setExpandedItem(expandedItem===i?null:i)} style={{background:"transparent",border:"none",cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:12,padding:"0 3px"}}>{expandedItem===i?"▲":"▼"}</button><button onClick={()=>{upCh(n=>{n.inventory.splice(i,1);return n;});if(expandedItem===i)setExpandedItem(null);}} style={{...S.btnDanger,padding:"4px 8px",fontSize:12}}>✕</button></div>{it.equipped&&<div style={{padding:"2px 10px 5px",fontSize:11,color:theme.accent,fontWeight:600}}>✓ Ausgerüstet</div>}{expandedItem===i&&<div style={{padding:"0 10px 10px"}}><ItemDetail it={it} i={i}/></div>}</div>))}<div style={{textAlign:"right",fontSize:11,color:"rgba(255,255,255,0.25)",paddingTop:4}}>Gewicht: {ch.inventory.reduce((s,it)=>s+(it.weight*it.qty),0).toFixed(1)} / {ch.stats.str*15} lbs</div></div>}</div>
+          <div style={S.card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><div style={S.section}>🎒 Inventar</div><button onClick={()=>{upCh(n=>{n.inventory.push({...DEFAULT_ITEM});return n;});setExpandedItem(ch.inventory.length);}} style={{...S.btnPrimary,fontSize:12,padding:"6px 14px"}}>+ Gegenstand</button></div>
+            {ch.inventory.length===0
+              ? <div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",padding:"32px 0",fontSize:13}}>Inventar ist leer</div>
+              : <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {ch.inventory.map((it,i)=>{
+                    const canEquip = it.type==="weapon"||it.type==="armor"||it.type==="shield"||it.type==="magic";
+                    const typeColors = { weapon:"#f87171", armor:"#60a5fa", shield:"#4ade80", magic:"#c084fc", potion:"#fbbf24", misc:"rgba(255,255,255,0.4)" };
+                    const typeEmojis = { weapon:"⚔", armor:"🛡", shield:"🔰", magic:"✨", potion:"🧪", misc:"📦" };
+                    const col = it.equipped ? typeColors[it.type] || theme.accent : "rgba(255,255,255,0.15)";
+                    return (
+                      <div key={i} style={{
+                        borderRadius:14, overflow:"hidden",
+                        border:`2px solid ${it.equipped ? col+"88" : "rgba(255,255,255,0.08)"}`,
+                        background: it.equipped ? `${col}0d` : theme.card,
+                        transition:"all 0.2s",
+                      }}>
+                        {/* ── TOP ROW ── */}
+                        <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 12px"}}>
+                          {/* Type icon */}
+                          <div style={{
+                            width:32, height:32, borderRadius:8, flexShrink:0,
+                            display:"flex", alignItems:"center", justifyContent:"center",
+                            fontSize:16,
+                            background: it.equipped ? `${col}22` : "rgba(255,255,255,0.06)",
+                            border:`1px solid ${it.equipped ? col+"55" : "rgba(255,255,255,0.1)"}`,
+                          }}>{typeEmojis[it.type]||"📦"}</div>
+
+                          {/* Name + type */}
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+                              <input type="text" value={it.name}
+                                onChange={e=>upCh(n=>{n.inventory[i].name=e.target.value;return n;})}
+                                placeholder="Name"
+                                style={{...S.input,flex:1,minWidth:80,fontSize:13,fontWeight:700,
+                                  padding:"3px 8px",
+                                  color: it.equipped ? col : "white",
+                                  border:`1px solid ${it.equipped ? col+"44" : "rgba(255,255,255,0.12)"}`,
+                                }}/>
+                              <input type="number" min="1" value={it.qty}
+                                onChange={e=>upCh(n=>{n.inventory[i].qty=+e.target.value;return n;})}
+                                style={{...S.input,width:44,textAlign:"center",padding:"3px 4px",fontSize:12}}
+                                title="Anzahl"/>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:6,marginTop:4}}>
+                              <select value={it.type}
+                                onChange={e=>upCh(n=>{n.inventory[i].type=e.target.value;n.inventory[i].equipped=false;return n;})}
+                                style={{...S.input,width:"auto",fontSize:10,padding:"1px 5px"}}>
+                                {ITEM_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div style={{display:"flex",flexDirection:"column",gap:4,flexShrink:0}}>
+                            {canEquip && (() => {
+                              // ── Handsystem ──
+                              // Berechne belegte Hände ohne dieses Item
+                              const handsUsed = ch.inventory.reduce((sum, x, j) => {
+                                if (j === i || !x.equipped) return sum;
+                                if (x.type === "shield") return sum + 1;
+                                if (x.type === "misc" && /fackel|torch/i.test(x.name)) return sum + 1;
+                                if (x.type === "weapon") {
+                                  const twoH = (x.weapon?.props||[]).some(p => p === "Zweihändig" || p.startsWith("Zweihändig"));
+                                  return sum + (twoH ? 2 : 1);
+                                }
+                                return sum;
+                              }, 0);
+                              const thisHands = it.type === "shield" ? 1
+                                : it.type === "misc" && /fackel|torch/i.test(it.name) ? 1
+                                : it.type === "weapon"
+                                  ? ((it.weapon?.props||[]).some(p => p === "Zweihändig" || p.startsWith("Zweihändig")) ? 2 : 1)
+                                : 0; // armor/magic = keine Hände
+                              const needsHands = thisHands > 0;
+                              const blocked = !it.equipped && needsHands && (handsUsed + thisHands > 2);
+                              const handsAfter = handsUsed + thisHands;
+                              const conflictMsg = blocked
+                                ? thisHands === 2
+                                  ? `Zweihänder – braucht 2 Hände (${handsUsed}/2 belegt)`
+                                  : `Keine Hand frei (${handsUsed}/2 belegt)`
+                                : null;
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      if (it.equipped) {
+                                        upCh(n => { n.inventory[i].equipped = false; return n; });
+                                      } else if (!blocked) {
+                                        upCh(n => { n.inventory[i].equipped = true; return n; });
+                                      }
+                                    }}
+                                    title={conflictMsg || ""}
+                                    style={{
+                                      padding:"5px 10px", borderRadius:8,
+                                      cursor: blocked ? "not-allowed" : "pointer",
+                                      fontFamily:"inherit", fontWeight:800, fontSize:11,
+                                      transition:"all 0.15s", whiteSpace:"nowrap",
+                                      background: it.equipped ? `${col}22` : blocked ? "rgba(248,113,113,0.08)" : "rgba(255,255,255,0.06)",
+                                      color:      it.equipped ? col : blocked ? "#f87171" : "rgba(255,255,255,0.45)",
+                                      border:`1px solid ${it.equipped ? col+"66" : blocked ? "rgba(248,113,113,0.3)" : "rgba(255,255,255,0.12)"}`,
+                                    }}>
+                                    {it.equipped ? "✓ Ausgerüstet" : blocked ? "✗ Kein Platz" : "Ausrüsten"}
+                                  </button>
+                                  {it.equipped && (
+                                    <button
+                                      onClick={()=>upCh(n=>{n.inventory[i].equipped=false;return n;})}
+                                      style={{
+                                        padding:"4px 10px", borderRadius:8, cursor:"pointer",
+                                        fontFamily:"inherit", fontWeight:700, fontSize:10,
+                                        whiteSpace:"nowrap", transition:"all 0.15s",
+                                        background:"rgba(255,255,255,0.05)",
+                                        color:"rgba(255,255,255,0.35)",
+                                        border:"1px solid rgba(255,255,255,0.1)",
+                                      }}>
+                                      Ablegen
+                                    </button>
+                                  )}
+                                  {needsHands && (
+                                    <div style={{fontSize:10,color:"rgba(255,255,255,0.25)",textAlign:"center"}}>
+                                      {it.equipped
+                                        ? `${thisHands === 2 ? "🤲" : "✋"} ${thisHands}H · ${handsUsed + thisHands}/2 belegt`
+                                        : blocked
+                                          ? <span style={{color:"#f87171"}}>{conflictMsg}</span>
+                                          : `${thisHands}H · ${handsUsed}/2 belegt`
+                                      }
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+                            <div style={{display:"flex",gap:4}}>
+                              <button onClick={()=>setExpandedItem(expandedItem===i?null:i)}
+                                style={{flex:1,background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
+                                  borderRadius:7,padding:"4px 6px",cursor:"pointer",
+                                  color:"rgba(255,255,255,0.4)",fontSize:11,fontFamily:"inherit"}}>
+                                {expandedItem===i?"▲":"▼"}
+                              </button>
+                              <button onClick={()=>{upCh(n=>{n.inventory.splice(i,1);return n;});if(expandedItem===i)setExpandedItem(null);}}
+                                style={{...S.btnDanger,padding:"4px 8px",fontSize:11}}>✕</button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── WEAPON STAT BAR ── */}
+                        {it.type==="weapon"&&it.weapon?.damage&&(
+                          <div style={{
+                            display:"flex",gap:6,padding:"6px 12px 8px",
+                            borderTop:`1px solid ${it.equipped ? col+"33" : "rgba(255,255,255,0.05)"}`,
+                          }}>
+                            <div style={{display:"flex",alignItems:"center",gap:5,
+                              background:it.equipped?"rgba(74,222,128,0.12)":"rgba(255,255,255,0.05)",
+                              border:`1px solid ${it.equipped?"rgba(74,222,128,0.3)":"rgba(255,255,255,0.1)"}`,
+                              borderRadius:8,padding:"3px 9px"}}>
+                              <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:700}}>ATK</span>
+                              <span style={{fontSize:13,fontWeight:900,color:it.equipped?"#4ade80":"rgba(255,255,255,0.5)"}}>{fmtMod(weaponAtkBonus(it))}</span>
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:5,
+                              background:it.equipped?"rgba(248,113,113,0.12)":"rgba(255,255,255,0.05)",
+                              border:`1px solid ${it.equipped?"rgba(248,113,113,0.3)":"rgba(255,255,255,0.1)"}`,
+                              borderRadius:8,padding:"3px 9px"}}>
+                              <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:700}}>DMG</span>
+                              <span style={{fontSize:13,fontWeight:900,color:it.equipped?"#f87171":"rgba(255,255,255,0.5)"}}>
+                                {it.weapon.damage}{it.weapon.damageType?` ${it.weapon.damageType}`:""}
+                              </span>
+                            </div>
+                            {it.weapon.scale&&<div style={{display:"flex",alignItems:"center",
+                              background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",
+                              borderRadius:8,padding:"3px 8px"}}>
+                              <span style={{fontSize:10,color:"rgba(255,255,255,0.3)",fontWeight:700}}>{it.weapon.scale}</span>
+                            </div>}
+                            {(it.weapon.props||[]).length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                              {it.weapon.props.map(p=><span key={p} style={{fontSize:10,color:"rgba(255,255,255,0.3)",
+                                background:"rgba(255,255,255,0.04)",borderRadius:6,padding:"3px 7px"}}>{p}</span>)}
+                            </div>}
+                          </div>
+                        )}
+
+                        {/* ── ARMOR STAT BAR ── */}
+                        {(it.type==="armor"||it.type==="shield")&&(
+                          <div style={{
+                            display:"flex",gap:6,padding:"6px 12px 8px",
+                            borderTop:`1px solid ${it.equipped ? col+"33" : "rgba(255,255,255,0.05)"}`,
+                          }}>
+                            <div style={{display:"flex",alignItems:"center",gap:5,
+                              background:it.equipped?"rgba(96,165,250,0.12)":"rgba(255,255,255,0.05)",
+                              border:`1px solid ${it.equipped?"rgba(96,165,250,0.3)":"rgba(255,255,255,0.1)"}`,
+                              borderRadius:8,padding:"3px 9px"}}>
+                              <span style={{fontSize:10,color:"rgba(255,255,255,0.4)",fontWeight:700}}>RK</span>
+                              <span style={{fontSize:13,fontWeight:900,color:it.equipped?"#60a5fa":"rgba(255,255,255,0.5)"}}>
+                                {it.type==="armor"
+                                  ? `${it.armor?.ac||10}${it.armor?.bonus?` +${it.armor.bonus}`:""}`
+                                  : `+${it.shield?.acBonus||2}`}
+                              </span>
+                            </div>
+                            {it.type==="armor"&&it.armor?.stealthDisadv&&(
+                              <div style={{display:"flex",alignItems:"center",gap:4,
+                                background:"rgba(248,113,113,0.08)",border:"1px solid rgba(248,113,113,0.2)",
+                                borderRadius:8,padding:"3px 9px"}}>
+                                <span style={{fontSize:10,color:"#f87171",fontWeight:700}}>⚠ Heimlichkeit</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── EXPANDED DETAIL ── */}
+                        {expandedItem===i&&<div style={{padding:"0 12px 12px",borderTop:`1px solid ${it.equipped?col+"22":"rgba(255,255,255,0.05)"}`}}><ItemDetail it={it} i={i}/></div>}
+                      </div>
+                    );
+                  })}
+                  <div style={{textAlign:"right",fontSize:11,color:"rgba(255,255,255,0.25)",paddingTop:4}}>
+                    Gewicht: {ch.inventory.reduce((s,it)=>s+(it.weight*it.qty),0).toFixed(1)} / {ch.stats.str*15} lbs
+                  </div>
+                </div>
+            }
+          </div>
         </>}
 
         {tab==="features"&&<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><div style={S.section}>✨ Features &amp; Klassenmerkmale</div><div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginTop:-6,marginBottom:10}}>Attribut- &amp; Fertigkeitsboni werden überall eingerechnet.</div></div><button onClick={()=>upCh(n=>{n.featureList.push({...DEFAULT_FEATURE});return n;})} style={{...S.btnPrimary,fontSize:12,padding:"6px 14px"}}>+ Feature</button></div>
-          {ch.featureList.length===0?(<div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",padding:"40px 0",fontSize:13}}>Noch keine Features</div>):ch.featureList.map((f,i)=>(<div key={i} style={{...S.card,opacity:f.active!==false?1:0.45}}><div style={{display:"flex",gap:10,alignItems:"flex-start"}}><input type="checkbox" checked={f.active!==false} onChange={e=>upCh(n=>{n.featureList[i].active=e.target.checked;return n;})} style={{accentColor:theme.accent,marginTop:4}}/><div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><Label>Schlagwort</Label><AutoTextarea value={f.keyword||""} onChange={e=>upCh(n=>{n.featureList[i].keyword=e.target.value;return n;})} placeholder="z.B. Sneak Attack"/></div><div><Label>Typ</Label><select value={f.type} onChange={e=>upCh(n=>{n.featureList[i].type=e.target.value;n.featureList[i].target="";return n;})} style={S.input}>{FEATURE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></div><div style={{gridColumn:"1/-1"}}><Label>Beschreibung</Label><AutoTextarea value={f.desc||""} onChange={e=>upCh(n=>{n.featureList[i].desc=e.target.value;return n;})} placeholder="Wie funktioniert es?" minRows={2}/></div>{f.type!=="passive"&&f.type!=="other"&&f.type!=="resistance"&&f.type!=="advantage"&&f.type!=="disadvantage"&&(<div><Label>{f.type==="extra_attack"?"Anzahl":f.type==="bonus_damage"||f.type==="sneak_attack"?"Würfel":"Bonus +X"}</Label><AutoTextarea value={f.value} onChange={e=>upCh(n=>{n.featureList[i].value=e.target.value;return n;})} placeholder={f.type==="extra_attack"?"1":f.type==="bonus_damage"||f.type==="sneak_attack"?"2d6":"2"}/></div>)}{f.type==="stat_bonus"?(<div><Label>Attribut</Label><select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} style={S.input}><option value="">— wählen —</option>{SAVES.map(s=><option key={s} value={s}>{STAT_NAMES[s]}</option>)}</select></div>):f.type==="skill_bonus"?(<div><Label>Fertigkeit</Label><select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} style={S.input}><option value="">— wählen —</option>{SKILLS.map(s=><option key={s.name} value={s.name}>{s.name}</option>)}</select></div>):(<div><Label>Notiz</Label><AutoTextarea value={f.note} onChange={e=>upCh(n=>{n.featureList[i].note=e.target.value;return n;})} placeholder="z.B. einmal pro Runde"/></div>)}</div><button onClick={()=>upCh(n=>{n.featureList.splice(i,1);return n;})} style={{...S.btnDanger,padding:"4px 10px",fontSize:13}}>✕</button></div></div>))}
+
+          {/* ── Ki-Fähigkeiten Sektion ── */}
+          {ch.featureList.some(f=>f.type==="ki_pool"&&f.active!==false)&&(()=>{
+            const charLevel = ch.classes.reduce((s,c)=>s+(c.level||0),0)||1;
+            // Welcher Pool ist aktiv?
+            const pool = Object.values(KNOWN_RESOURCE_POOLS).find(p =>
+              p.type==="ki_pool" && p.abilities.length > 0 &&
+              ch.featureList.some(f=>f.type==="ki_pool"&&p.keywords.some(kw=>((f.keyword||"")+(f.desc||"")).toLowerCase().includes(kw)))
+            );
+            const futureAbils = pool ? pool.abilities.filter(ab=>(ab.minLevel||1)>charLevel) : [];
+            return (
+              <div style={{...S.card,border:"2px solid rgba(56,189,248,0.35)",background:"rgba(56,189,248,0.05)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:14,color:"#38bdf8"}}>⚡ Ki-Fähigkeiten</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",marginTop:2}}>Werden automatisch beim Level-Up hinzugefügt</div>
+                  </div>
+                  <button onClick={()=>upCh(n=>{n.featureList.push({...DEFAULT_FEATURE,type:"ki_ability",kiCost:1,kiAction:"Bonus-Aktion",active:true});return n;})}
+                    style={{fontSize:11,padding:"5px 12px",borderRadius:8,cursor:"pointer",fontFamily:"inherit",fontWeight:700,
+                      background:"rgba(56,189,248,0.15)",color:"#38bdf8",border:"1px solid rgba(56,189,248,0.35)"}}>
+                    + Manuell
+                  </button>
+                </div>
+
+                {/* Aktuelle Ki-Fähigkeiten (editierbar) */}
+                {ch.featureList.filter(f=>f.type==="ki_ability").length===0
+                  ? <div style={{fontSize:12,color:"rgba(255,255,255,0.25)",fontStyle:"italic",marginBottom:futureAbils.length?10:0}}>Noch keine Ki-Fähigkeiten für dieses Level.</div>
+                  : ch.featureList.map((f,i)=>{
+                    if(f.type!=="ki_ability") return null;
+                    return (
+                      <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",padding:"8px 10px",borderRadius:10,marginBottom:6,
+                        background:f.active!==false?"rgba(56,189,248,0.07)":"rgba(255,255,255,0.02)",
+                        border:`1px solid ${f.active!==false?"rgba(56,189,248,0.2)":"rgba(255,255,255,0.07)"}`,
+                        opacity:f.active!==false?1:0.45}}>
+                        <input type="checkbox" checked={f.active!==false}
+                          onChange={e=>upCh(n=>{n.featureList[i].active=e.target.checked;return n;})}
+                          style={{accentColor:"#38bdf8",marginTop:3,flexShrink:0}} title="In Übersicht anzeigen"/>
+                        <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 60px 1fr",gap:8,alignItems:"start"}}>
+                          <div><Label>Name</Label>
+                            <AutoTextarea value={f.keyword||""} onChange={e=>upCh(n=>{n.featureList[i].keyword=e.target.value;return n;})} placeholder="Flurry of Blows"/>
+                          </div>
+                          <div><Label>Ki-Kosten</Label>
+                            <input type="number" min="0" max="10" value={f.kiCost??1}
+                              onChange={e=>upCh(n=>{n.featureList[i].kiCost=+e.target.value;return n;})}
+                              style={{...S.input,textAlign:"center",padding:"4px"}}/>
+                          </div>
+                          <div><Label>Aktion</Label>
+                            <select value={f.kiAction||"Bonus-Aktion"} onChange={e=>upCh(n=>{n.featureList[i].kiAction=e.target.value;return n;})} style={S.input}>
+                              {["Bonus-Aktion","Aktion","Reaktion","Nach Treffer","Passiv"].map(a=><option key={a}>{a}</option>)}
+                            </select>
+                          </div>
+                          <div style={{gridColumn:"1/-1"}}><Label>Beschreibung</Label>
+                            <AutoTextarea value={f.desc||""} onChange={e=>upCh(n=>{n.featureList[i].desc=e.target.value;return n;})} placeholder="Was macht diese Fähigkeit?" minRows={1}/>
+                          </div>
+                        </div>
+                        <button onClick={()=>upCh(n=>{n.featureList.splice(i,1);return n;})} style={{...S.btnDanger,padding:"4px 8px",fontSize:11,flexShrink:0}}>✕</button>
+                      </div>
+                    );
+                  })
+                }
+
+                {/* Zukünftige Fähigkeiten – gesperrt */}
+                {futureAbils.length>0&&(
+                  <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid rgba(255,255,255,0.07)"}}>
+                    <div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.2)",letterSpacing:"0.06em",marginBottom:6}}>🔒 NOCH NICHT VERFÜGBAR</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                      {futureAbils.map(ab=>(
+                        <div key={ab.name} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 10px",borderRadius:8,
+                          background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.05)",opacity:0.5}}>
+                          <span style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.3)",flex:1}}>{ab.name}</span>
+                          <span style={{fontSize:10,color:"rgba(255,255,255,0.2)",fontWeight:600}}>Ab Level {ab.minLevel}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          {ch.featureList.length===0
+            ?(<div style={{textAlign:"center",color:"rgba(255,255,255,0.2)",padding:"40px 0",fontSize:13}}>Noch keine Features</div>)
+            :ch.featureList.map((f,i)=>{
+              const isLU = f.type==="limited_use";
+              const usesLeft = f.usesLeft ?? f.maxUses ?? 1;
+              const maxUses  = f.maxUses ?? 1;
+              const resetLabel = RESET_TYPES.find(r=>r.value===f.resetOn)?.label || "🌙 Lange Rast";
+              return (
+                <div key={i} style={{...S.card,
+                  opacity:f.active!==false?1:0.45,
+                  border:`1px solid ${isLU?(usesLeft>0?`${theme.accent}55`:"rgba(248,113,113,0.3)"):theme.border}`,
+                  background:isLU?(usesLeft>0?`${theme.accent}08`:"rgba(248,113,113,0.06)"):theme.card,
+                }}>
+                  <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                    <input type="checkbox" checked={f.active!==false}
+                      onChange={e=>upCh(n=>{n.featureList[i].active=e.target.checked;return n;})}
+                      style={{accentColor:theme.accent,marginTop:4}}/>
+                    <div style={{flex:1,display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                      <div><Label>Schlagwort</Label><AutoTextarea value={f.keyword||""} onChange={e=>upCh(n=>{n.featureList[i].keyword=e.target.value;const upd=autoClassifyFeature({...n.featureList[i]});if(upd.type!==n.featureList[i].type&&(n.featureList[i].type==="passive"||n.featureList[i].type==="other"))n.featureList[i]={...upd};else n.featureList[i].keyword=e.target.value;return n;})} placeholder="z.B. Sneak Attack"/></div>
+                      <div><Label>Typ</Label><select value={f.type} onChange={e=>upCh(n=>{n.featureList[i].type=e.target.value;n.featureList[i].target="";return n;})} style={S.input}>{FEATURE_TYPES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select></div>
+                      <div style={{gridColumn:"1/-1"}}><Label>Beschreibung</Label><AutoTextarea value={f.desc||""} onChange={e=>upCh(n=>{n.featureList[i].desc=e.target.value;const upd=autoClassifyFeature({...n.featureList[i]});if(upd.type!==n.featureList[i].type&&(n.featureList[i].type==="passive"||n.featureList[i].type==="other")){n.featureList[i]={...upd};}else{n.featureList[i].desc=e.target.value;}return n;})} placeholder="Wie funktioniert es?" minRows={2}/></div>
+
+                      {/* Limited Use fields */}
+                      {isLU && <>
+                        <div>
+                          <Label>Max. Nutzungen</Label>
+                          <input type="number" min="1" max="20" value={f.maxUses||1}
+                            onChange={e=>upCh(n=>{const v=Math.max(1,+e.target.value);n.featureList[i].maxUses=v;n.featureList[i].usesLeft=Math.min(n.featureList[i].usesLeft??v,v);return n;})}
+                            style={S.input}/>
+                        </div>
+                        <div>
+                          <Label>Reset bei</Label>
+                          <select value={f.resetOn||"long"} onChange={e=>upCh(n=>{n.featureList[i].resetOn=e.target.value;return n;})} style={S.input}>
+                            {RESET_TYPES.map(r=><option key={r.value} value={r.value}>{r.label}</option>)}
+                          </select>
+                        </div>
+                        {/* Manual reset button */}
+                        <div style={{gridColumn:"1/-1",display:"flex",alignItems:"center",gap:8}}>
+                          <button onClick={()=>upCh(n=>{n.featureList[i].usesLeft=Math.max(0,(n.featureList[i].usesLeft??1)-1);return n;})}
+                            disabled={usesLeft<=0}
+                            style={{background:usesLeft>0?"rgba(248,113,113,0.15)":"rgba(255,255,255,0.05)",
+                              color:usesLeft>0?"#f87171":"rgba(255,255,255,0.2)",
+                              border:`1px solid ${usesLeft>0?"rgba(248,113,113,0.3)":"rgba(255,255,255,0.08)"}`,
+                              borderRadius:8,padding:"5px 12px",cursor:usesLeft>0?"pointer":"not-allowed",
+                              fontSize:12,fontWeight:800,fontFamily:"inherit"}}>
+                            − Verwenden
+                          </button>
+                          <button onClick={()=>upCh(n=>{n.featureList[i].usesLeft=n.featureList[i].maxUses||1;return n;})}
+                            style={{...S.btnGhost,fontSize:12,padding:"5px 12px"}}>↺ Reset</button>
+                          <div style={{display:"flex",gap:4,marginLeft:4,flexWrap:"wrap"}}>
+                            {Array.from({length:maxUses}).map((_,di)=>(
+                              <div key={di} onClick={()=>upCh(n=>{n.featureList[i].usesLeft=maxUses-di;return n;})}
+                                style={{width:18,height:18,borderRadius:"50%",cursor:"pointer",transition:"all 0.15s",
+                                  background:di<usesLeft?theme.accent:"rgba(255,255,255,0.1)",
+                                  border:`2px solid ${di<usesLeft?theme.accent:"rgba(255,255,255,0.15)"}`,
+                                  boxShadow:di<usesLeft?`0 0 6px ${theme.accent}88`:"none"}}/>
+                            ))}
+                          </div>
+                          <span style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginLeft:4}}>
+                            {usesLeft}/{maxUses} · {resetLabel}
+                          </span>
+                        </div>
+                      </>}
+
+                      {/* Non-limited-use fields */}
+                      {!isLU && <>
+                        {f.type!=="passive"&&f.type!=="other"&&f.type!=="resistance"&&f.type!=="advantage"&&f.type!=="disadvantage"&&(
+                          <div><Label>{f.type==="extra_attack"?"Anzahl":f.type==="bonus_damage"||f.type==="sneak_attack"?"Würfel":"Bonus +X"}</Label>
+                            <AutoTextarea value={f.value} onChange={e=>upCh(n=>{n.featureList[i].value=e.target.value;return n;})}
+                              placeholder={f.type==="extra_attack"?"1":f.type==="bonus_damage"||f.type==="sneak_attack"?"2d6":"2"}/></div>
+                        )}
+                        {f.type==="stat_bonus"?(<div><Label>Attribut</Label><select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} style={S.input}><option value="">— wählen —</option>{SAVES.map(s=><option key={s} value={s}>{STAT_NAMES[s]}</option>)}</select></div>)
+                         :f.type==="skill_bonus"?(<div><Label>Fertigkeit</Label><select value={f.target} onChange={e=>upCh(n=>{n.featureList[i].target=e.target.value;return n;})} style={S.input}><option value="">— wählen —</option>{SKILLS.map(s=><option key={s.name} value={s.name}>{s.name}</option>)}</select></div>)
+                         :(<div><Label>Notiz</Label><AutoTextarea value={f.note} onChange={e=>upCh(n=>{n.featureList[i].note=e.target.value;return n;})} placeholder="z.B. einmal pro Runde"/></div>)}
+                      </>}
+                    </div>
+                    <button onClick={()=>upCh(n=>{n.featureList.splice(i,1);return n;})} style={{...S.btnDanger,padding:"4px 10px",fontSize:13}}>✕</button>
+                  </div>
+                </div>
+              );
+            })
+          }
         </>}
 
         {tab==="notes"&&<>
