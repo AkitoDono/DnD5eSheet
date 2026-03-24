@@ -18,18 +18,41 @@
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
     .stat-grid-6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; }
     .stat-grid-rk { display: grid; grid-template-columns: 52px repeat(6,1fr); gap: 6px; }
-    @media (max-width: 480px) {
-      .stat-grid-6 { grid-template-columns: repeat(3,1fr); gap: 8px; }
-      .stat-grid-rk { grid-template-columns: repeat(3,1fr); gap: 8px; }
-      .rk-box-desktop { display: none !important; }
-      .rk-box-mobile { display: flex !important; }
-      .overview-grid { grid-template-columns: 1fr !important; }
-      .skills-sidebar { display: none !important; }
-      .skills-mobile { display: block !important; }
-    }
     .rk-box-mobile { display: none; }
     .skills-mobile { display: none; }
-    @media (min-width: 481px) { .skills-mobile { display: none !important; } }
+    /* ── Mobile ≤ 600px ── */
+    @media (max-width: 600px) {
+      .stat-grid-6  { grid-template-columns: repeat(3,1fr); gap: 6px; }
+      .stat-grid-rk { grid-template-columns: repeat(3,1fr); gap: 6px; }
+      .rk-box-desktop { display: none !important; }
+      .rk-box-mobile  { display: flex !important; }
+      .overview-grid  { grid-template-columns: 1fr !important; }
+      .skills-sidebar { display: none !important; }
+      .skills-mobile  { display: block !important; }
+      /* Tab-Bar scrollbar */
+      .tab-bar { overflow-x: auto !important; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .tab-bar::-webkit-scrollbar { display: none; }
+      /* Wizard Nav: Stack buttons vertically */
+      .wizard-nav { flex-direction: column !important; }
+      .wizard-nav button { width: 100% !important; }
+      /* Feature-Tags: volle Breite auf Mobile */
+      .feature-tags { flex-direction: column !important; }
+      .feature-tags > div { max-width: 100% !important; width: 100% !important; }
+      /* Inventar Action-Column */
+      .inv-action-col { flex-direction: row !important; flex-wrap: wrap !important; }
+      /* Charakter-Karte im Wizard breiter */
+      .wizard-card-grid { grid-template-columns: 1fr !important; }
+      /* Equipment Preview Box */
+      .rk-preview-row { gap: 12px !important; padding: 12px !important; }
+      /* Ki-Ability Rows */
+      .ki-ability-row { flex-wrap: wrap !important; }
+      .ki-ability-row button { align-self: flex-start !important; }
+      /* Generelle Karten-Padding-Reduktion */
+      .sheet-card { padding: 10px 10px !important; }
+      /* Limited-Use Feature Row */
+      .lu-row { flex-wrap: wrap !important; gap: 8px !important; }
+    }
+    @media (min-width: 601px) { .skills-mobile { display: none !important; } }
     @keyframes flyIn{0%{transform:translateY(-300px) scale(0.5);opacity:0}60%{transform:translateY(20px) scale(1.08);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
     @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
@@ -1273,9 +1296,9 @@ function WizardEquipmentStep({ cls, stats, theme, selectedEquipment, onEquipment
       </div>
 
       {/* Live RK */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:20,
+      <div className="rk-preview-row" style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:20,
         background:"rgba(255,255,255,0.04)", borderRadius:16,
-        border:`2px solid ${theme.accent}55`, padding:"14px 20px" }}>
+        border:`2px solid ${theme.accent}55`, padding:"14px 20px", flexWrap:"wrap" }}>
         <div style={{ textAlign:"center" }}>
           <div style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.3)", letterSpacing:"0.07em" }}>RÜSTUNGSKLASSE</div>
           <div style={{ fontSize:48, fontWeight:900, color:theme.accent, lineHeight:1.1 }}>{currentAC}</div>
@@ -2947,7 +2970,7 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:theme.bg, color:"white", padding:"16px 14px" }}>
+    <div style={{ minHeight:"100vh", background:theme.bg, color:"white", padding:"12px 10px" }}>
       {/* Unterrassen-Modal */}
       {subraceModalRace && (
         <SubraceModal
@@ -3017,7 +3040,7 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
         </div>
 
         {currentStep.id !== "summary" && (
-          <div style={{ display:"flex", gap:10, marginTop:14 }}>
+          <div className="wizard-nav" style={{ display:"flex", gap:10, marginTop:14 }}>
             {step > 0 && (
               <button onClick={handleBack}
                 style={{ background:"rgba(255,255,255,0.07)", color:"rgba(255,255,255,0.7)",
@@ -4526,11 +4549,11 @@ function App(){
       </div>
     </div>
 
-    <div style={{position:"relative",zIndex:1,display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:3,padding:"8px 10px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-      {tabs.map(([id,label])=>(<button key={id} onClick={()=>setTab(id)} style={{padding:"7px 4px",fontSize:11,fontWeight:700,borderRadius:8,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(255,255,255,0.07)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",background:tab===id?`${theme.accent}18`:"rgba(255,255,255,0.03)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>{label}</button>))}
+    <div className="tab-bar" style={{position:"relative",zIndex:1,display:"flex",gap:3,padding:"8px 10px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
+      {tabs.map(([id,label])=>(<button key={id} onClick={()=>setTab(id)} style={{padding:"7px 8px",fontSize:11,fontWeight:700,borderRadius:8,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(255,255,255,0.07)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",flexShrink:0,background:tab===id?`${theme.accent}18`:"rgba(255,255,255,0.03)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>{label}</button>))}
     </div>
 
-    <div style={{position:"relative",zIndex:1,padding:"12px 12px",maxWidth:900,margin:"0 auto"}}>
+    <div style={{position:"relative",zIndex:1,padding:"10px 8px",maxWidth:900,margin:"0 auto"}}>
       {tab==="overview"&&(<div className="overview-grid" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:14,alignItems:"start"}}>
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div style={{display:"flex",gap:12,alignItems:"flex-start"}}>
@@ -4564,7 +4587,7 @@ function App(){
             <button onClick={()=>setRestModal("short")} style={{flex:1,background:"rgba(251,191,36,0.1)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span>☕ Kurze Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(251,191,36,0.6)"}}>TW: {availableHitDice}/{totalLevel}</span></button>
             <button onClick={()=>setRestModal("long")} style={{flex:1,background:"rgba(96,165,250,0.1)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.3)",borderRadius:12,padding:"10px 8px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:2}}><span>🌙 Lange Rast</span><span style={{fontSize:10,fontWeight:600,color:"rgba(96,165,250,0.6)"}}>Volle Erholung</span></button>
           </div>
-          {(()=>{const resist=activeF.filter(f=>f.type==="resistance"),adv=activeF.filter(f=>f.type==="advantage"),disadv=activeF.filter(f=>f.type==="disadvantage"),extraAtk=activeF.filter(f=>f.type==="extra_attack"),atkBonus=activeF.filter(f=>f.type==="attack_bonus"),sneakAtk=activeF.filter(f=>f.type==="sneak_attack"),bonusDmg=activeF.filter(f=>f.type==="bonus_damage"),acBonus=activeF.filter(f=>f.type==="ac_bonus"),statBon=activeF.filter(f=>f.type==="stat_bonus"),passive=activeF.filter(f=>f.type==="passive"||f.type==="other");const nonLU=resist.length+adv.length+disadv.length+extraAtk.length+atkBonus.length+sneakAtk.length+bonusDmg.length+acBonus.length+statBon.length+passive.length;if(nonLU===0)return null;const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);
+          {(()=>{const resist=activeF.filter(f=>f.type==="resistance"),adv=activeF.filter(f=>f.type==="advantage"),disadv=activeF.filter(f=>f.type==="disadvantage"),extraAtk=activeF.filter(f=>f.type==="extra_attack"),atkBonus=activeF.filter(f=>f.type==="attack_bonus"),sneakAtk=activeF.filter(f=>f.type==="sneak_attack"),bonusDmg=activeF.filter(f=>f.type==="bonus_damage"),acBonus=activeF.filter(f=>f.type==="ac_bonus"),statBon=activeF.filter(f=>f.type==="stat_bonus"),passive=activeF.filter(f=>f.type==="passive"||f.type==="other");const nonLU=resist.length+adv.length+disadv.length+extraAtk.length+atkBonus.length+sneakAtk.length+bonusDmg.length+acBonus.length+statBon.length+passive.length;if(nonLU===0)return null;const Section=({label,children})=>(<div><div style={{fontSize:10,fontWeight:800,color:"rgba(255,255,255,0.3)",letterSpacing:"0.07em",marginBottom:5}}>{label}</div><div className="feature-tags" style={{display:"flex",flexWrap:"wrap",gap:6}}>{children}</div></div>);
               const Tag=({color,bg,border,shape,note,permanent,children})=>(<div style={{background:bg,border:`2px solid ${border}`,borderRadius:shape==="sharp"?8:20,padding:"5px 12px",fontSize:12,fontWeight:700,color,display:"inline-flex",flexDirection:"column",gap:2,boxShadow:`0 0 8px ${border}55`,maxWidth:260}}><div style={{display:"inline-flex",alignItems:"center",justifyContent:"space-between",gap:8}}><span style={{display:"inline-flex",alignItems:"center",gap:5}}>{children}</span><span style={{fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:20,background:"rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.45)",flexShrink:0,letterSpacing:"0.03em"}}>∞</span></div>{note&&<span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,0.45)",lineHeight:1.4}}>{note}</span>}</div>);const kw=f=>f.keyword||f.name||"?";const val=f=>f.value?` ${f.value}`:"";return(<div style={S.card}><div style={S.section}>✨ Features &amp; Boni</div><div style={{display:"flex",flexDirection:"column",gap:12}}>
               {(extraAtk.length>0||atkBonus.length>0)&&<Section label="⚔ ANGRIFFE & ANGRIFFSBONUS">{extraAtk.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp" note={f.note||f.desc||""}>⚔ +{f.value||1} Angriff{f.keyword?` · ${f.keyword}`:""}</Tag>)}{atkBonus.map((f,i)=><Tag key={i} color="#fbbf24" bg="rgba(251,191,36,0.15)" border="#fbbf24" shape="sharp" note={f.note||f.desc||""}>🎯 {kw(f)}{val(f)}</Tag>)}</Section>}{(sneakAtk.length>0||bonusDmg.length>0)&&<Section label="🎲 BONUSSCHADEN">{sneakAtk.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp" note={f.note||f.desc||""}>🗡 {kw(f)}{val(f)}</Tag>)}{bonusDmg.map((f,i)=><Tag key={i} color="#c084fc" bg="rgba(192,132,252,0.15)" border="#c084fc" shape="sharp" note={f.note||f.desc||""}>🎲 {kw(f)} +{f.value}</Tag>)}</Section>}{(acBonus.length>0||statBon.length>0)&&<Section label="🛡 RK & ATTRIBUTBONI">{acBonus.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round" note={f.note||f.desc||""}>🛡 RK +{f.value}</Tag>)}{statBon.map((f,i)=><Tag key={i} color="#38bdf8" bg="rgba(56,189,248,0.15)" border="#38bdf8" shape="round" note={f.note||f.desc||""}>💪 {STAT_NAMES[f.target]||f.target} +{f.value}</Tag>)}</Section>}{resist.length>0&&<Section label="🛡 RESISTENZEN">{resist.map((f,i)=><Tag key={i} color="#60a5fa" bg="rgba(96,165,250,0.15)" border="#60a5fa" shape="round" note={f.note||f.desc||""}>🛡 {kw(f)}</Tag>)}</Section>}{adv.length>0&&<Section label="🟢 VORTEILE">{adv.map((f,i)=><Tag key={i} color="#4ade80" bg="rgba(74,222,128,0.15)" border="#4ade80" shape="round" note={f.note||f.desc||""}>▲ {kw(f)}</Tag>)}</Section>}{disadv.length>0&&<Section label="🔴 NACHTEILE">{disadv.map((f,i)=><Tag key={i} color="#f87171" bg="rgba(248,113,113,0.15)" border="#f87171" shape="sharp" note={f.note||f.desc||""}>▼ {kw(f)}</Tag>)}</Section>}{passive.length>0&&<Section label="✨ PASSIVE FEATURES">{passive.map((f,i)=><Tag key={i} color="rgba(255,255,255,0.6)" bg="rgba(255,255,255,0.05)" border="rgba(255,255,255,0.2)" shape="round" note={f.note||f.desc||""}>✦ {kw(f)}</Tag>)}</Section>}</div></div>);})()}
 
@@ -4627,7 +4650,7 @@ function App(){
                         const cost = ab.kiCost||1;
                         const canUse = usesLeft >= cost;
                         return (
-                          <div key={ai} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 10px",borderRadius:10,transition:"all 0.15s",
+                          <div key={ai} className="ki-ability-row" style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 10px",borderRadius:10,transition:"all 0.15s",
                             background:canUse?"rgba(56,189,248,0.06)":"rgba(255,255,255,0.02)",
                             border:`1px solid ${canUse?"rgba(56,189,248,0.25)":"rgba(255,255,255,0.06)"}`}}>
                             <div style={{flex:1,minWidth:0}}>
@@ -4675,7 +4698,7 @@ function App(){
                   const isEmpty = usesLeft <= 0;
                   const resetLbl = RESET_TYPES.find(r=>r.value===f.resetOn)?.label || "🌙 Lange Rast";
                   return (
-                    <div key={fi} style={{
+                    <div key={fi} className="lu-row" style={{
                       display:"flex", alignItems:"center", gap:12, padding:"12px 14px",
                       borderRadius:12,
                       border:`2px solid ${isEmpty?"rgba(248,113,113,0.4)":`${theme.accent}55`}`,
