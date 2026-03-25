@@ -583,7 +583,7 @@ function SubraceModal({ race, selectedSubrace, onSelect, onClose, theme }) {
 
         {/* Subraces list */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {race.subraces.map((sr, i) => {
+          {(race.subraces||[]).map((sr, i) => {
             const isChosen = selectedSubrace?.name === sr.name;
             return (
               <div
@@ -614,7 +614,7 @@ function SubraceModal({ race, selectedSubrace, onSelect, onClose, theme }) {
 
                 {/* Traits */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 3, marginBottom: sr.note ? 8 : 0 }}>
-                  {sr.traits.map((t, j) => (
+                  {(sr.traits||[]).map((t, j) => (
                     <div key={j} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", display: "flex", gap: 7 }}>
                       <span style={{ color: race.color, flexShrink: 0 }}>·</span>{t}
                     </div>
@@ -657,6 +657,303 @@ function SubraceModal({ race, selectedSubrace, onSelect, onClose, theme }) {
 // WIZARD DATA
 // ═══════════════════════════════════════════════════════
 
+
+const RACE_FEATURES = {
+      "Mensch": [
+        { keyword:"Vielseitigkeit (Standard)", type:"passive",
+          note:"Alle Attribute +1 · eine zusätzliche Sprache",
+          desc:"Alle sechs Attribute erhalten +1. Du lernst eine zusätzliche Sprache deiner Wahl." },
+      ],
+      "Zwerg": [
+        { keyword:"Zwergische Zähigkeit", type:"passive",
+          note:"+1 TP pro Level (Hügelzwerg)",
+          desc:"Hügelzwerge erhalten +1 Maximum-TP pro Level-Aufstieg." },
+        { keyword:"Zwergische Widerstandsfähigkeit", type:"advantage",
+          note:"Vorteil auf Rettungswürfe gegen Gift · Resistenz gegen Giftschaden",
+          desc:"Du hast Vorteil auf Rettungswürfe gegen Gift und Resistenz gegen Giftschaden." },
+        { keyword:"Stonecunning", type:"passive",
+          note:"Verdoppelter Übungsbonus auf Geschichte-Würfe über Steine/Bauwerke",
+          desc:"Wenn du einen INT (Geschichte)-Wurf über den Ursprung von Steinwerk machst, gilt dein Übungsbonus als doppelt so hoch, auch wenn du nicht geübt bist." },
+        { keyword:"Dunkelsicht (Zwerg)", type:"passive",
+          note:"60 ft (18 m) · Dämmerlicht wie helles Licht · Dunkelheit wie Dämmerlicht",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht, und Dämmerlicht als wäre es helles Licht." },
+      ],
+      "Elf": [
+        { keyword:"Fey Ancestry", type:"advantage",
+          note:"Vorteil gegen Bezauberung · Immunität gegen magischen Schlaf",
+          desc:"Du hast Vorteil auf Rettungswürfe gegen Bezauberung und kannst nicht magisch in den Schlaf versetzt werden." },
+        { keyword:"Trance (Elfischer Schlaf)", type:"passive",
+          note:"4 Stunden Meditation statt 8 Stunden Schlaf",
+          desc:"Elfen schlafen nicht. Stattdessen meditierst du tief 4 Stunden (Trance). Nach dieser Trance erhältst du die gleichen Vorteile wie Menschen nach 8 Stunden Schlaf." },
+        { keyword:"Keen Senses", type:"passive",
+          note:"Wahrnehmung als Übungsfertigkeit",
+          desc:"Du hast Übung in der Fertigkeit Wahrnehmung." },
+        { keyword:"Dunkelsicht (Elf)", type:"passive",
+          note:"60 ft (18 m)",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht." },
+      ],
+      "Halb-Elf": [
+        { keyword:"Fey Ancestry (Halb-Elf)", type:"advantage",
+          note:"Vorteil gegen Bezauberung · Immunität gegen magischen Schlaf",
+          desc:"Du hast Vorteil auf Rettungswürfe gegen Bezauberung und kannst nicht magisch in den Schlaf versetzt werden." },
+        { keyword:"Skill Versatility", type:"passive",
+          note:"2 Fertigkeiten nach Wahl als Übungsfähigkeit",
+          desc:"Du erhältst Übung in 2 Fertigkeiten deiner Wahl." },
+        { keyword:"Dunkelsicht (Halb-Elf)", type:"passive",
+          note:"60 ft (18 m)",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht." },
+      ],
+      "Halbork": [
+        { keyword:"Unbeugsame Ausdauer", type:"limited_use", maxUses:1, resetOn:"long",
+          note:"Einmal pro Lange Rast: auf 1 HP statt auf 0 HP fallen",
+          desc:"Wenn du auf 0 HP fallen würdest, kannst du einmal pro langen Rast stattdessen auf 1 HP fallen." },
+        { keyword:"Wilde Angriffe (Savage Attacks)", type:"bonus_damage", value:"1W",
+          note:"Kritische Nahkampftreffer: +1 Schadenswürfel",
+          desc:"Bei einem kritischen Treffer mit einer Nahkampfwaffe würfelst du einen der Schadenswürfel der Waffe einmal zusätzlich und addierst ihn zum Extrakritisch-Schaden." },
+        { keyword:"Einschüchtern als Übung", type:"passive",
+          note:"Einschüchtern (CHA) ist eine Übungsfertigkeit",
+          desc:"Du hast Übung in der Fertigkeit Einschüchtern." },
+        { keyword:"Dunkelsicht (Halbork)", type:"passive",
+          note:"60 ft (18 m)",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht." },
+      ],
+      "Halbling": [
+        { keyword:"Glück (Lucky)", type:"passive",
+          note:"Gewürfelte 1 auf W20 immer neu würfeln · Ergebnis annehmen",
+          desc:"Wenn du eine 1 auf einem Angriffswurf, Rettungswurf oder Fähigkeitswurf würfelst, darfst du den Würfel neu werfen und musst das neue Ergebnis verwenden." },
+        { keyword:"Mutig (Brave)", type:"advantage",
+          note:"Vorteil auf Rettungswürfe gegen Erschrecken",
+          desc:"Du hast Vorteil auf Rettungswürfe gegen Erschrecken (Frightened condition)." },
+        { keyword:"Halblings-Agilität (Nimbleness)", type:"passive",
+          note:"Kannst durch Felder von Wesen bewegen die größer als du sind",
+          desc:"Du kannst dich durch das Feld eines Wesens bewegen, das größer als du ist, ohne dass es als schwieriges Gelände gilt." },
+      ],
+      "Gnom": [
+        { keyword:"Gnomische Findigkeit (Gnomish Cunning)", type:"advantage",
+          note:"Vorteil auf INT/WIS/CHA-Rettungswürfe gegen Magie",
+          desc:"Du hast Vorteil auf alle INT-, WIS- und CHA-Rettungswürfe gegen Zauber und andere magische Effekte." },
+        { keyword:"Dunkelsicht (Gnom)", type:"passive",
+          note:"60 ft (18 m)",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht." },
+      ],
+      "Drachenblütige": [
+        { keyword:"Atemwaffe (Breath Weapon)", type:"limited_use", maxUses:1, resetOn:"short",
+          note:"Kegel 15 ft oder Linie 5×30 ft · Rettungswurf oder Schaden · Schadenstyp je nach Abstammung",
+          desc:"Als Aktion kannst du eine Atemwaffe einsetzen. Form und Schadenstyp hängen von deiner Drachenabstammung ab. Schaden: 2W6 (steigt auf 3W6 bei Level 6, 4W6 bei Level 11, 5W6 bei Level 16)." },
+        { keyword:"Schadensresistenz (Drachenblütig)", type:"resistance",
+          note:"Resistenz gegen den Schadenstyp deiner Drachenabstammung",
+          desc:"Du hast Resistenz gegen den Schadenstyp deiner Drachenabstammung (z.B. Feuer für Roten/Goldenen Drachen, Kälte für Weißen/Silberdrachen)." },
+      ],
+      "Tiefling": [
+        { keyword:"Höllisches Erbe (Infernal Legacy)", type:"passive",
+          note:"Thaumaturgy (immer) · Hellish Rebuke Level 3 · Darkness Level 5 · 1× pro langer Rast",
+          desc:"Du kennst den Zaubertrick Thaumaturgy. Ab Level 3 kannst du Hellish Rebuke als 2.-Grad-Zauber wirken (1× pro langer Rast). Ab Level 5 kannst du Darkness wirken (1× pro langer Rast). Zaubermerkmal: CHA." },
+        { keyword:"Höllische Resistenz (Hellish Resistance)", type:"resistance",
+          note:"Resistenz gegen Feuerschaden",
+          desc:"Du hast Resistenz gegen Feuerschaden." },
+        { keyword:"Dunkelsicht (Tiefling)", type:"passive",
+          note:"60 ft (18 m)",
+          desc:"Du siehst im Dunkeln bis 18 m als wäre es Dämmerlicht." },
+      ],
+    };
+
+const CLASS_FEATURES = {
+      "Barbar": [
+        { keyword:"Kampfrausch (Rage)", type:"limited_use", maxUses:2, resetOn:"long",
+          note:"Bonus-Aktion · Vorteil auf STR-Würfe & Angriffe · +2 Schadenbonus · Resistenz gegen Hieb/Stich/Wucht",
+          desc:"Als Bonus-Aktion trittst du in den Kampfrausch ein (dauert 1 Minute). Du hast Vorteil auf STR-Würfe und STR-Angriffswürfe, +2 Schadensbonus bei STR-Waffen, und Resistenz gegen Hieb-, Stich- und Wuchtschaden. Endet wenn du keinen Angriff gemacht hast oder keinen Schaden genommen hast seit deinem letzten Zug, oder du Magie wirkst." },
+        { keyword:"Unarmored Defense (Barbar)", type:"ac_bonus", value:0,
+          note:"RK = 10 + DEX-Mod + CON-Mod (ohne Rüstung)",
+          desc:"Solange du keine Rüstung trägst, berechnet sich deine RK als 10 + DEX-Modifikator + CON-Modifikator. Du kannst weiterhin einen Schild benutzen." },
+        { keyword:"Waffenübung", type:"passive",
+          note:"Einfache & Kriegswaffen · Leichte, mittlere & schwere Rüstung · Schilde",
+          desc:"Du bist geübt im Umgang mit einfachen und Kriegswaffen sowie allen Rüstungsarten und Schilden." },
+      ],
+      "Barde": [
+        { keyword:"Bardische Inspiration (W6)", type:"limited_use", maxUses:1, resetOn:"long",
+          note:"Bonus-Aktion · W6 Inspirationswürfel · Verbündeter in 18 m · Reset nach langer Rast",
+          desc:"Als Bonus-Aktion gibst du einem Verbündeten deiner Wahl in 18 m einen Bardischen Inspirationswürfel (W6). Dieser kann ihn einmal innerhalb von 10 Minuten auf einen Angriffswurf, Fähigkeitswurf oder Rettungswurf addieren." },
+        { keyword:"Vielseitige Fertigkeiten (Jack of All Trades)", type:"passive",
+          note:"Ab Level 2 · +halber Übungsbonus auf alle ungeübten Würfe",
+          desc:"Ab Level 2 kannst du deinen halben Übungsbonus (abgerundet) auf alle Fähigkeitswürfe addieren, für die du keinen Übungsbonus hast." },
+        { keyword:"Zauberwirken (Barde)", type:"passive",
+          note:"Zaubermerkmal: CHA · Zaubertricks + Zauberslots ab Level 1",
+          desc:"Du wirkst Zauber durch dein natürliches Talent und dein Training. Dein Zaubermerkmal ist Charisma. Zauberangriff: +PB+CHA. Zauber-SG: 8+PB+CHA." },
+        { keyword:"Waffenübung (Barde)", type:"passive",
+          note:"Einfache Waffen · Handarmbrüste · Langschwert · Rapier · Kurzschwert · Leichte Rüstung",
+          desc:"Du bist geübt mit einfachen Waffen, Handarmbrüsten, Langschwert, Rapier und Kurzschwert sowie leichter Rüstung." },
+      ],
+      "Kleriker": [
+        { keyword:"Zauberwirken (Kleriker)", type:"passive",
+          note:"Zaubermerkmal: WIS · Domänen-Zauber immer vorbereitet",
+          desc:"Dein Zaubermerkmal ist Weisheit. Zauberangriff: +PB+WIS. Zauber-SG: 8+PB+WIS. Du kannst WIS-Mod + Stufe Zauber vorbereiten. Domänenzauber sind immer vorbereitet und zählen nicht zur Grenze." },
+        { keyword:"Kanalisierte Gottheit", type:"limited_use", maxUses:1, resetOn:"short",
+          note:"1× pro Kurze Rast · Gottheit vertreiben oder Domänen-Effekt",
+          desc:"Du kannst göttliche Energie direkt kanalisieren. 'Untote vertreiben': Untote in 9 m müssen WIS-Rettungswurf schaffen oder fliehen für 1 Minute. Zweite Option kommt von deiner Domäne." },
+        { keyword:"Göttliche Domäne", type:"passive",
+          note:"Domäne wählen bei Level 1 · Domänenzauber + Features",
+          desc:"Du wählst eine Göttliche Domäne, die deine Verbindung zu deiner Gottheit widerspiegelt (z.B. Leben, Krieg, Licht, Wissen). Du erhältst Domänenzauber und besondere Domänen-Features." },
+        { keyword:"Waffenübung (Kleriker)", type:"passive",
+          note:"Einfache Waffen · Leichte & mittlere Rüstung · Schilde (schwere Rüstung je nach Domäne)",
+          desc:"Du bist geübt mit einfachen Waffen, leichter und mittlerer Rüstung sowie Schilden. Manche Domänen gewähren zusätzliche Übung." },
+      ],
+      "Druide": [
+        { keyword:"Wild Shape", type:"limited_use", maxUses:2, resetOn:"short",
+          note:"2× pro Kurze Rast · Bonus-Aktion · CR ½ (kein Fliegen/Schwimmen) bei Level 1",
+          desc:"Als Bonus-Aktion verwandelst du dich in ein Tier, das du schon gesehen hast (max. CR ¼ auf Level 1, CR ½ auf Level 2). Du behältst deine INT/WIS/CHA, Persönlichkeit und Erinnerungen. Dauer: Stunden = halbes Druiden-Level." },
+        { keyword:"Zauberwirken (Druide)", type:"passive",
+          note:"Zaubermerkmal: WIS · Zauber vorbereiten aus gesamter Druidenliste",
+          desc:"Dein Zaubermerkmal ist Weisheit. Du kannst WIS-Mod + Druiden-Level Zauber vorbereiten. Zauber-SG: 8+PB+WIS. Du benutzt einen Druidenfokus oder Beutelbeutel für somatische/materielle Komponenten." },
+        { keyword:"Waldgeheimnis (Druidic)", type:"passive",
+          note:"Geheimsprache der Druiden · nur Druiden verstehen sie",
+          desc:"Du kennst Druidisch, die Geheimsprache der Druiden. Du kannst unsichtbare Zeichen hinterlassen, die nur andere Druiden lesen können. Diese Sprache ist nur für Druiden bekannt." },
+        { keyword:"Waffenübung (Druide)", type:"passive",
+          note:"Keulen · Dolche · Wurfspeer · Kampfstab · Kurzsäbel · Schleuder · Speer · Leichte & mittlere Rüstung (kein Metall) · Schilde (kein Metall)",
+          desc:"Du bist geübt mit Keulen, Dolchen, Wurfspeeren, Kampfstäben, Kurzsäbeln, Schleudern und Speeren sowie leichter und mittlerer Rüstung und Schilden aus Nicht-Metall. Druiden tragen keine Metallrüstung." },
+      ],
+      "Kämpfer": [
+        { keyword:"Kampfstil (Fighting Style)", type:"passive",
+          note:"Wähle einen Kampfstil bei Level 1 (z.B. Bogenschießen, Verteidigung, Duell, Großwaffenkampf)",
+          desc:"Du wählst einen Kampfstil als Spezialgebiet. Optionen: Bogenschießen (+2 Fernkampf), Verteidigung (+1 RK mit Rüstung), Duell (+2 Schaden Einhandwaffe), Großwaffenkampf (1er & 2er bei 2H-Schadenwürfeln neu würfeln), Schutz (Reaktion: Nachteil auf Angriff gegen Verbündeten), Zweiwaffenkampf (+Modifikator Zweitangriff)." },
+        { keyword:"Zweiter Atem (Second Wind)", type:"limited_use", maxUses:1, resetOn:"short",
+          note:"Bonus-Aktion · 1W10 + Kämpfer-Level HP · Reset nach kurzer oder langer Rast",
+          desc:"Als Bonus-Aktion schöpfst du einen Atemzug und regenerierst 1W10 + Kämpfer-Level Trefferpunkte." },
+        { keyword:"Waffenübung (Kämpfer)", type:"passive",
+          note:"Alle einfachen & Kriegswaffen · Alle Rüstungen · Schilde",
+          desc:"Du bist geübt mit allen einfachen und Kriegswaffen sowie allen Rüstungsarten und Schilden – die breiteste Waffenübung aller Klassen." },
+      ],
+      "Mönch": [
+        { keyword:"Unbewaffnete Verteidigung (Unarmored Defense)", type:"passive",
+          note:"RK = 10 + DEX-Mod + WIS-Mod (ohne Rüstung & Schild)",
+          desc:"Solange du weder Rüstung noch Schild trägst, berechnet sich deine RK als 10 + DEX-Modifikator + WIS-Modifikator." },
+        { keyword:"Kampfkünste (Martial Arts)", type:"passive",
+          note:"Unbewaffnete Angriffe = 1W4 (skaliert) · DEX statt STR nutzbar · Bonus-Aktion Unarmed Strike nach Angriff",
+          desc:"Du beherrschst Kampfkünste die unbewaffneten Kampf und Mönchswaffen stärken: Du kannst DEX statt STR für Angriff & Schaden nutzen, dein Schadenwürfel ist mindestens 1W4 (steigt mit Level), und nach einem Angriff mit Mönchswaffe oder unbewaffnet kannst du als Bonus-Aktion einen weiteren unbewaffneten Angriff ausführen." },
+        { keyword:"Ki-Pool", type:"ki_pool", maxUses:1, resetOn:"short",
+          note:"Ki-Punkte = Mönch-Level · Reset nach kurzer oder langer Rast",
+          desc:"Du hast einen Vorrat innerer Energie (Ki) gleich deinem Mönch-Level. Ki-Punkte werden für besondere Fähigkeiten ausgegeben und regenerieren sich nach kurzer oder langer Rast." },
+        { keyword:"Flurry of Blows", type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Unmittelbar nach dem Angriff: 2 zusätzliche unbewaffnete Angriffe als Bonus-Aktion." },
+        { keyword:"Patient Defense", type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Nimm die Ausweichen-Aktion als Bonus-Aktion (Angreifer haben Nachteil auf Angriffe gegen dich)." },
+        { keyword:"Step of the Wind", type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
+          desc:"Nimm die Dash- oder Ausscheren-Aktion als Bonus-Aktion. Deine Sprungweite verdoppelt sich für diesen Zug." },
+        { keyword:"Unarmored Movement", type:"passive",
+          note:"+3 m Bewegung ohne Rüstung (steigt mit Level)",
+          desc:"Deine Bewegungsrate erhöht sich um 3 m (ab Level 2), solange du keine Rüstung oder Schild trägst. Dieser Bonus steigt mit höheren Mönch-Stufen." },
+        { keyword:"Waffenübung (Mönch)", type:"passive",
+          note:"Einfache Waffen · Kurzschwert · keine Rüstung",
+          desc:"Du bist geübt mit einfachen Waffen und Kurzschwertern. Diese zählen als Mönchswaffen. Du bist NICHT geübt mit Rüstungen." },
+      ],
+      "Paladin": [
+        { keyword:"Göttlicher Schlag (Divine Smite)", type:"passive",
+          note:"Nach Nahkampftreffer · kostet Zauberslot · 2W8 Strahlenschaden +1W8/Slot über 1.",
+          desc:"Wenn du einen Nahkampfangriff triffst, kannst du einen Zauberslot ausgeben um Extraschaden zu verursachen: 2W8 Strahlenschaden (+1W8 für jeden Slot über dem 1. Grad). Gegen Untote und Feen: +1W8 zusätzlich." },
+        { keyword:"Aura des Schutzes (Aura of Protection)", type:"passive",
+          note:"Ab Level 6 · Verbündete in 3 m (+6 m bei L18) · +CHA-Mod auf alle Rettungswürfe",
+          desc:"Ab Level 6: Du und freundliche Wesen in 3 m addieren deinen CHA-Modifikator (mind. +1) auf alle Rettungswürfe, solange du bei Bewusstsein bist." },
+        { keyword:"Göttliche Gesundheit (Divine Health)", type:"passive",
+          note:"Ab Level 3 · Immunität gegen Krankheiten",
+          desc:"Ab Level 3 macht deine göttliche Magie dich immun gegen Krankheiten." },
+        { keyword:"Heilende Hände (Lay on Hands)", type:"limited_use", maxUses:5, resetOn:"long",
+          note:"HP-Pool = Paladin-Level × 5 · Als Aktion beliebig aufteilen oder Krankheit/Gift heilen (5 HP)",
+          desc:"Du hast einen Heilpool von Paladin-Level × 5 HP. Als Aktion berührst du ein Wesen und stellst beliebig viele HP aus dem Pool wieder her. Alternativ: 5 HP ausgeben um eine Krankheit oder ein Gift zu heilen." },
+        { keyword:"Heiliger Eid (Sacred Oath)", type:"passive",
+          note:"Ab Level 3 · Eid-Zauber immer vorbereitet · Channel Divinity · Eid-Features",
+          desc:"Ab Level 3 schwörst du deinen Heiligen Eid (z.B. Hingabe, Rache, Alte). Du erhältst Eid-spezifische Zauber (immer vorbereitet), Channel Divinity-Optionen und besondere Fähigkeiten." },
+        { keyword:"Zauberwirken (Paladin)", type:"passive",
+          note:"Ab Level 2 · Zaubermerkmal: CHA · Zauber vorbereiten = CHA-Mod + halbes Paladin-Level",
+          desc:"Ab Level 2: Dein Zaubermerkmal ist Charisma. Du kannst CHA-Mod + halbes Paladin-Level (abgerundet) Zauber vorbereiten. Zauber-SG: 8+PB+CHA." },
+        { keyword:"Waffenübung (Paladin)", type:"passive",
+          note:"Alle einfachen & Kriegswaffen · Alle Rüstungen · Schilde",
+          desc:"Du bist geübt mit allen einfachen und Kriegswaffen sowie allen Rüstungsarten und Schilden." },
+      ],
+      "Waldläufer": [
+        { keyword:"Bevorzugter Feind (Favored Enemy)", type:"passive",
+          note:"1 Feindtyp wählen · Vorteil auf Nachverfolgen & Erinnern · Sprache des Feindes",
+          desc:"Du wählst einen Feindtyp (z.B. Bestien, Humanoide, Untote). Du hast Vorteil auf WIS (Überleben)-Würfe zum Verfolgen und auf INT-Würfe zum Erinnern an Informationen über diesen Feindtyp. Du lernst außerdem eine Sprache die er spricht." },
+        { keyword:"Natürlicher Entdecker (Natural Explorer)", type:"passive",
+          note:"1 Gelände wählen · Vorteil Erkunden · doppelter Übungsbonus relevante Fertigkeiten · schnelles Reisen",
+          desc:"Du wählst ein Geländetyp (z.B. Wald, Gebirge, Küste). In diesem Gelände: Vorteil auf INT/WIS-Würfe mit Übungsbonus, doppelter Übungsbonus bei relevantem Gelände-Skill, Gruppe kann normal wachsam bei Eilmarsch sein, du irrst nicht, Nahrung für 2× so viele Leute beim Nahrungssuchen." },
+        { keyword:"Kampfstil (Fighting Style)", type:"passive",
+          note:"Wähle bei Level 2 (Bogenschießen, Verteidigung, Duell, Zweiwaffenkampf)",
+          desc:"Ab Level 2 wählst du einen Kampfstil: Bogenschießen (+2 auf Fernkampfangriffe), Verteidigung (+1 RK mit Rüstung), Duell (+2 Schaden Einhandwaffe), Zweiwaffenkampf (Modifikator zum Zweitangriff)." },
+        { keyword:"Zauberwirken (Waldläufer)", type:"passive",
+          note:"Ab Level 2 · Zaubermerkmal: WIS",
+          desc:"Ab Level 2: Dein Zaubermerkmal ist Weisheit. Zauber-SG: 8+PB+WIS. Du wirkst Waldläufer-Zauber durch deine natürliche Verbindung zur Wildnis." },
+        { keyword:"Waffenübung (Waldläufer)", type:"passive",
+          note:"Einfache & Kriegswaffen · Leichte & mittlere Rüstung · Schilde",
+          desc:"Du bist geübt mit einfachen und Kriegswaffen sowie leichter und mittlerer Rüstung und Schilden." },
+      ],
+      "Schurke": [
+        { keyword:"Meucheln (Sneak Attack)", type:"sneak_attack", value:"1W6",
+          note:"1× pro Runde · braucht Vorteil ODER verbündeten Angreifer in 1,5 m vom Ziel",
+          desc:"Einmal pro Runde kannst du 1W6 Extraschaden verursachen wenn du Vorteil auf den Angriff hast, oder wenn ein Verbündeter deines Ziels sich in 1,5 m vom Ziel befindet und du keinen Nachteil hast. Skaliert: +1W6 pro 2 Schurken-Level." },
+        { keyword:"Gaunersprache (Thieves' Cant)", type:"passive",
+          note:"Geheimsprache der Diebe · versteckte Botschaften in Alltagsgesprächen",
+          desc:"Du kennst die Gaunersprache – eine Mischung aus Dialekt, Slang und Code. Du kannst versteckte Botschaften in normalen Gesprächen oder Schriften hinterlassen, die nur andere Kenner der Gaunersprache verstehen." },
+        { keyword:"Expertise", type:"passive",
+          note:"2 Fertigkeiten: doppelter Übungsbonus · ab Level 6 zwei weitere",
+          desc:"Du wählst 2 deiner geübten Fertigkeiten (oder Diebeswerkzeug). Dein Übungsbonus wird für diese Fertigkeiten verdoppelt. Bei Level 6 wählst du 2 weitere." },
+        { keyword:"Hinterlistige Aktion (Cunning Action)", type:"passive",
+          note:"Ab Level 2 · Bonus-Aktion: Dash, Ausscheren oder Verstecken",
+          desc:"Ab Level 2: Du kannst als Bonus-Aktion die Aktionen Dash (Sprinten), Ausscheren (Disengage) oder Verstecken (Hide) benutzen." },
+        { keyword:"Waffenübung (Schurke)", type:"passive",
+          note:"Einfache Waffen · Handarmbrüste · Langschwert · Rapier · Kurzschwert · Leichte Rüstung · Diebeswerkzeug",
+          desc:"Du bist geübt mit einfachen Waffen, Handarmbrüsten, Langschwert, Rapier, Kurzschwert, leichter Rüstung und Diebeswerkzeug." },
+      ],
+      "Zauberer (Magier)": [
+        { keyword:"Zauberbuch (Spellbook)", type:"passive",
+          note:"6 Startzauber · 2 neue Zauber pro Level · alle arkanischen Zauber lernbar",
+          desc:"Dein Zauberbuch enthält 6 Zauber des 1. Grads zu Spielbeginn. Bei jedem Level-Aufstieg kannst du 2 neue Zauber in dein Buch eintragen. Du kannst auch gefundene oder erworbene Zauberschriften kopieren." },
+        { keyword:"Zauberwirken (Magier)", type:"passive",
+          note:"Zaubermerkmal: INT · Vorbereiten: INT-Mod + Magier-Level Zauber · Ritualkunde",
+          desc:"Dein Zaubermerkmal ist Intelligenz. Zauber-SG: 8+PB+INT. Du kannst INT-Mod + Magier-Level Zauber pro langer Rast vorbereiten. Du kannst als Ritual gekennzeichnete Zauber ohne Slot wirken (dauert 10 Min. länger)." },
+        { keyword:"Arkane Wiederherstellung (Arcane Recovery)", type:"limited_use", maxUses:1, resetOn:"long",
+          note:"1× pro langer Rast · nach kurzer Rast · Zauberslots zurück (Summe ≤ halbes Magier-Level)",
+          desc:"Einmal pro langer Rast kannst du nach einer kurzen Rast Zauberslots zurückgewinnen. Die Summe der Slot-Grade darf nicht höher als dein halbes Magier-Level (aufgerundet) sein. Slots des 6. Grads oder höher sind ausgeschlossen." },
+        { keyword:"Magische Schule (Arcane Tradition)", type:"passive",
+          note:"Ab Level 2 · Schule wählen (z.B. Verwandlung, Nekromantie, Vorahnung) · Schul-Features",
+          desc:"Ab Level 2 wählst du eine magische Schule (Evokation, Beschwörung, Nekromantie, Verwandlung, Illusion, Bezauberung, Vorahnung, Abjuration). Du erhältst spezialisierte Features dieser Schule." },
+        { keyword:"Waffenübung (Magier)", type:"passive",
+          note:"Dolche · Dartpfeile · Schleuder · Kampfstab · Leichte Armbrust · keine Rüstung",
+          desc:"Du bist geübt mit Dolchen, Dartpfeilen, Schleudern, Kampfstäben und leichten Armbrüsten. Du bist NICHT geübt mit Rüstungen." },
+      ],
+      "Hexenmeister": [
+        { keyword:"Überirdischer Schutzherr (Otherworldly Patron)", type:"passive",
+          note:"Schutzherr wählen bei Level 1 (Großer Alter, Erzdämon, Feenpatin, Himmelsgeist) · Erweiterter Zauberpool",
+          desc:"Du hast einen Pakt mit einem mächtigen überweltlichen Wesen geschlossen. Dein Schutzherr bestimmt deinen erweiterten Zauberpool und deine späteren Features." },
+        { keyword:"Pakt-Magie (Pact Magic)", type:"passive",
+          note:"Zauberslots = Pakt-Magie-Slots (alle gleicher Grad) · Reset nach kurzer Rast · Zaubermerkmal: CHA",
+          desc:"Deine Zauberslots sind Pakt-Magie-Slots: wenige, aber mächtige Slots die sich nach JEDER Kurzen Rast regenerieren. Alle deine Pakt-Slots haben den gleichen Grad (steigt mit Level). Zaubermerkmal: Charisma." },
+        { keyword:"Eldritch Blast", type:"passive",
+          note:"Zaubertrick · immer verfügbar · 1W10 Kraftschaden · Reichweite 36 m",
+          desc:"Dein kraftvollster Zaubertrick: Ein Strahl lodernder Energie trifft ein Ziel in 36 m für 1W10 Kraftschaden. Kein Slot nötig. Skaliert mit Level: 2 Strahlen bei Level 5, 3 bei Level 11, 4 bei Level 17." },
+        { keyword:"Eldritch Invocations (Anrufungen)", type:"passive",
+          note:"Ab Level 2 · 2 Anrufungen wählen · permanente übernatürliche Fähigkeiten",
+          desc:"Ab Level 2 wählst du 2 Erleuchtete Anrufungen – permanente übernatürliche Fähigkeiten aus deinem Studium des Okkulten (z.B. Agonizing Blast +CHA zu Eldritch Blast, Devil's Sight in magischer Dunkelheit sehen). Weitere Anrufungen bei höheren Levels." },
+        { keyword:"Waffenübung (Hexenmeister)", type:"passive",
+          note:"Einfache Waffen · Leichte Rüstung",
+          desc:"Du bist geübt mit einfachen Waffen und leichter Rüstung." },
+      ],
+      "Zauberwirker (Sorcerer)": [
+        { keyword:"Magische Abstammung (Sorcerous Origin)", type:"passive",
+          note:"Abstammung wählen bei Level 1 (Drachenlinie, Wilde Magie, etc.) · Origin-Features",
+          desc:"Deine Magie kommt aus deiner inneren Abstammung. Du wählst eine magische Herkunft (z.B. Drachenlinie, Wilde Magie, Göttliche Seele). Diese bestimmt deinen Ursprung und gibt dir besondere Features ab Level 1." },
+        { keyword:"Zauberwirken (Sorcerer)", type:"passive",
+          note:"Zaubermerkmal: CHA · Zauber fest bekannt (kein Buch) · kein Vorbereiten nötig",
+          desc:"Dein Zaubermerkmal ist Charisma. Du kennst deine Zauber von Geburt – kein Zauberbuch, kein Vorbereiten. Deine bekannten Zauber sind immer verfügbar." },
+        { keyword:"Zauberpunkte (Sorcery Points)", type:"limited_use", maxUses:2, resetOn:"long",
+          note:"Ab Level 2 · Punkte = Sorcerer-Level · Slots erschaffen oder Metamagie anwenden",
+          desc:"Ab Level 2 hast du Sorcery Points (= Sorcerer-Level). Du kannst sie nutzen um Zauberslots zu erschaffen (Flexible Casting) oder Metamagie-Optionen anzuwenden. Reset nach langer Rast." },
+        { keyword:"Metamagie", type:"passive",
+          note:"Ab Level 3 · 2 Optionen wählen (z.B. Twinned, Quickened, Heightened, Subtle)",
+          desc:"Ab Level 3 wählst du 2 Metamagie-Optionen. Diese erlauben dir, Zauber zu modifizieren indem du Sorcery Points ausgibst (z.B. Twinned Spell: gleichen Zauber auf 2 Ziele, Quickened Spell: Bonus-Aktion statt Aktion)." },
+        { keyword:"Waffenübung (Sorcerer)", type:"passive",
+          note:"Dolche · Dartpfeile · Schleuder · Kampfstab · Leichte Armbrust · keine Rüstung",
+          desc:"Du bist geübt mit Dolchen, Dartpfeilen, Schleudern, Kampfstäben und leichten Armbrüsten. Keine Rüstungsübung." },
+      ],
+    };
 const WIZARD_CLASSES = [
   { name:"Barbar", emoji:"🪓", role:"Kämpfer", color:"#ef4444",
     tagline:"Wut ist deine Waffe",
@@ -748,125 +1045,206 @@ const WIZARD_RACES = [
   { name:"Mensch", emoji:"🧑", color:"#fbbf24",
     tagline:"Vielseitig, ehrgeizig, überall präsent",
     description:"Menschen sind die häufigste Rasse in den meisten D&D-Welten. Ihre kurze Lebensspanne treibt sie zu Ehrgeiz und Leistung an. Sie passen sich allen Kulturen, Klassen und Rollen an wie keine andere Rasse.",
-    traits:["Alle Attribute +1 (Standardvariante)","Oder: 2 Attribute +1, 1 Fertigkeit, 1 Feat (Variante)","Keine besonderen Schwächen oder Einschränkungen"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","eine weitere Sprache"],
+    traits:["Alle Attribute +1 (Standard) oder 2 Attribute +1 + 1 Fertigkeit + 1 Feat (Variante)","Keine Dunkelsicht, keine Resistenzen – dafür maximale Flexibilität"],
+    size:"Mittelgroß", speed:30, darkvision:0,
+    languages:["Gemeinsprache","eine weitere Sprache"],
+    resistances:[],
     suggestedFor:{ classes:["Kämpfer","Paladin","Kleriker","Barbar","Waldläufer","Zauberer (Magier)","Hexenmeister","Barde","Schurke","Druide","Mönch","Zauberwirker (Sorcerer)"] },
     subraces:[
-      { name:"Standard-Mensch", bonus:"Alle Attribute +1", traits:["Keine Unterrasse nötig – sofort spielbereit"], note:"Einfachste Wahl, solide Grundlage für jede Klasse." },
-      { name:"Varianten-Mensch (optional)", bonus:"2× Attribut +1, 1 Fertigkeit, 1 Feat", traits:["Ein Feat bereits auf Stufe 1","Eine Fertigkeit nach Wahl"], note:"Empfohlen für erfahrene Spieler. Mit einem frühen Feat extrem mächtig." },
+      { name:"Standard-Mensch", bonus:"Alle Attribute +1",
+        statBonuses:{str:1,dex:1,con:1,int:1,wis:1,cha:1},
+        traits:["Alle sechs Attribute +1","Keine weitere Sonderregel – sofort spielbereit"],
+        note:"Einfachste Wahl, solide Grundlage für jede Klasse." },
+      { name:"Varianten-Mensch (optional)", bonus:"2× Attribut +1, 1 Fertigkeit, 1 Feat",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0},
+        extraChoices:{ freeStats:2, statAmount:1, skills:1, feats:1 },
+        traits:["2 Attribute nach Wahl je +1","1 Fertigkeit nach Wahl","1 Feat bereits auf Level 1"],
+        note:"Empfohlen für erfahrene Spieler. Mit einem frühen Feat extrem mächtig." },
     ],
     classTip:"Passt zu: jeder Klasse – besonders stark als Kämpfer, Paladin oder Zauberer dank Varianten-Feat.",
-    lore:"Menschen gründen Königreiche, Imperien und Religionen. Ihre Anpassungsfähigkeit macht sie zu den dominanten Wesen der meisten Welten. Ein menschlicher Charakter kann buchstäblich jede Rolle einnehmen." },
+    lore:"Menschen gründen Königreiche, Imperien und Religionen. Ihre Anpassungsfähigkeit macht sie zu den dominanten Wesen der meisten Welten." },
 
   { name:"Zwerg", emoji:"⛏️", color:"#a78bfa",
     tagline:"Zäh wie Fels, stolz wie Gold",
-    description:"Zwerge sind ein uraltes Volk, das tief in Berghöhlen lebt. Bekannt für ihre Härte, ihren Stolz und ihre unvergleichliche Handwerkskunst. Sie leben jahrhundertelang und vergessen keine Beleidigung – und kein gutes Ale.",
-    traits:["CON +2","Dunkelsicht (60 ft)","Resistenz gegen Gift","Vorteil auf Rettungswürfe gegen Gift","Kampftraining mit Äxten und Hämmern","Stonecunning: Steine und Bauwerke beurteilen"],
-    size:"Mittelgroß (aber kleiner)", speed:"25 ft (wird nicht durch Rüstung reduziert)", languages:["Gemeinsprache","Zwergisch"],
+    description:"Zwerge sind ein uraltes Volk das tief in Berghöhlen lebt. Bekannt für ihre Härte, ihren Stolz und ihre unvergleichliche Handwerkskunst. CON +2 macht sie zum zähesten Volk im PHB.",
+    traits:["CON +2","Dunkelsicht 60 ft","Resistenz gegen Gift + Vorteil auf Rettungswürfe gegen Gift","Kampftraining: Streitaxt, Handaxt, leichter Hammer, Kriegshammer","Stonecunning: doppelter Übungsbonus auf Geschichte über Stein"],
+    size:"Mittelgroß", speed:25, darkvision:60,
+    statBonuses:{str:0,dex:0,con:2,int:0,wis:0,cha:0},
+    languages:["Gemeinsprache","Zwergisch"],
+    resistances:["Giftschaden"],
+    weaponProfs:["Streitaxt","Handaxt","Leichter Hammer","Kriegshammer"],
     suggestedFor:{ classes:["Kämpfer","Barbar","Kleriker","Paladin","Druide","Mönch"] },
     subraces:[
-      { name:"Hügelzwerg (Hill Dwarf)", bonus:"WIS +1", traits:["+1 TP pro Stufe (Zwergische Zähigkeit)","WIS +1 für bessere Rettungswürfe"], note:"Bester Allrounder-Zwerg. Die extra HP machen ihn sehr robust." },
-      { name:"Bergzwerg (Mountain Dwarf)", bonus:"STR +2", traits:["STR +2 zusätzlich","Ausrüstungsübung: leichte & mittlere Rüstung"], note:"Der geborene Kämpfer. CON +2 und STR +2 machen ihn zum Nahkampf-Tank." },
+      { name:"Hügelzwerg (Hill Dwarf)", bonus:"WIS +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:1,cha:0},
+        extraHP:1,
+        traits:["WIS +1","Zwergische Zähigkeit: +1 HP pro Level"],
+        note:"Bester Allrounder-Zwerg. Die extra HP machen ihn sehr robust." },
+      { name:"Bergzwerg (Mountain Dwarf)", bonus:"STR +2",
+        statBonuses:{str:2,dex:0,con:0,int:0,wis:0,cha:0},
+        armorProfs:["Leichte Rüstung","Mittlere Rüstung"],
+        traits:["STR +2","Rüstungsübung: leichte & mittlere Rüstung"],
+        note:"Der geborene Kämpfer. CON +2 und STR +2 – perfekter Nahkampf-Tank." },
     ],
     classTip:"Passt zu: Kämpfer, Kleriker, Barbar (Bergzwerg) · Kleriker, Druide, Mönch (Hügelzwerg).",
-    lore:"Zwerge bauten die ersten großen Städte unter der Erde. Ihre Clans führen Kriege über Jahrhunderte. Treu, zuverlässig und in keiner Gruppe zu ersetzen, die einen Tank braucht." },
+    lore:"Zwerge bauten die ersten großen Städte unter der Erde. Ihre Clans führen Kriege über Jahrhunderte." },
 
   { name:"Elf", emoji:"🌙", color:"#38bdf8",
     tagline:"Jahrtausende alter Geist in einer schlanken Gestalt",
-    description:"Elfen leben Jahrhunderte lang und sehen die Welt mit anderen Augen als kurzlebige Rassen. Sie schlafen nicht, sondern meditieren (Trance), sind von Natur aus magisch begabt und körperlich geschmeidig.",
-    traits:["DEX +2","Dunkelsicht (60 ft)","Keen Senses: Wahrnehmung als Übung","Fey Ancestry: Vorteil gegen Bezauberung, Immunität gegen Schlaf","Trance: nur 4h Meditation statt 8h Schlaf"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","Elfisch"],
+    description:"Elfen leben Jahrhunderte lang und sehen die Welt mit anderen Augen. Sie schlafen nicht, sondern meditieren (Trance), sind magisch begabt und körperlich geschmeidig. DEX +2 prädestiniert sie für Finesse-Kampf und Magie.",
+    traits:["DEX +2","Dunkelsicht 60 ft","Keen Senses: Wahrnehmung als Übungsfertigkeit","Fey Ancestry: Vorteil gegen Bezauberung, Immunität gegen magischen Schlaf","Trance: 4h Meditation statt 8h Schlaf"],
+    size:"Mittelgroß", speed:30, darkvision:60,
+    statBonuses:{str:0,dex:2,con:0,int:0,wis:0,cha:0},
+    languages:["Gemeinsprache","Elfisch"],
+    resistances:[],
+    skillProfs:["Wahrnehmung"],
     suggestedFor:{ classes:["Waldläufer","Schurke","Zauberer (Magier)","Barde","Druide","Mönch","Hexenmeister"] },
     subraces:[
-      { name:"Hochelf (High Elf)", bonus:"INT +1", traits:["Ein Zaubertrick aus der Magierliste (INT-basiert)","Eine zusätzliche Sprache nach Wahl"], note:"Ideal für Magier und arkane Zauberer. Der Zaubertrick ist immer verfügbar." },
-      { name:"Waldelfe (Wood Elf)", bonus:"WIS +1", traits:["Speed 35 ft statt 30 ft","Maske der Wildnis: in Natur verstecken auch wenn nur leicht verdeckt"], note:"Bester Waldläufer oder Schurke. Schnell, mobil, unauffällig." },
-      { name:"Dunkelelfe / Drow (Dark Elf)", bonus:"CHA +1", traits:["Erweitertes Dunkelsicht (120 ft)","Drow-Magie: Faerie Fire, Darkness auf höheren Stufen","Sonnenlicht-Empfindlichkeit: Nachteil in direktem Sonnenlicht"], note:"Charismatisch und magisch stark – aber der Sonnenlicht-Nachteil ist ein echter Makel im Freien." },
+      { name:"Hochelf (High Elf)", bonus:"INT +1",
+        statBonuses:{str:0,dex:0,con:0,int:1,wis:0,cha:0},
+        extraLanguages:1,
+        extraCantrip:{ list:"Magier", ability:"int" },
+        traits:["INT +1","Ein Zaubertrick aus der Magierliste (INT)","Eine zusätzliche Sprache"],
+        note:"Ideal für Magier und arkane Zauberwirker. Der Zaubertrick ist immer verfügbar." },
+      { name:"Waldelfe (Wood Elf)", bonus:"WIS +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:1,cha:0},
+        speedOverride:35,
+        traits:["WIS +1","Speed 35 ft","Maske der Wildnis: in Natur verstecken auch wenn leicht verdeckt"],
+        note:"Bester Waldläufer oder Schurke. Schnell, mobil, unauffällig." },
+      { name:"Dunkelelfe / Drow (Dark Elf)", bonus:"CHA +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:1},
+        darkvision:120,
+        traits:["CHA +1","Dunkelsicht 120 ft","Drow-Magie: Dancing Lights Zaubertrick; Faerie Fire (L3), Darkness (L5) je 1×/langer Rast","Sonnenlicht-Empfindlichkeit: Nachteil auf Angriffe & Wahrnehmung in direktem Sonnenlicht"],
+        note:"Charismatisch und magisch stark – Sonnenlicht-Nachteil ist echter Makel im Freien." },
     ],
     classTip:"Passt zu: Magier, Eldritch Knight (Hochelf) · Waldläufer, Schurke (Waldelfe) · Hexenmeister, Barde (Drow).",
-    lore:"Elfen stammen aus den Feywild und tragen dieses Reich des Wundersamen in ihrer Seele. Hochelfen sind Zauberer und Adlige, Waldelfen scheue Jäger, Drow gefährliche Untergrundkrieger." },
+    lore:"Elfen stammen aus den Feywild und tragen dieses Reich des Wundersamen in ihrer Seele." },
 
   { name:"Halb-Elf", emoji:"🌓", color:"#ec4899",
     tagline:"Das Beste zweier Welten",
-    description:"Halb-Elfen stehen zwischen zwei Welten – zu menschlich für Elfen, zu elfisch für Menschen. Diese Außenseiterrolle macht sie zu Diplomaten, Vermittlern und Weltenwanderern. Mechanisch eine der stärksten Rassen im Spiel.",
-    traits:["CHA +2","Zwei weitere Attribute +1 nach Wahl","Dunkelsicht (60 ft)","Fey Ancestry: Vorteil gegen Bezauberung","Skill Versatility: 2 Fertigkeiten nach Wahl"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","Elfisch","eine weitere"],
+    description:"Halb-Elfen stehen zwischen zwei Welten. Mechanisch eine der stärksten Rassen im PHB: CHA +2, zwei freie +1 nach Wahl, zwei Fertigkeiten, Dunkelsicht, Fey Ancestry.",
+    traits:["CHA +2","Zwei weitere Attribute je +1 frei wählen","Dunkelsicht 60 ft","Fey Ancestry: Vorteil gegen Bezauberung, Immunität gegen Schlaf","Skill Versatility: 2 Fertigkeiten nach Wahl"],
+    size:"Mittelgroß", speed:30, darkvision:60,
+    statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:2},
+    extraChoices:{ freeStats:2, statAmount:1 },
+    extraSkills:2,
+    languages:["Gemeinsprache","Elfisch","eine weitere"],
+    resistances:[],
     suggestedFor:{ classes:["Barde","Hexenmeister","Paladin","Zauberwirker (Sorcerer)","Schurke"] },
     subraces:[
-      { name:"Standard Halb-Elf", bonus:"CHA +2, 2× frei +1", traits:["2 Fertigkeiten nach Wahl","Volle Flexibilität bei Attributboni"], note:"Universell einsetzbar. Kaum eine schlechte Klasse für Halb-Elfen." },
+      { name:"Standard Halb-Elf", bonus:"CHA +2, 2× frei +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0},
+        traits:["Volle Flexibilität bei den 2 freien Attributboni","2 Fertigkeiten nach Wahl"],
+        note:"Universell einsetzbar. Kaum eine schlechte Klasse für Halb-Elfen." },
     ],
     classTip:"Passt zu: Barde, Hexenmeister, Paladin, Sorcerer – CHA +2 ist für alle Charisma-Klassen ideal.",
-    lore:"Halb-Elfen haben keine eigene Heimat – doch genau das macht sie frei. Ihr Charisma und ihre Anpassungsfähigkeit machen sie zu natürlichen Anführern, Spionen und Unterhändlern." },
+    lore:"Halb-Elfen haben keine eigene Heimat – doch genau das macht sie frei." },
 
   { name:"Halbork", emoji:"💪", color:"#ef4444",
     tagline:"Überleben ist keine Frage – es ist ein Fakt",
-    description:"Halborks tragen das Blut beider Welten in sich: die Zivilisation der Menschen und die rohe Kraft der Orks. Lange als Monster abgestempelt, sind sie oft die härtesten, loyalsten und entschlossensten Charaktere in jeder Gruppe.",
-    traits:["STR +2, CON +1","Dunkelsicht (60 ft)","Bedrohlich: Einschüchtern als Übung","Unbeugsame Ausdauer: einmal pro Rast 1 HP statt zu fallen","Wilde Angriffe: kritische Treffer +1 Schadenswürfel"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","Orkisch"],
+    description:"Halborks tragen die Kraft der Orks und die Zivilisation der Menschen in sich. STR +2, CON +1, Dunkelsicht, Relentless Endurance und Savage Attacks machen sie zum geborenen Krieger.",
+    traits:["STR +2, CON +1","Dunkelsicht 60 ft","Einschüchtern als Übungsfertigkeit","Unbeugsame Ausdauer: 1× pro langer Rast auf 1 HP statt 0 HP fallen","Wilde Angriffe: krit. Nahkampftreffer +1 Schadenswürfel"],
+    size:"Mittelgroß", speed:30, darkvision:60,
+    statBonuses:{str:2,dex:0,con:1,int:0,wis:0,cha:0},
+    languages:["Gemeinsprache","Orkisch"],
+    resistances:[],
+    skillProfs:["Einschüchtern"],
     suggestedFor:{ classes:["Barbar","Kämpfer","Paladin"] },
     subraces:[
-      { name:"Halbork", bonus:"STR +2, CON +1", traits:["Keine Unterrassen – nur eine Version im PHB","Dafür sehr stark und eindeutig auf Kampf ausgerichtet"], note:"Kein Unterrassenentscheid nötig. Was du siehst, bekommst du." },
+      { name:"Halbork", bonus:"STR +2, CON +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0},
+        traits:["Keine Unterrassen im PHB"],
+        note:"Was du siehst, bekommst du – klare, starke Kampfrasse." },
     ],
     classTip:"Passt zu: Barbar (Synergie mit Rage und Savage Attacks), Kämpfer, Paladin.",
-    lore:"Halborks entstammen oft gewaltsamen Begegnungen, aber viele wachsen in friedlichen Gemeinschaften auf. Ihr Kampfgeist und ihre Zähigkeit machen sie zu gefürchteten Kriegern." },
+    lore:"Halborks entstammen oft gewaltsamen Begegnungen, aber viele wachsen in friedlichen Gemeinschaften auf." },
 
   { name:"Halbling", emoji:"🍀", color:"#4ade80",
     tagline:"Klein, aber das Glück liebt ihn",
-    description:"Halblinge sind klein, freundlich und erstaunlich schwer zu töten. Lucky ist eine der mächtigsten passiven Fähigkeiten im Spiel: Jede gewürfelte 1 auf einem d20 darf sofort neu gewürfelt werden. Brave: Immunität gegen Angst.",
-    traits:["DEX +2","Lucky: gewürfelte 1 auf d20 immer neu würfeln","Brave: Vorteil auf Rettungswürfe gegen Angst","Halfling Nimbleness: durch Felder von großen Wesen hindurchgehen"],
-    size:"Klein", speed:"25 ft", languages:["Gemeinsprache","Halblingisch"],
+    description:"Halblinge sind klein, freundlich und erstaunlich schwer zu töten. Lucky ist eine der mächtigsten passiven Fähigkeiten im Spiel: jede gewürfelte 1 auf W20 sofort neu würfeln.",
+    traits:["DEX +2","Lucky: gewürfelte 1 auf W20 immer neu würfeln","Brave: Vorteil auf Rettungswürfe gegen Erschrecken","Halfling Nimbleness: durch Felder von größeren Wesen hindurchgehen"],
+    size:"Klein", speed:25, darkvision:0,
+    statBonuses:{str:0,dex:2,con:0,int:0,wis:0,cha:0},
+    languages:["Gemeinsprache","Halblingisch"],
+    resistances:[],
     suggestedFor:{ classes:["Schurke","Barde","Waldläufer","Kämpfer"] },
     subraces:[
-      { name:"Leichtfuß-Halbling (Lightfoot)", bonus:"CHA +1", traits:["Naturally Stealthy: hinter größeren Wesen verstecken","Charismatisch und unauffällig zugleich"], note:"Bester Schurke oder Barde unter den Halblingen. Lucky + Heimlichkeit = fast ungreifbar." },
-      { name:"Robuster Halbling (Stout)", bonus:"CON +1", traits:["Stout Resilience: Vorteil gegen Gift","Resistenz gegen Giftschaden"], note:"Zäherer Halbling. Gut für Kämpfer oder Waldläufer, die etwas mehr aushalten wollen." },
+      { name:"Leichtfuß-Halbling (Lightfoot)", bonus:"CHA +1",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:1},
+        traits:["CHA +1","Naturally Stealthy: hinter größeren Wesen verstecken auch wenn sie den Sichtschutz bieten"],
+        note:"Bester Schurke oder Barde. Lucky + Heimlichkeit = fast ungreifbar." },
+      { name:"Robuster Halbling (Stout)", bonus:"CON +1",
+        statBonuses:{str:0,dex:0,con:1,int:0,wis:0,cha:0},
+        traits:["CON +1","Stout Resilience: Vorteil auf Rettungswürfe gegen Gift, Resistenz gegen Giftschaden"],
+        resistances:["Giftschaden"],
+        note:"Zäherer Halbling. Gut für Kämpfer oder Waldläufer." },
     ],
     classTip:"Passt zu: Schurke, Barde (Leichtfuß) · Waldläufer, Kämpfer (Stout).",
-    lore:"Halblinge lieben Komfort, gutes Essen und Geschichten – aber wenn die Welt ruft, erweisen sie sich als unverzichtbare Helden. Frodo Beutlin ist der bekannteste Halbling der Literaturgeschichte." },
+    lore:"Halblinge lieben Komfort und gutes Essen – aber wenn die Welt ruft, erweisen sie sich als unverzichtbare Helden." },
 
   { name:"Gnom", emoji:"⚙️", color:"#86efac",
     tagline:"Neugier trifft Magie trifft Genie",
-    description:"Gnome sind ein lebhaftes, neugieriges Volk voller Erfindungsgeist. Gnomish Cunning gibt ihnen Vorteil auf alle INT-, WIS- und CHA-Rettungswürfe gegen Magie – was sie unglaublich magieresistent macht.",
-    traits:["INT +2","Dunkelsicht (60 ft)","Gnomische Findigkeit: Vorteil auf INT/WIS/CHA-Rettungswürfe gegen Magie"],
-    size:"Klein", speed:"25 ft", languages:["Gemeinsprache","Gnomisch"],
+    description:"Gnome sind lebhaft, neugierig und voller Erfindungsgeist. Gnomish Cunning gibt Vorteil auf alle INT-, WIS- und CHA-Rettungswürfe gegen Magie – unglaublich nützlich.",
+    traits:["INT +2","Dunkelsicht 60 ft","Gnomische Findigkeit: Vorteil auf INT/WIS/CHA-Rettungswürfe gegen Magie"],
+    size:"Klein", speed:25, darkvision:60,
+    statBonuses:{str:0,dex:0,con:0,int:2,wis:0,cha:0},
+    languages:["Gemeinsprache","Gnomisch"],
+    resistances:[],
     suggestedFor:{ classes:["Zauberer (Magier)","Zauberwirker (Sorcerer)","Druide","Schurke","Barde"] },
     subraces:[
-      { name:"Felsgnom (Rock Gnome)", bonus:"CON +1", traits:["Kunstfertigkeit: Illusionszaubertrick (Minor Illusion)","Tüftler: kleine mechanische Geräte und Uhren bauen"], note:"Klassischer Erfinder-Gnom. INT + CON + Illusionen = geborener Magier oder Erfinder-Zauberer." },
-      { name:"Waldgnom (Forest Gnome)", bonus:"DEX +1", traits:["Natürliche Illusionen: Minor Illusion als Zaubertrick","Tiersprache: mit kleinen Tieren kommunizieren"], note:"Beweglicher und heimlicher als der Felsgnom. Gut für Schurken oder Druiden." },
+      { name:"Felsgnom (Rock Gnome)", bonus:"CON +1",
+        statBonuses:{str:0,dex:0,con:1,int:0,wis:0,cha:0},
+        traits:["CON +1","Minor Illusion als Zaubertrick (INT)","Tüftler: kleine mechanische Geräte konstruieren"],
+        note:"Klassischer Erfinder-Gnom. INT + CON + Illusionen = geborener Magier." },
+      { name:"Waldgnom (Forest Gnome)", bonus:"DEX +1",
+        statBonuses:{str:0,dex:1,con:0,int:0,wis:0,cha:0},
+        traits:["DEX +1","Minor Illusion als Zaubertrick (INT)","Tiersprache: mit kleinen Tieren sprechen"],
+        note:"Beweglicher und heimlicher. Gut für Schurken oder Druiden." },
     ],
     classTip:"Passt zu: Magier, Zauberwirker (Felsgnom) · Druide, Schurke (Waldgnom).",
-    lore:"Gnome bauen Uhren, die zehn Jahre laufen, und fragen sich dann, ob sie schneller laufen könnten. Ihre Begeisterung für Wissen macht sie zu großartigen Magiern und Erfindern." },
+    lore:"Gnome bauen Uhren die zehn Jahre laufen und fragen sich dann ob sie schneller gehen könnten." },
 
   { name:"Drachenblütige", emoji:"🐉", color:"#f97316",
     tagline:"Drachenahne. Drachenatmung. Drachenstolz.",
-    description:"Dragonborn stammen von Drachen ab und tragen deren Stolz und Kraft in sich. Ihr Atemwaffe-Angriff ist eine einzigartige Kampfoption, und ihre Resistenz gegen den eigenen Schadenstyp macht sie zu soliden Kämpfern.",
-    traits:["STR +2, CHA +1","Drachenabstammung wählen (bestimmt Schadenstyp)","Atemwaffe: Kegel oder Linie, Rettungswurf, skaliert mit Stufe","Schadensresistenz gegen den eigenen Atemtyp"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","Drakonisch"],
+    description:"Dragonborn stammen von Drachen ab. STR +2, CHA +1, eine Atemwaffe und Resistenz gegen den eigenen Schadenstyp. Die Unterrasse bestimmt Element und Schadenstyp.",
+    traits:["STR +2, CHA +1","Drachenabstammung wählen (bestimmt Schadenstyp und Atemform)","Atemwaffe: Kegel 15 ft oder Linie 5×30 ft, Rettungswurf, skaliert mit Level","Schadensresistenz gegen den eigenen Abstammungstyp"],
+    size:"Mittelgroß", speed:30, darkvision:0,
+    statBonuses:{str:2,dex:0,con:0,int:0,wis:0,cha:1},
+    languages:["Gemeinsprache","Drakonisch"],
+    resistances:[],
     suggestedFor:{ classes:["Paladin","Kämpfer","Hexenmeister","Zauberwirker (Sorcerer)","Barbar"] },
     subraces:[
-      { name:"Schwarzer Drache (Säure)", bonus:"Säureschaden", traits:["Atemwaffe: Linie 5×30 ft, CON-Rettungswurf"], note:"" },
-      { name:"Blauer Drache (Blitz)", bonus:"Blitzschaden", traits:["Atemwaffe: Linie 5×30 ft, DEX-Rettungswurf"], note:"" },
-      { name:"Roter Drache (Feuer)", bonus:"Feuerschaden", traits:["Atemwaffe: Kegel 15 ft, DEX-Rettungswurf","Populärste Wahl – ikonisch"], note:"Der klassische Drachenkämpfer." },
-      { name:"Goldener Drache (Feuer)", bonus:"Feuerschaden", traits:["Atemwaffe: Kegel 15 ft, DEX-Rettungswurf","Gute Ausrichtung typisch"], note:"Mechanisch identisch mit Roter Drache." },
-      { name:"Silberdrache (Kälte)", bonus:"Kälteschaden", traits:["Atemwaffe: Kegel 15 ft, CON-Rettungswurf"], note:"" },
-      { name:"Grüner Drache (Gift)", bonus:"Giftschaden", traits:["Atemwaffe: Kegel 15 ft, CON-Rettungswurf"], note:"" },
-      { name:"Weißer Drache (Kälte)", bonus:"Kälteschaden", traits:["Atemwaffe: Kegel 15 ft, CON-Rettungswurf"], note:"" },
-      { name:"Bronzedrache (Blitz)", bonus:"Blitzschaden", traits:["Atemwaffe: Linie 5×30 ft, DEX-Rettungswurf"], note:"" },
-      { name:"Kupferdrache (Säure)", bonus:"Säureschaden", traits:["Atemwaffe: Linie 5×30 ft, CON-Rettungswurf"], note:"" },
-      { name:"Messingdrache (Feuer)", bonus:"Feuerschaden", traits:["Atemwaffe: Linie 5×30 ft, DEX-Rettungswurf"], note:"" },
+      { name:"Schwarzer Drache (Säure)",   bonus:"Säureresistenz",   resistances:["Säureschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Linie 5×30 ft, CON-RW","Resistenz: Säure"], note:"" },
+      { name:"Blauer Drache (Blitz)",      bonus:"Blitzresistenz",   resistances:["Blitzschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Linie 5×30 ft, DEX-RW","Resistenz: Blitz"], note:"" },
+      { name:"Roter Drache (Feuer)",       bonus:"Feuerresistenz",   resistances:["Feuerschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Kegel 15 ft, DEX-RW","Resistenz: Feuer","Ikonische Wahl"], note:"Der klassische Drachenkämpfer." },
+      { name:"Goldener Drache (Feuer)",    bonus:"Feuerresistenz",   resistances:["Feuerschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Kegel 15 ft, DEX-RW","Resistenz: Feuer"], note:"Mechanisch wie Roter Drache." },
+      { name:"Silberdrache (Kälte)",       bonus:"Kälteresistenz",   resistances:["Kälteschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Kegel 15 ft, CON-RW","Resistenz: Kälte"], note:"" },
+      { name:"Grüner Drache (Gift)",       bonus:"Giftresistenz",    resistances:["Giftschaden"],    statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Kegel 15 ft, CON-RW","Resistenz: Gift"], note:"" },
+      { name:"Weißer Drache (Kälte)",      bonus:"Kälteresistenz",   resistances:["Kälteschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Kegel 15 ft, CON-RW","Resistenz: Kälte"], note:"" },
+      { name:"Bronzedrache (Blitz)",       bonus:"Blitzresistenz",   resistances:["Blitzschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Linie 5×30 ft, DEX-RW","Resistenz: Blitz"], note:"" },
+      { name:"Kupferdrache (Säure)",       bonus:"Säureresistenz",   resistances:["Säureschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Linie 5×30 ft, CON-RW","Resistenz: Säure"], note:"" },
+      { name:"Messingdrache (Feuer)",      bonus:"Feuerresistenz",   resistances:["Feuerschaden"],   statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0}, traits:["Atemwaffe: Linie 5×30 ft, DEX-RW","Resistenz: Feuer"], note:"" },
     ],
-    classTip:"Passt zu: Paladin, Kämpfer (STR), Hexenmeister, Sorcerer (CHA) – Atemwaffe ist Bonus zur Klasse.",
-    lore:"Dragonborn erinnern sich an eine Zeit, als Drachen über die Welt herrschten. Ihr Stolz ist legendär. Sie bilden eigene Klans mit starren Ehrenkodizes und unvergesslicher Loyalität." },
+    classTip:"Passt zu: Paladin, Kämpfer (STR), Hexenmeister, Sorcerer (CHA).",
+    lore:"Dragonborn erinnern sich an eine Zeit als Drachen über die Welt herrschten. Ihr Stolz ist legendär." },
 
   { name:"Tiefling", emoji:"😈", color:"#c084fc",
     tagline:"Verdammt von Geburt – bestimmt zur Größe",
-    description:"Tieflinge tragen das Blut eines Teufels in sich. Ihre Hörner, Schwänze und glühenden Augen machen sie zu Außenseitern. Doch Infernal Legacy gibt ihnen natürliche Magie und Hellish Resistance schützt sie vor Feuer.",
-    traits:["INT +1, CHA +2","Dunkelsicht (60 ft)","Höllisches Erbe: Thaumaturgy (Stufe 1), Hellish Rebuke (Stufe 3), Darkness (Stufe 5)","Hellish Resistance: Resistenz gegen Feuerschaden"],
-    size:"Mittelgroß", speed:"30 ft", languages:["Gemeinsprache","Höllisch"],
+    description:"Tieflinge tragen das Blut eines Teufels in sich. INT +1, CHA +2, Dunkelsicht, natürliche Feuerresistenz und angeborene Magie (Thaumaturgy, Hellish Rebuke, Darkness).",
+    traits:["INT +1, CHA +2","Dunkelsicht 60 ft","Höllische Resistenz: Resistenz gegen Feuerschaden","Höllisches Erbe: Thaumaturgy (immer), Hellish Rebuke (L3, 1×/lang), Darkness (L5, 1×/lang)"],
+    size:"Mittelgroß", speed:30, darkvision:60,
+    statBonuses:{str:0,dex:0,con:0,int:1,wis:0,cha:2},
+    languages:["Gemeinsprache","Höllisch"],
+    resistances:["Feuerschaden"],
     suggestedFor:{ classes:["Hexenmeister","Zauberwirker (Sorcerer)","Barde","Paladin","Zauberer (Magier)"] },
     subraces:[
-      { name:"Standard-Tiefling (Asmodeus)", bonus:"INT +1, CHA +2", traits:["Hellish Rebuke (Schaden zurückwerfen)","Darkness (Dunkelheit erzeugen)"], note:"Die Basis-Version. Für die meisten Klassen ausreichend und ikonisch." },
+      { name:"Standard-Tiefling (Asmodeus)", bonus:"INT +1, CHA +2",
+        statBonuses:{str:0,dex:0,con:0,int:0,wis:0,cha:0},
+        traits:["Thaumaturgy Zaubertrick","Hellish Rebuke (Level 3)","Darkness (Level 5)"],
+        note:"Die Basis-Version. Für die meisten Klassen ausreichend und ikonisch." },
     ],
     classTip:"Passt zu: Hexenmeister (synergetisches CHA + Infernal-Thema), Sorcerer, Barde, Paladin.",
-    lore:"Tieflinge werden oft verfolgt und misstraut – zu Unrecht. Viele kämpfen aktiv gegen das Böse, um das Erbe ihres Blutes zu überwinden. Sie sind oft die tragischsten und tiefsten Charaktere am Tisch." },
+    lore:"Tieflinge werden oft verfolgt und misstraut – zu Unrecht. Viele kämpfen aktiv gegen das Böse." },
 ];
 
 const WIZARD_BACKGROUNDS = [
@@ -1505,6 +1883,21 @@ function WizardCard({ item, selected, onSelect, theme, showTip, recommendedNames
   );
 }
 
+class WizardDetailErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(err) { console.error("WizardDetail crash:", err); }
+  render() {
+    if (this.state.hasError) return (
+      <div style={{ padding:20, color:"rgba(255,255,255,0.4)", textAlign:"center" }}>
+        <div style={{ fontSize:24, marginBottom:8 }}>⚠</div>
+        <div>Konnte Details nicht laden.</div>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
 function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }) {
   if (!item) return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
@@ -1551,7 +1944,7 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
         </div>
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>⭐ STÄRKEN</div>
-          {item.strengths.map((s,i) => (
+          {(item.strengths||[]).map((s,i) => (
             <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:5, fontSize:13, color:"rgba(255,255,255,0.7)" }}>
               <span style={{ color:item.color, flexShrink:0 }}>✦</span>{s}
             </div>
@@ -1560,12 +1953,53 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>🏛 SUBKLASSEN (Auswahl)</div>
           <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
-            {item.subclasses.map((s,i) => (
+            {(item.subclasses||[]).map((s,i) => (
               <span key={i} style={{ background:`${item.color}18`, border:`1px solid ${item.color}44`,
                 borderRadius:20, padding:"3px 10px", fontSize:12, color:item.color, fontWeight:600 }}>{s}</span>
             ))}
           </div>
         </div>
+        {/* ── Klassenmerkmale (Level 1) ── */}
+        {CLASS_FEATURES[item.name] && CLASS_FEATURES[item.name].length > 0 && (
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>
+              ⚔ KLASSENMERKMALE (LEVEL 1)
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {CLASS_FEATURES[item.name].map((f, i) => (
+                <div key={i} style={{
+                  background:`${item.color}0d`, borderRadius:10,
+                  border:`1px solid ${item.color}33`,
+                  padding:"8px 12px",
+                }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:f.note||f.desc?4:0 }}>
+                    <span style={{ fontSize:12, fontWeight:900, color:item.color }}>
+                      {f.type==="limited_use"?"🔢":f.type==="passive"?"✦":f.type==="advantage"?"🟢":f.type==="resistance"?"🛡":f.type==="ki_pool"?"🧘":f.type==="ki_ability"?"⚡":f.type==="sneak_attack"?"🗡":f.type==="ac_bonus"?"🛡":"✦"}
+                    </span>
+                    <span style={{ fontWeight:800, fontSize:13, color:"rgba(255,255,255,0.9)" }}>{f.keyword}</span>
+                    {f.type==="limited_use" && (
+                      <span style={{ fontSize:10, fontWeight:800, marginLeft:"auto", flexShrink:0,
+                        background:`${item.color}22`, color:item.color, border:`1px solid ${item.color}44`,
+                        borderRadius:20, padding:"1px 7px" }}>
+                        {f.maxUses}× / {f.resetOn==="short"?"Kurze Rast":"Lange Rast"}
+                      </span>
+                    )}
+                  </div>
+                  {f.note && (
+                    <div style={{ fontSize:11, color:`${item.color}cc`, marginBottom:3, fontWeight:600 }}>
+                      {f.note}
+                    </div>
+                  )}
+                  {f.desc && (
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", lineHeight:1.5 }}>
+                      {f.desc}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div style={{ background:`${item.color}10`, borderRadius:10, padding:"10px 14px", fontSize:13, color:"rgba(255,255,255,0.6)" }}>
           🎮 <span style={{ fontWeight:700, color:item.color }}>Spielstil:</span> {item.playstyle}
         </div>
@@ -1573,7 +2007,7 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
 
       {type==="race" && <>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:12 }}>
-          {[["Größe", item.size, "📏"],["Speed", item.speed, "🏃"],["Sprachen", item.languages?.join(", ") || "—", "🗣"]].map(([l,v,e]) => (
+          {[["Größe", item.size, "📏"],["Speed", typeof item.speed==="number" ? item.speed+" ft" : item.speed, "🏃"],["Sprachen", Array.isArray(item.languages) ? (Array.isArray(item.languages)?item.languages:[]).join(", ") : (item.languages ? `${item.languages} nach Wahl` : "—"), "🗣"]].map(([l,v,e]) => (
             <div key={l} style={{ background:"rgba(12,12,18,0.88)", borderRadius:10,
               padding:"8px 10px", border:"1px solid rgba(255,255,255,0.08)" }}>
               <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontWeight:700, textTransform:"uppercase", marginBottom:3 }}>{e} {l}</div>
@@ -1583,17 +2017,17 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
         </div>
         <div style={{ marginBottom:12 }}>
           <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>⚡ RASSENMERKMALE</div>
-          {item.traits.map((t,i) => (
+          {(item.traits||[]).map((t,i) => (
             <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:5, fontSize:13, color:"rgba(255,255,255,0.7)" }}>
               <span style={{ color:item.color, flexShrink:0 }}>✦</span>{t}
             </div>
           ))}
         </div>
-        {item.subraces && item.subraces.length > 0 && (
+        {item.subraces && (item.subraces||[]).length > 0 && (
           <div style={{ marginBottom:12 }}>
             <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>🌿 UNTERRASSEN</div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {item.subraces.map((sr,i) => (
+              {(item.subraces||[]).map((sr,i) => (
                 <div key={i} style={{ background:`${item.color}0d`, border:`1px solid ${item.color}33`,
                   borderRadius:10, padding:"10px 12px" }}>
                   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
@@ -1601,7 +2035,7 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
                     <span style={{ fontSize:11, background:`${item.color}22`, color:item.color,
                       border:`1px solid ${item.color}44`, borderRadius:20, padding:"2px 8px", fontWeight:700 }}>{sr.bonus}</span>
                   </div>
-                  {sr.traits.map((t,j) => (
+                  {(sr.traits||[]).map((t,j) => (
                     <div key={j} style={{ fontSize:12, color:"rgba(255,255,255,0.6)", marginBottom:2 }}>
                       <span style={{ color:item.color, marginRight:5 }}>·</span>{t}
                     </div>
@@ -1616,13 +2050,42 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
             </div>
           </div>
         )}
+        {/* ── Rassenmerkmale aus PHB ── */}
+        {RACE_FEATURES[item.name] && RACE_FEATURES[item.name].length > 0 && (
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:item.color, letterSpacing:"0.07em", marginBottom:8 }}>
+              ⚡ MECHANISCHE MERKMALE
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+              {RACE_FEATURES[item.name].map((f, i) => (
+                <div key={i} style={{
+                  background:`${item.color}0d`, borderRadius:9,
+                  border:`1px solid ${item.color}2a`, padding:"7px 11px",
+                }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:f.note?3:0 }}>
+                    <span style={{ fontSize:11, color:item.color, fontWeight:900 }}>
+                      {f.type==="advantage"?"🟢":f.type==="resistance"?"🛡":f.type==="limited_use"?"🔢":"✦"}
+                    </span>
+                    <span style={{ fontWeight:800, fontSize:12, color:"rgba(255,255,255,0.9)" }}>{f.keyword}</span>
+                  </div>
+                  {f.note && (
+                    <div style={{ fontSize:11, color:`${item.color}bb`, fontWeight:600, marginBottom:2 }}>{f.note}</div>
+                  )}
+                  {f.desc && (
+                    <div style={{ fontSize:11, color:"rgba(255,255,255,0.45)", lineHeight:1.5 }}>{f.desc}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {item.classTip && (
           <div style={{ background:"rgba(74,222,128,0.07)", border:"1px solid rgba(74,222,128,0.25)",
             borderRadius:10, padding:"10px 14px", fontSize:13, color:"rgba(255,255,255,0.7)", lineHeight:1.6 }}>
             🎯 <span style={{ fontWeight:700, color:"#4ade80" }}>Klassen-Tipp:</span> {item.classTip}
           </div>
         )}
-        {item.subraces && item.subraces.length > 1 && onOpenSubraceModal && (
+        {item.subraces && (item.subraces||[]).length > 1 && onOpenSubraceModal && (
           <button
             onClick={() => onOpenSubraceModal(item)}
             style={{
@@ -1690,12 +2153,16 @@ function WizardDetail({ item, theme, type, onOpenSubraceModal, selectedSubrace }
   );
 }
 
-function AttributeExplainer({ theme, chosenClass, onStatsChange }) {
+function AttributeExplainer({ theme, chosenClass, onStatsChange, mode, onModeChange, manualVals, onManualValsChange, rollResults, onRollResultsChange, assigned, onAssignedChange, chosenRace, chosenSubrace, freeStatChoices, onFreeStatChoicesChange }) {
   const recommended = chosenClass?.primaryStats || [];
   const STAT_KEYS = ["str","dex","con","int","wis","cha"];
   const STAT_LABELS = { str:"STR",dex:"DEX",con:"CON",int:"INT",wis:"WIS",cha:"CHA" };
 
-  const [mode, setMode] = useState("info");
+  // mode/manualVals/rollResults/assigned lifted to CharacterWizard for persistence
+  const setMode = onModeChange;
+  const setManualVals = onManualValsChange;
+  const setRollResults = onRollResultsChange;
+  const setAssigned = onAssignedChange;
   const [selected, setSelected] = useState(() => {
     if (recommended.length > 0) {
       const first = WIZARD_ATTRIBUTES.find(a => a.key === recommended[0]);
@@ -1704,9 +2171,6 @@ function AttributeExplainer({ theme, chosenClass, onStatsChange }) {
     return WIZARD_ATTRIBUTES[0];
   });
 
-  const [manualVals, setManualVals] = useState({str:"",dex:"",con:"",int:"",wis:"",cha:""});
-  const [rollResults, setRollResults] = useState(null);
-  const [assigned, setAssigned]   = useState({str:null,dex:null,con:null,int:null,wis:null,cha:null});
   const [rolling, setRolling]     = useState(false);
   const [rollAnim, setRollAnim]   = useState(false);
 
@@ -1770,18 +2234,80 @@ function AttributeExplainer({ theme, chosenClass, onStatsChange }) {
     },
   };
 
+  const SLBL = { str:"STR", dex:"DEX", con:"CON", int:"INT", wis:"WIS", cha:"CHA" };
+  const _rb = chosenRace?.statBonuses || {};
+  const _sb = chosenSubrace?.statBonuses || {};
+  const _raceBonuses = {};
+  Object.entries(_rb).forEach(([k,v]) => { if(v) _raceBonuses[k]=(_raceBonuses[k]||0)+v; });
+  Object.entries(_sb).forEach(([k,v]) => { if(v) _raceBonuses[k]=(_raceBonuses[k]||0)+v; });
+  const _bonusEntries = Object.entries(_raceBonuses).filter(([,v])=>v>0);
+  const _freeCount = (chosenRace?.extraChoices?.freeStats||0) + (chosenSubrace?.extraChoices?.freeStats||0);
+  const _freeAmt   = chosenRace?.extraChoices?.statAmount || chosenSubrace?.extraChoices?.statAmount || 1;
+  const _allSK = ["str","dex","con","int","wis","cha"];
+
   return (
     <div className="wizard-fade">
-      {chosenClass && recommended.length > 0 && (
-        <div style={{ background:"rgba(74,222,128,0.07)", border:"1px solid rgba(74,222,128,0.25)",
-          borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:"rgba(255,255,255,0.7)" }}>
-          🎯 <span style={{ fontWeight:700, color:"#4ade80" }}>Für {chosenClass.name} wichtig:</span>{" "}
-          {recommended.map(k => {
-            const a = WIZARD_ATTRIBUTES.find(x => x.key === k);
-            return a ? <span key={k} style={{ fontWeight:800, color:a.color, marginRight:8 }}>{a.emoji} {a.short}</span> : null;
-          })}
-        </div>
-      )}
+      <>
+          {(_bonusEntries.length > 0 || _freeCount > 0) && (
+            <div style={{ background:"rgba(139,92,246,0.08)", border:"1px solid rgba(139,92,246,0.3)",
+              borderRadius:10, padding:"10px 14px", marginBottom:12, fontSize:13 }}>
+              <div style={{ fontWeight:800, color:"#a78bfa", marginBottom:8, fontSize:11, letterSpacing:"0.07em" }}>
+                ⚡ RASSENBONI – werden automatisch addiert
+              </div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:_freeCount>0?10:0 }}>
+                {_bonusEntries.map(([k,v]) => (
+                  <span key={k} style={{ background:"rgba(139,92,246,0.2)", border:"1px solid #a78bfa88",
+                    borderRadius:20, padding:"2px 10px", color:"#c4b5fd", fontWeight:800 }}>
+                    {SLBL[k]} +{v}
+                  </span>
+                ))}
+              </div>
+              {_freeCount > 0 && (
+                <div>
+                  <div style={{ fontSize:11, color:"rgba(255,255,255,0.5)", marginBottom:8 }}>
+                    Wähle {_freeCount}× +{_freeAmt} für ein Attribut nach Wahl:
+                  </div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {_allSK.map(sk => {
+                      const chosen = (freeStatChoices||[]).includes(sk);
+                      const full   = !chosen && (freeStatChoices||[]).length >= _freeCount;
+                      return (
+                        <button key={sk} disabled={full}
+                          onClick={() => {
+                            if (!onFreeStatChoicesChange) return;
+                            if (chosen) onFreeStatChoicesChange((freeStatChoices||[]).filter(s=>s!==sk));
+                            else if ((freeStatChoices||[]).length < _freeCount) onFreeStatChoicesChange([...(freeStatChoices||[]), sk]);
+                          }}
+                          style={{ padding:"4px 12px", borderRadius:20, fontWeight:800,
+                            fontSize:13, fontFamily:"inherit", cursor:full?"not-allowed":"pointer",
+                            background: chosen?"rgba(139,92,246,0.35)":"rgba(255,255,255,0.05)",
+                            border: chosen?"2px solid #a78bfa":"1px solid rgba(255,255,255,0.15)",
+                            color: chosen?"#c4b5fd": full?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.7)" }}>
+                          {SLBL[sk]}{chosen?` +${_freeAmt}`:""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {(freeStatChoices||[]).length < _freeCount && (
+                    <div style={{ fontSize:11, color:"#fbbf24", marginTop:6 }}>
+                      ⚠ Noch {_freeCount-(freeStatChoices||[]).length} Attribut(e) wählen
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          {chosenClass && recommended.length > 0 && (
+            <div style={{ background:"rgba(74,222,128,0.07)", border:"1px solid rgba(74,222,128,0.25)",
+              borderRadius:10, padding:"10px 14px", marginBottom:16, fontSize:13, color:"rgba(255,255,255,0.7)" }}>
+              🎯 <span style={{ fontWeight:700, color:"#4ade80" }}>Für {chosenClass.name} wichtig:</span>{" "}
+              {recommended.map(k => {
+                const a = WIZARD_ATTRIBUTES.find(x => x.key === k);
+                return a ? <span key={k} style={{ fontWeight:800, color:a.color, marginRight:8 }}>{a.emoji} {a.short}</span> : null;
+              })}
+            </div>
+          )}
+        </>
 
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
         <button style={S2.modeBtn(mode==="info")}    onClick={() => setMode("info")}>📖 Erklärer</button>
@@ -1975,11 +2501,34 @@ function AttributeExplainer({ theme, chosenClass, onStatsChange }) {
   );
 }
 
-function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledStats, selectedEquipment }) {
+function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledStats, selectedEquipment, freeStatChoices }) {
+  const STAT_KEYS2 = ["str","dex","con","int","wis","cha"];
   const missing = [];
-  if (!data.name?.trim()) missing.push("Name");
-  if (!data.race) missing.push("Rasse");
-  if (!data.class) missing.push("Klasse");
+  if (!data.name?.trim())  missing.push({ field:"name",      label:"✏️ Name",           hint:"Gib deinem Charakter einen Namen." });
+  if (!data.race)          missing.push({ field:"race",      label:"🌍 Rasse",           hint:"Wähle eine Rasse im Rassen-Schritt." });
+  if (!data.class)         missing.push({ field:"class",     label:"⚔️ Klasse",          hint:"Wähle eine Klasse im Klassen-Schritt." });
+  if (!data.background)    missing.push({ field:"background",label:"📖 Hintergrund",     hint:"Wähle einen Hintergrund." });
+  if (!data.alignment)     missing.push({ field:"alignment", label:"☯️ Gesinnung",       hint:"Wähle eine Gesinnung." });
+  // Attributwerte prüfen - alle 6 müssen ausgefüllt sein
+  const allStatsSet = rolledStats && STAT_KEYS2.every(k => {
+    const v = parseInt(rolledStats[k]);
+    return !isNaN(v) && v >= 1;
+  });
+  if (!allStatsSet)
+    missing.push({ field:"attributes", label:"💪 Attribute", hint:"Alle 6 Attributwerte müssen ausgefüllt sein." });
+
+  // Freie Attributwahlen (Halb-Elf, Varianten-Mensch) prüfen
+  const requiredFreeStats = (data.race?.extraChoices?.freeStats || 0) +
+                             (selectedSubrace?.extraChoices?.freeStats || 0);
+  const chosenFreeStats   = (freeStatChoices || []).length;
+  if (requiredFreeStats > 0 && chosenFreeStats < requiredFreeStats)
+    missing.push({
+      field: "freeStats",
+      label: "⚡ Freie Attributwahl",
+      hint: `Deine Rasse gibt dir ${requiredFreeStats} freie +1 Boni – du hast erst ${chosenFreeStats} von ${requiredFreeStats} gewählt. Gehe zum Attribut-Schritt.`
+    });
+  if (!selectedEquipment)  missing.push({ field:"equipment", label:"🎒 Ausrüstung",      hint:"Wähle ein Ausrüstungspaket." });
+  const allDone = missing.length === 0;
 
   const STAT_KEYS = ["str","dex","con","int","wis","cha"];
   const STAT_LABELS = { str:"STR",dex:"DEX",con:"CON",int:"INT",wis:"WIS",cha:"CHA" };
@@ -2064,10 +2613,32 @@ function WizardSummary({ data, theme, onFinish, onBack, selectedSubrace, rolledS
             fontWeight:600, cursor:"pointer", fontSize:14, fontFamily:"inherit" }}>
           ← Zurück
         </button>
-        <button onClick={onFinish}
-          style={{ flex:1, background:`linear-gradient(135deg,${theme.accent}cc,${theme.accent}77)`,
-            color:"white", border:"none", borderRadius:12, padding:"12px 0",
-            fontWeight:800, cursor:"pointer", fontSize:15, fontFamily:"inherit" }}>
+        {missing.length > 0 && (
+          <div style={{
+            width:"100%", marginBottom:12,
+            background:"rgba(239,68,68,0.08)",
+            border:"1px solid rgba(239,68,68,0.25)",
+            borderRadius:12, padding:"12px 14px",
+          }}>
+            <div style={{ fontSize:12, fontWeight:800, color:"#f87171", marginBottom:8, letterSpacing:"0.05em" }}>
+              ⚠ Noch nicht vollständig – bitte ausfüllen:
+            </div>
+            {missing.map((m,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:8, marginBottom: i < missing.length-1 ? 6 : 0 }}>
+                <span style={{ fontSize:13, fontWeight:700, color:"#f87171", flexShrink:0 }}>{m.label}</span>
+                <span style={{ fontSize:12, color:"rgba(255,255,255,0.45)", lineHeight:1.5 }}>{m.hint}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <button onClick={allDone ? onFinish : undefined} disabled={!allDone}
+          style={{ flex:1, background: allDone
+            ? `linear-gradient(135deg,${theme.accent}cc,${theme.accent}77)`
+            : "rgba(255,255,255,0.08)",
+            color: allDone ? "white" : "rgba(255,255,255,0.3)",
+            border:"none", borderRadius:12, padding:"12px 0",
+            fontWeight:800, cursor: allDone ? "pointer" : "not-allowed",
+            fontSize:15, fontFamily:"inherit", transition:"all 0.2s" }}>
           ⚔ Charakter erstellen!
         </button>
       </div>
@@ -2123,7 +2694,7 @@ function CustomRaceModal({ editRace, onSave, onClose, theme }) {
         .map(sr => ({
           ...sr,
           name: sr.name.trim(),
-          bonus: sr.bonus.trim(),
+          bonus: (sr.bonus||"").trim(),
           traits: (sr.traits||[]).filter(t => t.trim()),
           note: (sr.note||"").trim(),
         })),
@@ -2366,6 +2937,13 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
   const [freeChoiceModal, setFreeChoiceModal] = useState(null); // {choices, pendingCharData}
   const [editingCustomRace, setEditingCustomRace] = useState(null);
   const [selectedEquipment, setSelectedEquipment] = useState(null);
+  // Lifted attribute state - persists across step navigation
+  const [attrMode,        setAttrMode]        = useState("info");
+  const [attrManualVals,  setAttrManualVals]  = useState({str:"",dex:"",con:"",int:"",wis:"",cha:""});
+  const [attrRollResults, setAttrRollResults] = useState(null);
+  const [attrAssigned,    setAttrAssigned]    = useState({str:null,dex:null,con:null,int:null,wis:null,cha:null});
+  const [freeStatChoices, setFreeStatChoices] = useState([]);  // für freie +1 Boni
+  const [freeStepChoices, setFreeStepChoices] = useState({});  // freie Skill/Sprach-Wahlen aus Schritten (Halb-Elf, Varianten-Mensch)
 
   const allRaces = [...WIZARD_RACES, ...customRaces];
 
@@ -2391,6 +2969,16 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
 
   const handleNext = () => {
     if (step < steps.length - 1) {
+      // Beim Verlassen des Attribut-Schritts: freie Skill/Sprach-Wahlen zeigen
+      if (currentStep.id === "attributes") {
+        const freeChoices = detectFreeChoices(data.race, selectedSubrace, data.background)
+          .filter(fc => fc.type !== "stat_free"); // Stat-freiwahlen sind schon im Attribut-Schritt
+        if (freeChoices.length > 0) {
+          // Baue ein temporäres pendingData für das Modal
+          setFreeChoiceModal({ choices: freeChoices, pendingCharData: null, fromStep: true });
+          return;
+        }
+      }
       setStep(s => s + 1);
       setDetailItem(null);
     }
@@ -2413,10 +3001,26 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
 
     // ── Attribut-Boni aus Rasse + Unterrasse ──────────────────────────────
     const stats = { ...baseStats };
+    // Apply structured statBonuses from race data
+    const applyStatBonuses = (bonuses) => {
+      if (!bonuses) return;
+      Object.entries(bonuses).forEach(([k,v]) => {
+        if (v && stats[k] !== undefined) stats[k] = (stats[k] || 10) + v;
+      });
+    };
+    // Race base bonuses
+    applyStatBonuses(race?.statBonuses);
+    // Subrace bonuses (additive)
+    applyStatBonuses(sr?.statBonuses);
+    // Free stat choices (Varianten-Mensch, Halb-Elf)
+    const freeAmt = race?.extraChoices?.statAmount || sr?.extraChoices?.statAmount || 1;
+    freeStatChoices.forEach(sk => {
+      if (stats[sk] !== undefined) stats[sk] = (stats[sk] || 10) + freeAmt;
+    });
+    // Fallback: parse text bonus for old-format data
     const applyStatBonus = (bonusStr) => {
       if (!bonusStr) return;
       const map = { STR:"str", DEX:"dex", CON:"con", INT:"int", WIS:"wis", CHA:"cha" };
-      // Parst z.B. "CON +2", "STR +2, CON +1", "CHA +2, 2× frei +1" (frei = ignoriert)
       const re = /\b(STR|DEX|CON|INT|WIS|CHA)\s*\+(\d+)/gi;
       let m;
       while ((m = re.exec(bonusStr)) !== null) {
@@ -2424,25 +3028,13 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
         if (key) stats[key] = (stats[key] || 10) + parseInt(m[2]);
       }
     };
-    // Rassentraits (z.B. "CON +2", "DEX +2", "STR +2, CON +1")
-    if (race?.traits) {
-      race.traits.forEach(t => applyStatBonus(t));
-    }
-    // Unterrassen-Bonus (z.B. "WIS +1", "STR +2")
-    if (sr?.bonus) applyStatBonus(sr.bonus);
 
-    // ── Speed aus Unterrasse überschreiben ────────────────────────────────
-    let speed = 30;
-    if (race?.speed) {
-      const sp = parseInt(race.speed);
-      if (!isNaN(sp)) speed = sp;
-    }
-    // Waldelfe: 35 ft
-    if (sr?.traits) {
-      sr.traits.forEach(t => {
-        const m = t.match(/Speed\s+(\d+)\s*ft/i);
-        if (m) speed = parseInt(m[1]);
-      });
+    // ── Speed: use structured data ─────────────────────────────────────
+    let speed = typeof race?.speed === 'number' ? race.speed : 30;
+    if (sr?.speedOverride) speed = sr.speedOverride;
+    // Fallback: parse from string
+    if (typeof race?.speed === 'string') {
+      const sp = parseInt(race.speed); if (!isNaN(sp)) speed = sp;
     }
 
     // ── Rettungswurf-Proficiencies aus Klasse (PHB-Regeln) ────────────────
@@ -2544,30 +3136,31 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
     const featureList = [];
 
     // Rassenmerkmale die mechanisch relevant sind
-    const RACE_FEATURES = {
-      "Halbork": [
-        { keyword:"Unbeugsame Ausdauer", type:"passive", note:"Einmal pro Lange Rast: auf 1 HP statt 0 HP fallen", desc:"Wenn du auf 0 HP fällst, kannst du einmal pro langen Rast stattdessen auf 1 HP fallen." },
-        { keyword:"Wilde Angriffe", type:"bonus_damage", value:"1W", note:"Kritische Treffer: +1 Schadenswürfel", desc:"Bei einem kritischen Treffer mit einer Nahkampfwaffe würfelst du einen zusätzlichen Schadenswürfel." },
-      ],
-      "Elf": [
-        { keyword:"Fey Ancestry", type:"advantage", target:"", note:"Vorteil gegen Bezauberung; Immunität gegen Schlaf", desc:"Du hast Vorteil auf Rettungswürfe gegen Bezauberung und kannst nicht magisch eingeschläfert werden." },
-      ],
-      "Halb-Elf": [
-        { keyword:"Fey Ancestry", type:"advantage", target:"", note:"Vorteil gegen Bezauberung; Immunität gegen Schlaf", desc:"Du hast Vorteil auf Rettungswürfe gegen Bezauberung und kannst nicht magisch eingeschläfert werden." },
-      ],
-      "Zwerg": [
-        { keyword:"Zwergische Widerstandsfähigkeit", type:"advantage", target:"", note:"Vorteil auf Rettungswürfe gegen Gift; Resistenz gegen Giftschaden", desc:"Du hast Vorteil auf Rettungswürfe gegen Gift und Resistenz gegen Giftschaden." },
-      ],
-      "Halbling": [
-        { keyword:"Lucky", type:"passive", note:"Gewürfelte 1 auf d20 immer neu würfeln", desc:"Wenn du eine 1 auf einem Angriffswurf, Rettungswurf oder Fertigkeitswurf würfelst, kannst du den Würfel neu würfeln und musst das neue Ergebnis verwenden." },
-        { keyword:"Mutig", type:"advantage", target:"", note:"Vorteil auf Rettungswürfe gegen Angst", desc:"Du hast Vorteil auf Rettungswürfe gegen Erschrecken." },
-      ],
-    };
-
-    const raceName = race?.name || "";
+const raceName = race?.name || "";
     const raceFeatures = RACE_FEATURES[raceName] || [];
     raceFeatures.forEach(f => featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE, ...f, active: true })));
 
+    // ── Auto-Features aus strukturierten Rassen-Daten ─────────────────────
+    // Dunkelsicht
+    const dvRange = sr?.darkvision ?? race?.darkvision ?? 0;
+    if (dvRange > 0) {
+      const dvExists = featureList.some(f => f.keyword?.toLowerCase().includes('dunkelsicht'));
+      if (!dvExists) featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE,
+        keyword:`Dunkelsicht (${dvRange} ft)`, type:"passive", active:true,
+        note:`${dvRange} ft · Dämmerlicht wie Helles Licht · Dunkelheit wie Dämmerlicht`,
+        desc:`Du siehst in dunklen Bedingungen bis ${dvRange} ft als wäre es Dämmerlicht, und in Dunkelheit als wäre es Dämmerlicht.`
+      }));
+    }
+    // Resistenzen
+    const allResistances = [...(race?.resistances||[]), ...(sr?.resistances||[])];
+    allResistances.forEach(res => {
+      const resExists = featureList.some(f => f.keyword?.includes(res));
+      if (!resExists) featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE,
+        keyword:`Resistenz: ${res}`, type:"resistance", active:true,
+        note:`Resistenz gegen ${res} (halber Schaden)`,
+        desc:`Du hast Resistenz gegen ${res}. Du nimmst nur die Hälfte des Schadens dieses Typs.`
+      }));
+    });
     // Hügelzwerg: +1 HP pro Stufe als passive Note
     if (sr?.name?.includes("Hügelzwerg")) {
       featureList.push({ ...DEFAULT_FEATURE,
@@ -2579,58 +3172,13 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
 
     // Halbork: Einschüchtern bereits in Fertigkeiten – ggf. als Feature vermerken
     // Barbar Rage als Feature
-    const monkLevel = cls?.name === "Mönch" ? (charData?.classes?.[0]?.level || 1) : 1;
-    const CLASS_FEATURES = {
-      "Barbar": [
-        { keyword:"Kampfrausch (Rage)", type:"limited_use", maxUses:2, resetOn:"long",
-          note:"Bonus-Aktion · Vorteil STR-Angriffe · +2 Schaden · Resistenz Hieb/Stich/Wucht",
-          desc:"Als Bonus-Aktion kannst du in den Kampfrausch eintreten. Du hast Vorteil auf STR-Würfe, +2 Schadensbonus, und Resistenz gegen Hieb-, Stich- und Wuchtschaden. Endet wenn du keinen Angriff machst oder keinen Schaden nimmst." },
-      ],
-      "Schurke": [
-        { keyword:"Meucheln (Sneak Attack)", type:"sneak_attack", value:"1W6",
-          note:"1× pro Runde · braucht Vorteil oder verbündeten Angreifer",
-          desc:"Einmal pro Runde kannst du 1W6 Extraschaden verursachen wenn du Vorteil hast oder ein Verbündeter deinen Feind bedrängt." },
-      ],
-      "Mönch": [
-        { keyword:"Ki-Pool", type:"ki_pool", maxUses: monkLevel, resetOn:"short",
-          note:`${monkLevel} Ki-Punkte (= Level) · Reset nach kurzer oder langer Rast`,
-          desc:"Ki ist deine innere Energie. Du gibst Ki-Punkte aus um besondere Fähigkeiten zu aktivieren." },
-        // Level-2 Ki-Fähigkeiten direkt als ki_ability eintragen
-        { keyword:"Flurry of Blows",  type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
-          desc:"Nach einem Angriff: 2 zusätzliche unbewaffnete Angriffe als Bonus-Aktion." },
-        { keyword:"Patient Defense",  type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
-          desc:"Nimm die Dodge-Aktion als Bonus-Aktion (Angreifer haben Nachteil auf dich)." },
-        { keyword:"Step of the Wind", type:"ki_ability", kiCost:1, kiAction:"Bonus-Aktion", active:true,
-          desc:"Dash oder Disengage als Bonus-Aktion. Sprungweite verdoppelt." },
-      ],
-      "Paladin": [
-        { keyword:"Göttlicher Schlag (Divine Smite)", type:"passive",
-          note:"Reaktion nach Treffer · kostet Zauberslot · 2W8 + 1W8/Slot Strahlenschaden",
-          desc:"Wenn du einen Angriff triffst, kannst du einen Zauberslot verbrauchen um 2W8 (+1W8 pro Slot über dem 1.) extra Strahlenschaden zuzufügen." },
-      ],
-      "Hexenmeister": [
-        { keyword:"Eldritch Blast", type:"passive",
-          note:"Immer verfügbar · 1W10 Kraftschaden · Reichweite 36 m",
-          desc:"Dein stärkster Zaubertrick: 1W10 Kraftschaden auf 36 Meter Reichweite." },
-      ],
-      "Barde": [
-        { keyword:"Bardic Inspiration", type:"limited_use", maxUses:Math.max(1,Math.floor(((charData?.stats?.cha||10)-10)/2)), resetOn:"long",
-          note:"Bonus-Aktion · W6 Inspirationswürfel · 1 Verbündeter profitiert",
-          desc:"Als Bonus-Aktion kannst du einem Verbündeten in 18 m einen Inspirationswürfel (W6) geben. Er kann ihn auf einen Angriff, Fähigkeitswurf oder Rettungswurf addieren." },
-      ],
-      "Kleriker": [
-        { keyword:"Kanalisierte Gottheit", type:"limited_use", maxUses:1, resetOn:"short",
-          note:"1× pro Kurze Rast · Domain-spezifischer Effekt",
-          desc:"Du kannst göttliche Energie kanalisieren. Der genaue Effekt hängt von deiner Domain ab." },
-      ],
-      "Druide": [
-        { keyword:"Wild Shape", type:"limited_use", maxUses:2, resetOn:"short",
-          note:"2× pro Kurze Rast · Bonus-Aktion · in Tier verwandeln",
-          desc:"Als Bonus-Aktion kannst du dich in ein Tier verwandeln das du schon gesehen hast." },
-      ],
-    };
-
-    const classFeatures = cls ? (CLASS_FEATURES[cls.name] || []) : [];
+    const monkLevel = 1; // Level 1 start - scales via syncKiAbilities on level up
+const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
+    const classFeatures = (cls ? (CLASS_FEATURES[cls.name] || []) : []).map(f => {
+      if (f.keyword && f.keyword.includes("Bardische Inspiration")) return { ...f, maxUses: chaModFinal };
+      if (f.keyword && f.keyword.includes("Heilende Hände")) return { ...f, maxUses: 5 };
+      return f;
+    });
     classFeatures.forEach(f => featureList.push(autoClassifyFeature({ ...DEFAULT_FEATURE, ...f, active: true })));
 
     // ── Zusammenbauen ──────────────────────────────────────────────────────
@@ -2747,9 +3295,31 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
       } : {}),
     };
     // ── Freie Auswahlen prüfen ─────────────────────────────────────────────
-    const freeChoices = detectFreeChoices(race, sr, bg);
-    if (freeChoices.length > 0) {
-      setFreeChoiceModal({ choices: freeChoices, pendingCharData: charData });
+    // Stat-freiwahlen sind schon über freeStatChoices im Attribut-Schritt erfasst
+    // Skill/Sprach-freiwahlen die noch nicht erfasst wurden → Modal zeigen
+    const remainingFreeChoices = detectFreeChoices(race, sr, bg)
+      .filter(fc => {
+        if (fc.type === "stat_free") return false; // bereits via freeStatChoices
+        // Prüfen ob diese Wahl schon in freeStepChoices erfasst wurde
+        return !Object.keys(freeStepChoices).some(k => k.startsWith(fc.id));
+      });
+    if (remainingFreeChoices.length > 0) {
+      setFreeChoiceModal({ choices: remainingFreeChoices, pendingCharData: charData });
+      return;
+    }
+    // Bereits erfasste freeStepChoices auf charData anwenden
+    if (Object.keys(freeStepChoices).length > 0) {
+      const updated = JSON.parse(JSON.stringify(charData));
+      Object.entries(freeStepChoices).forEach(([k, v]) => {
+        if (k.startsWith("skill_")) {
+          const sk = k.replace("skill_", "");
+          if (updated.skillProficiencies?.[sk] !== undefined) updated.skillProficiencies[sk] = true;
+        } else if (k.startsWith("lang_")) {
+          if (!updated.languages) updated.languages = [];
+          updated.languages.push(v);
+        }
+      });
+      onFinish(updated);
       return;
     }
 
@@ -2757,6 +3327,17 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
   };
 
   const handleFreeChoiceConfirm = (choiceValues, pendingCharData) => {
+    // fromStep = called from attributes step navigation, not from handleFinish
+    if (!pendingCharData) {
+      // Apply skill choices to wizard state and proceed to next step
+      // Skills from free choice will be applied in handleFinish
+      setFreeChoiceModal(null);
+      // Store the skill/language choices for handleFinish to use
+      setFreeStepChoices(prev => ({...prev, ...choiceValues}));
+      setStep(s => s + 1);
+      setDetailItem(null);
+      return;
+    }
     const updated = JSON.parse(JSON.stringify(pendingCharData));
     Object.entries(choiceValues).forEach(([id, val]) => {
       // Stat bonuses
@@ -2862,7 +3443,7 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
             {currentStep.id === "race" && recNames && recNames.length > 0 && (
               <div style={{ fontSize:12, color:"rgba(74,222,128,0.8)", background:"rgba(74,222,128,0.06)",
                 border:"1px solid rgba(74,222,128,0.2)", borderRadius:9, padding:"7px 12px", marginBottom:12 }}>
-                ✦ Empfohlen für {data.class.name}: <strong>{recNames.join(", ")}</strong>
+                ✦ Empfohlen für {data.class?.name}: <strong>{recNames.join(", ")}</strong>
               </div>
             )}
             {currentStep.id === "background" && recNames && recNames.length > 0 && (
@@ -2879,14 +3460,22 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
                       selected={detailItem || selected}
                       onSelect={it => {
                         setDetailItem(it);
+                        const prevVal = data[currentStep.id];
+                        const changed = prevVal?.name !== it?.name;
                         set(currentStep.id, it);
                         if (currentStep.id === "race") {
-                          setSelectedSubrace(null);
+                          if (changed && prevVal) {
+                            setSelectedSubrace(null);
+                            setFreeChoiceModal(null);
+                          }
                           if (it.subraces && it.subraces.length > 1) {
                             setSubraceModalRace(it);
                           } else {
                             setSubraceModalRace(null);
                           }
+                        }
+                        if (currentStep.id === "class" && changed && prevVal) {
+                          setSelectedEquipment(null);
                         }
                       }}
                       theme={theme}
@@ -2921,9 +3510,11 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
                 )}
               </div>
               <div style={{ ...S.card, background:"rgba(255,255,255,0.02)", maxHeight:480, overflowY:"auto" }}>
+                <WizardDetailErrorBoundary key={detailItem?.name||selected?.name}>
                 <WizardDetail item={detailItem || selected} theme={theme} type={type}
                   onOpenSubraceModal={currentStep.id === "race" ? (race) => setSubraceModalRace(race) : undefined}
                   selectedSubrace={currentStep.id === "race" ? selectedSubrace : undefined} />
+                </WizardDetailErrorBoundary>
               </div>
             </div>
           </div>
@@ -2936,21 +3527,54 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
             <div style={{ fontSize:18, fontWeight:900, color:theme.accent, marginBottom:4 }}>💪 Attribute</div>
             <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)", marginBottom:16 }}>
               Lerne was jedes Attribut bedeutet, trage Werte manuell ein oder würfle sie direkt hier.
+              {(data.race?.extraChoices?.freeStats || selectedSubrace?.extraChoices?.freeStats) && (
+                <span style={{ color:"#a78bfa" }}> · Freie Attributwahl aus deiner Rasse unten auswählen.</span>
+              )}
             </div>
             <AttributeExplainer theme={theme} chosenClass={data.class}
-              onStatsChange={vals => setRolledStats(vals)} />
+              onStatsChange={vals => setRolledStats(vals)}
+              mode={attrMode} onModeChange={setAttrMode}
+              manualVals={attrManualVals} onManualValsChange={setAttrManualVals}
+              rollResults={attrRollResults} onRollResultsChange={setAttrRollResults}
+              assigned={attrAssigned} onAssignedChange={setAttrAssigned}
+              chosenRace={data.race} chosenSubrace={selectedSubrace}
+              freeStatChoices={freeStatChoices} onFreeStatChoicesChange={setFreeStatChoices}
+            />
           </div>
         );
 
       case "equipment":
         return (
+          <div className="wizard-fade">
+          {!selectedEquipment && data.class && (
+            <div style={{
+              marginBottom:12, padding:"10px 14px", borderRadius:10,
+              background:"rgba(251,191,36,0.08)", border:"1px solid rgba(251,191,36,0.3)",
+              fontSize:13, color:"#fbbf24", display:"flex", alignItems:"center", gap:8
+            }}>
+              <span>⚠</span>
+              <span>Klasse geändert – bitte wähle dein Ausrüstungspaket neu.</span>
+            </div>
+          )}
           <WizardEquipmentStep
             cls={data.class}
             stats={rolledStats ? (() => {
               const parseS = v => { const n=parseInt(v); return isNaN(n)?10:Math.max(1,Math.min(30,n)); };
               const base = { str:parseS(rolledStats.str),dex:parseS(rolledStats.dex),con:parseS(rolledStats.con),int:parseS(rolledStats.int),wis:parseS(rolledStats.wis),cha:parseS(rolledStats.cha) };
+
+    // ── Skill Proficiencies & extra HP aus Rasse ─────────────────────────
+    const _previewRace = data.race;
+    const _previewSr   = selectedSubrace;
+    const raceSkills = [...(_previewRace?.skillProfs||[]), ...(_previewSr?.skillProfs||[])];
+    raceSkills.forEach(sk => {
+      if (!base.skills) base.skills = [];
+      if (!base.skills.some(s => s.name === sk))
+        base.skills = [...base.skills, { name:sk, proficient:true, source:"Rasse" }];
+    });
+    const extraHPperLevel = _previewSr?.extraHP ?? _previewRace?.extraHP ?? 0;
+    if (extraHPperLevel > 0) base.hpBonus = (base.hpBonus||0) + extraHPperLevel;
               // apply race bonuses for live preview
-              if (data.race?.traits) data.race.traits.forEach(t => {
+              data.race?.traits?.forEach(t => {
                 const re=/\b(STR|DEX|CON|INT|WIS|CHA)\s*\+(\d+)/gi; let m;
                 const map={STR:"str",DEX:"dex",CON:"con",INT:"int",WIS:"wis",CHA:"cha"};
                 while((m=re.exec(t))!==null){ const k=map[m[1].toUpperCase()]; if(k) base[k]=(base[k]||10)+parseInt(m[2]); }
@@ -2966,13 +3590,15 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
             selectedEquipment={selectedEquipment}
             onEquipmentChange={eq => setSelectedEquipment(eq)}
           />
+          </div>
         );
 
       case "summary":
         return <WizardSummary data={{...data, name:nameInput}} theme={theme}
           onFinish={handleFinish} onBack={handleBack}
           selectedSubrace={selectedSubrace} rolledStats={rolledStats}
-          selectedEquipment={selectedEquipment} />;
+          selectedEquipment={selectedEquipment}
+          freeStatChoices={freeStatChoices} />;
 
       default: return null;
     }
@@ -3029,19 +3655,46 @@ function CharacterWizard({ theme, onFinish, onSkip }) {
         <WizardProgressBar step={step} total={steps.length} theme={theme} />
 
         <div style={{ display:"grid", gridTemplateColumns:`repeat(${steps.length},1fr)`, gap:4, marginBottom:20 }}>
-          {steps.map((s,i) => (
-            <button key={s.id} onClick={() => { if(i < step) { setStep(i); setDetailItem(null); } }}
+          {steps.map((s,i) => {
+            const isComplete = (() => {
+              if (s.id === "name")       return nameInput.trim().length > 0;
+              if (s.id === "class")      return !!data.class;
+              if (s.id === "race")       return !!data.race;
+              if (s.id === "background") return !!data.background;
+              if (s.id === "alignment")  return !!data.alignment;
+              if (s.id === "attributes") {
+              const _statsSet = rolledStats && ["str","dex","con","int","wis","cha"].every(k => {
+                const v = parseInt(rolledStats[k]); return !isNaN(v) && v >= 1;
+              });
+              const _reqFree = (data.race?.extraChoices?.freeStats||0) + (selectedSubrace?.extraChoices?.freeStats||0);
+              const _hasFree = (freeStatChoices||[]).length >= _reqFree;
+              return !!(_statsSet && _hasFree);
+            }
+              if (s.id === "equipment")  return !!selectedEquipment;
+              return false;
+            })();
+            const isCurrent = i === step;
+            return (
+            <button key={s.id} onClick={() => { setStep(i); setDetailItem(null); }}
               style={{
                 padding:"6px 4px", fontSize:10, fontWeight:700, borderRadius:8,
-                border:`1px solid ${i === step ? `${theme.accent}66` : "rgba(15,15,22,0.85)"}`,
-                cursor: i < step ? "pointer" : "default", fontFamily:"inherit",
-                background: i === step ? `${theme.accent}18` : i < step ? "rgba(12,12,18,0.88)" : "transparent",
-                color: i === step ? theme.accent : i < step ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)",
+                border: isCurrent
+                  ? `2px solid ${theme.accent}`
+                  : isComplete
+                    ? `2px solid ${theme.accent}bb`
+                    : step >= steps.length-1  // auf Summary-Schritt: unvollständige rot markieren
+                      ? "2px solid rgba(239,68,68,0.5)"
+                      : "1px solid rgba(255,255,255,0.08)",
+                cursor: "pointer", fontFamily:"inherit",
+                background: isCurrent ? `${theme.accent}22` : isComplete ? `${theme.accent}0e` : step >= steps.length-1 ? "rgba(239,68,68,0.08)" : "transparent",
+                color: isCurrent ? theme.accent : isComplete ? theme.accent+"cc" : step >= steps.length-1 ? "#f87171" : "rgba(255,255,255,0.25)",
                 whiteSpace:"nowrap", textOverflow:"ellipsis", overflow:"hidden",
+                boxShadow: isComplete && !isCurrent ? `inset 0 0 0 1px ${theme.accent}44, 0 0 8px ${theme.accent}22` : "none",
               }}>
-              {s.emoji} {s.label}
+              {isComplete && !isCurrent ? "✓ " : ""}{s.emoji} {s.label}
             </button>
-          ))}
+            );
+          })}
         </div>
 
         <div style={{ ...S.card, minHeight:200 }} key={step}>
@@ -5444,8 +6097,39 @@ function App(){
   </div>);
 }
 
-const root=ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App/>);
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError:false, error:null }; }
+  static getDerivedStateFromError(e) { return { hasError:true, error:e }; }
+  componentDidCatch(err, info) { console.error("App crash:", err, info); }
+  render() {
+    if (this.state.hasError) return (
+      <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center", color:"white",
+        fontFamily:"system-ui", textAlign:"center", padding:32 }}>
+        <div style={{ fontSize:48, marginBottom:16 }}>⚠️</div>
+        <div style={{ fontSize:22, fontWeight:800, marginBottom:8 }}>Etwas ist schiefgelaufen</div>
+        <div style={{ fontSize:14, color:"#f87171", marginBottom:8, 
+          fontFamily:"monospace", background:"rgba(239,68,68,0.1)", 
+          padding:"10px 16px", borderRadius:8, maxWidth:500, wordBreak:"break-all" }}>
+          {this.state.error?.message || "Unbekannter Fehler"}
+        </div>
+        <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginBottom:24,
+          fontFamily:"monospace", maxWidth:600, textAlign:"left", wordBreak:"break-all",
+          whiteSpace:"pre-wrap" }}>
+          {(this.state.error?.stack||"").slice(0,800)}
+        </div>
+        <button onClick={()=>this.setState({hasError:false,error:null})}
+          style={{ background:"#fbbf24", color:"#0f1117", border:"none", borderRadius:10,
+            padding:"10px 24px", fontWeight:800, fontSize:14, cursor:"pointer" }}>
+          Neu laden
+        </button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+const _appRoot = ReactDOM.createRoot(document.getElementById("root"));
+_appRoot.render(<AppErrorBoundary><App/></AppErrorBoundary>);
 </script>
 </body>
 </html>
