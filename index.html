@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>*{box-sizing:border-box;margin:0;padding:0;} html{transition:background 0.5s;} body{color:white;font-family:system-ui,sans-serif;background:transparent;} input[type=number]::-webkit-inner-spin-button{opacity:0.4;} input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2);} select option{background:#1a1d2e;} ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;} .stat-grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;} .stat-grid-rk{display:grid;grid-template-columns:52px repeat(6,1fr);gap:6px;} .rk-box-mobile{display:none;} .skills-mobile{display:none;} .tab-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;} .tab-bar button{text-align:center;min-height:36px;} @media (max-width:600px){.stat-grid-6{grid-template-columns:repeat(3,1fr);gap:6px;} .stat-grid-rk{grid-template-columns:repeat(3,1fr);gap:6px;} .rk-box-desktop{display:none !important;} .rk-box-mobile{display:flex !important;} .overview-grid{grid-template-columns:1fr !important;} .skills-sidebar{display:none !important;} .skills-mobile{display:block !important;} .tab-bar{gap:3px !important;} .tab-bar button{font-size:10px !important;padding:8px 3px !important;min-height:34px !important;} .wizard-nav{flex-direction:column !important;} .wizard-nav button{width:100% !important;} .feature-tags{flex-direction:column !important;} .feature-tags >div{max-width:100% !important;width:100% !important;} .inv-action-col{flex-direction:row !important;flex-wrap:wrap !important;} .wizard-card-grid{grid-template-columns:1fr !important;} .rk-preview-row{gap:12px !important;padding:12px !important;} .ki-ability-row{flex-wrap:wrap !important;} .ki-ability-row button{align-self:flex-start !important;} .sheet-card{padding:10px 10px !important;} .lu-row{flex-wrap:wrap !important;gap:8px !important;} } @media (min-width:601px){.skills-mobile{display:none !important;} } #root >*{position:relative;z-index:1;} @keyframes flyIn{0%{transform:translateY(-300px) scale(0.5);opacity:0}60%{transform:translateY(20px) scale(1.08);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}} @keyframes modalIn{from{opacity:0;transform:scale(0.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}} .wizard-fade{animation:fadeIn 0.35s ease forwards;} .wizard-slide{animation:slideIn 0.3s ease forwards;} @keyframes rollPulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}} .card-hover{transition:all 0.2s ease;cursor:pointer;} .card-hover:hover{transform:translateY(-2px);} *{-webkit-tap-highlight-color:transparent;} button,select,input,textarea{touch-action:manipulation;} input[type="number"]{-webkit-appearance:none;} button{user-select:none;-webkit-user-select:none;} @media (max-width:600px){.tab-bar button{min-height:44px !important;} select,input,textarea{font-size:16px !important;} }</style>
+  <style>*{box-sizing:border-box;margin:0;padding:0;} html{transition:background 0.5s;} body{color:white;font-family:system-ui,sans-serif;background:transparent;} input[type=number]::-webkit-inner-spin-button{opacity:0.4;} input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2);} select option{background:#1a1d2e;} ::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:4px;} .stat-grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;} .stat-grid-rk{display:grid;grid-template-columns:52px repeat(6,1fr);gap:6px;} .rk-box-mobile{display:none;} .skills-mobile{display:none;} .tab-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;} .tab-bar button{text-align:center;min-height:36px;} @media (max-width:600px){.stat-grid-6{grid-template-columns:repeat(3,1fr);gap:6px;} .stat-grid-rk{grid-template-columns:repeat(3,1fr);gap:6px;} .rk-box-desktop{display:none !important;} .rk-box-mobile{display:flex !important;} .overview-grid{grid-template-columns:1fr !important;} .skills-sidebar{display:none !important;} .skills-mobile{display:block !important;} .tab-bar{gap:3px !important;} .tab-bar button{font-size:10px !important;padding:8px 3px !important;min-height:34px !important;} .wizard-nav{flex-direction:column !important;} .wizard-nav button{width:100% !important;} .feature-tags{flex-direction:column !important;} .feature-tags >div{max-width:100% !important;width:100% !important;} .inv-action-col{flex-direction:row !important;flex-wrap:wrap !important;} .wizard-card-grid{grid-template-columns:1fr !important;} .rk-preview-row{gap:12px !important;padding:12px !important;} .ki-ability-row{flex-wrap:wrap !important;} .ki-ability-row button{align-self:flex-start !important;} .sheet-card{padding:10px 10px !important;} .lu-row{flex-wrap:wrap !important;gap:8px !important;} } @media (min-width:601px){.skills-mobile{display:none !important;} } #root >*{position:relative;z-index:1;} @keyframes flyIn{0%{transform:translateY(-300px) scale(0.5);opacity:0}60%{transform:translateY(20px) scale(1.08);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}} @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}} @keyframes modalIn{from{opacity:0;transform:scale(0.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}} .wizard-fade{animation:fadeIn 0.35s ease forwards;} .wizard-slide{animation:slideIn 0.3s ease forwards;} @keyframes rollPulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}} @keyframes infoPulse{0%{box-shadow:0 0 0 0 rgba(255,210,0,0.5)}70%{box-shadow:0 0 0 7px rgba(255,210,0,0)}100%{box-shadow:0 0 0 0 rgba(255,210,0,0)}} .info-btn{animation:infoPulse 2s ease-in-out infinite;} .card-hover{transition:all 0.2s ease;cursor:pointer;} .card-hover:hover{transform:translateY(-2px);} *{-webkit-tap-highlight-color:transparent;} button,select,input,textarea{touch-action:manipulation;} input[type="number"]{-webkit-appearance:none;} button{user-select:none;-webkit-user-select:none;} @media (max-width:600px){.tab-bar button{min-height:44px !important;} select,input,textarea{font-size:16px !important;} }</style>
 </head>
 <body>
 
@@ -127,11 +127,33 @@ function InfoModal({ onClose, theme }) {
      </span>
     </div>
 
+    {/* Buy Me a Coffee Button */}
+    <a
+     href="https://buymeacoffee.com/akitodono"
+     target="_blank"
+     rel="noopener noreferrer"
+     style={{
+      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+      width: "100%", marginTop: 20,
+      background: "linear-gradient(135deg, #FFDD00cc, #FFC200cc)",
+      color: "#1a1200", border: "none", borderRadius: 12,
+      padding: "11px 0", fontWeight: 800, cursor: "pointer",
+      fontSize: 14, fontFamily: "inherit", textDecoration: "none",
+      boxShadow: "0 4px 18px rgba(255,210,0,0.25)",
+      transition: "transform 0.15s, box-shadow 0.15s",
+     }}
+     onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 24px rgba(255,210,0,0.4)"; }}
+     onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 4px 18px rgba(255,210,0,0.25)"; }}
+    >
+     <span style={{ fontSize: 18 }}>☕</span>
+     <span>Wenn's dir gefällt ...</span>
+    </a>
+
     {/* Close button bottom */}
     <button
      onClick={onClose}
      style={{
-      width: "100%", marginTop: 20,
+      width: "100%", marginTop: 10,
       background: `linear-gradient(135deg,${theme.accent}cc,${theme.accent}77)`,
       color: "white", border: "none", borderRadius: 12,
       padding: "11px 0", fontWeight: 800, cursor: "pointer",
@@ -4649,13 +4671,13 @@ function CharacterSelect({onSelect,onNew,theme,onThemeChange,onShowInfo}){
     <h1 style={{fontSize:26,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ D&amp;D 5e Sheet</h1>
     <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center"}}>
      {/* Info button */}
-     <button onClick={onShowInfo} title="Info" style={{
-      width:28,height:28,borderRadius:"50%",
-      background:"rgba(15,15,22,0.85)",
-      border:"1px solid rgba(255,255,255,0.15)",
-      color:"rgba(255,255,255,0.5)",cursor:"pointer",
-      fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",
-      fontFamily:"inherit",transition:"all 0.2s",
+     <button onClick={onShowInfo} title="Info" className="info-btn" style={{
+      width:36,height:36,borderRadius:"50%",
+      background:"rgba(255,210,0,0.12)",
+      border:"2px solid rgba(255,210,0,0.55)",
+      color:"#FFD700",cursor:"pointer",
+      fontSize:17,display:"flex",alignItems:"center",justifyContent:"center",
+      fontFamily:"inherit",transition:"all 0.2s",fontWeight:800,
      }}>ℹ</button>
      {/* Theme dots */}
      {THEMES.map(t=>(<button key={t.id} onClick={()=>onThemeChange(t.id)} title={t.label} style={{width:20,height:20,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>))}
@@ -6449,13 +6471,13 @@ function App(){
    </div>
    <div style={{display:"flex",gap:5,alignItems:"center"}}>
     {/* Info button in sheet header */}
-    <button onClick={()=>setShowInfo(true)} title="Info" style={{
-     width:26,height:26,borderRadius:"50%",
-     background:"rgba(15,15,22,0.85)",
-     border:"1px solid rgba(255,255,255,0.12)",
-     color:"rgba(255,255,255,0.4)",cursor:"pointer",
-     fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",
-     fontFamily:"inherit",marginRight:4,
+    <button onClick={()=>setShowInfo(true)} title="Info" className="info-btn" style={{
+     width:32,height:32,borderRadius:"50%",
+     background:"rgba(255,210,0,0.12)",
+     border:"2px solid rgba(255,210,0,0.55)",
+     color:"#FFD700",cursor:"pointer",
+     fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",
+     fontFamily:"inherit",marginRight:4,fontWeight:800,
     }}>ℹ</button>
     {THEMES.map(t=>(<button key={t.id} onClick={()=>changeTheme(t.id)} title={t.label} style={{width:16,height:16,borderRadius:"50%",background:t.accent,border:`2px solid ${theme.id===t.id?"white":"transparent"}`,cursor:"pointer",padding:0}}/>))}
    </div>
