@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>D&D 5e Sheet</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -68,6 +68,17 @@
     @keyframes rollPulse{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
     .card-hover { transition: all 0.2s ease; cursor: pointer; }
     .card-hover:hover { transform: translateY(-2px); }
+    /* Mobile touch fixes */
+    * { -webkit-tap-highlight-color: transparent; }
+    button, select, input, textarea { touch-action: manipulation; }
+    input[type="number"] { -webkit-appearance: none; }
+    /* Prevent text selection on buttons */
+    button { user-select: none; -webkit-user-select: none; }
+    /* Better tap targets on mobile */
+    @media (max-width: 600px) {
+      .tab-bar button { min-height: 44px !important; }
+      select, input, textarea { font-size: 16px !important; }
+    }
 
     /* ── Hintergrundbild ── */
   </style>
@@ -383,7 +394,7 @@ function FreeChoiceModal({ choices, currentStats, currentSkillProfs, onConfirm, 
       justifyContent:"center",background:"rgba(0,0,0,0.9)",backdropFilter:"blur(8px)",padding:16 }}
       onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{
-        maxWidth:500,width:"100%",maxHeight:"92vh",overflowY:"auto",
+        maxWidth:500,width:"100%",maxHeight:"92vh",overflowY:"auto",WebkitOverflowScrolling:"touch",
         background:"#0f1117",border:`2px solid ${theme.accent}55`,borderRadius:20,
         padding:"24px 20px",
         boxShadow:`0 0 60px ${theme.accent}22,0 24px 60px rgba(0,0,0,0.8)`,
@@ -3166,7 +3177,7 @@ function CustomRaceModal({ editRace, onSave, onClose, theme }) {
       justifyContent:"center", background:"rgba(0,0,0,0.9)", backdropFilter:"blur(8px)", padding:16 }}
       onClick={onClose}>
       <div onClick={e => e.stopPropagation()} style={{
-        maxWidth:520, width:"100%", maxHeight:"92vh", overflowY:"auto",
+        maxWidth:520, width:"100%", maxHeight:"92vh", overflowY:"auto", WebkitOverflowScrolling:"touch",
         background:"#0f1117", border:`2px solid ${form.color}55`,
         borderRadius:20, padding:"24px 20px",
         boxShadow:`0 0 60px ${form.color}22, 0 24px 60px rgba(0,0,0,0.8)`,
@@ -3664,7 +3675,7 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
       const armorObj = ARMOR_CATALOG.find(a => a.id === eq.armorId);
       if (armorObj) inventoryFromEquip.push({
         ...DEFAULT_ITEM, name: armorObj.name, type:"armor", equipped:true, qty:1,
-        armor:{ ac: armorObj.baseAC, stealthDisadv: armorObj.stealthDisadv, profCategory: armorObj.profCategory, minStr: armorObj.minStr||0, bonus:0 },
+        armor:{ ac: armorObj.baseAC, stealthDisadv: armorObj.stealthDisadv, profCategory: armorObj.profCategory, minStr: armorObj.minStr||0, bonus:0, addDex: armorObj.addDex, maxDex: armorObj.maxDex },
       });
     }
 
@@ -3707,7 +3718,7 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
           weapon:{
             damage: w.damage, damageType: w.type, damageVers: w.damageVers || null,
             scale: w.scale, bonus:0, props: w.props, range: rangeStr,
-            note: w.note || "",
+            note: w.note || "", catalogId: w.id, category: w.category,
           },
         });
         if (fits) handsUsed += hands;
@@ -3775,9 +3786,10 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
         return 10 + dex + shieldBonus;
       }
       const baseAC = equippedArmorItem.armor?.ac || 10;
-      const armorObj = ARMOR_CATALOG.find(a => a.name === equippedArmorItem.name);
-      if (armorObj?.addDex) {
-        const effectiveDex = armorObj.maxDex !== null ? Math.min(dex, armorObj.maxDex ?? 99) : dex;
+      const armorAddDex = equippedArmorItem.armor?.addDex ?? ARMOR_CATALOG.find(a => a.name === equippedArmorItem.name)?.addDex;
+      const armorMaxDex = equippedArmorItem.armor?.maxDex ?? ARMOR_CATALOG.find(a => a.name === equippedArmorItem.name)?.maxDex;
+      if (armorAddDex) {
+        const effectiveDex = (armorMaxDex !== null && armorMaxDex !== undefined) ? Math.min(dex, armorMaxDex) : dex;
         return baseAC + effectiveDex + shieldBonus;
       }
       return baseAC + shieldBonus;
@@ -4815,28 +4827,28 @@ function Wallet({currency,onUpdate,theme}){
   </div>);
 }
 
-function HpButtons({currentHP,maxHP,onUpdate}){
+function HpButtons({currentHP,maxHP,tempHP,onUpdate,onUpdateTemp}){
   const [mode,setMode]=useState(null);const [input,setInput]=useState("");
-  const confirm=()=>{const v=parseInt(input);if(isNaN(v)||v<=0){setMode(null);setInput("");return;}if(mode==="heal")onUpdate(Math.min(maxHP,currentHP+v));if(mode==="damage")onUpdate(Math.max(0,currentHP-v));setMode(null);setInput("");};
+  const confirm=()=>{const v=parseInt(input);if(isNaN(v)||v<=0){setMode(null);setInput("");return;}if(mode==="heal")onUpdate(Math.min(maxHP,currentHP+v));if(mode==="damage"){const t=tempHP||0;if(t>0){const absorbed=Math.min(t,v);const remaining=v-absorbed;if(onUpdateTemp)onUpdateTemp(t-absorbed);if(remaining>0)onUpdate(Math.max(0,currentHP-remaining));}else{onUpdate(Math.max(0,currentHP-v));}}setMode(null);setInput("");};
   return(<div style={{marginTop:12}}>{mode?(<div style={{display:"flex",gap:8,alignItems:"center"}}><div style={{flex:1,display:"flex",alignItems:"center",gap:10,background:"rgba(12,12,18,0.88)",borderRadius:16,border:`1px solid ${mode==="heal"?"rgba(74,222,128,0.4)":"rgba(248,113,113,0.4)"}`,padding:"10px 14px"}}><span style={{fontSize:20}}>{mode==="heal"?"💚":"🩸"}</span><input type="number" min="1" autoFocus value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")confirm();if(e.key==="Escape"){setMode(null);setInput("");}}} placeholder={mode==="heal"?"Wie viel heilen?":"Wie viel Schaden?"} style={{flex:1,background:"transparent",border:"none",color:"white",fontSize:18,fontWeight:800,outline:"none",fontFamily:"inherit"}}/></div><button onClick={confirm} style={{background:"rgba(34,197,94,0.15)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"8px 16px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit"}}>✓</button><button onClick={()=>{setMode(null);setInput("");}} style={{background:"rgba(18,18,25,0.83)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"8px 12px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit"}}>✕</button></div>):(<div style={{display:"flex",gap:8}}><button onClick={()=>setMode("heal")} style={{background:"rgba(34,197,94,0.15)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"8px 16px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",flex:1}}>💚 Heilen</button><button onClick={()=>setMode("damage")} style={{background:"rgba(239,68,68,0.15)",color:"#f87171",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"8px 16px",fontWeight:700,cursor:"pointer",fontSize:13,fontFamily:"inherit",flex:1}}>🩸 Schaden</button><button onClick={()=>onUpdate(maxHP)} style={{background:"rgba(18,18,25,0.83)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"8px 14px",fontWeight:600,cursor:"pointer",fontSize:12,fontFamily:"inherit"}}>Voll</button></div>)}</div>);
 }
 
 function RestModals({restModal,setRestModal,ch,upCh,totalLevel,deathSaves,setDeathSaves,theme}){
   const [shortRestDice,setShortRestDice]=useState(0);const [shortRestInput,setShortRestInput]=useState("");const [shortRestResult,setShortRestResult]=useState(null);
-  const S={card:{background:theme.card,borderRadius:16,border:`1px solid ${theme.border}`,padding:16},input:{background:"rgba(18,18,25,0.83)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"6px 10px",color:"white",fontSize:14,outline:"none",width:"100%",fontFamily:"inherit"},btnGhost:{background:"rgba(18,18,25,0.83)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"6px 12px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit"},};
+  const S={card:{background:theme.card,borderRadius:16,border:`1px solid ${theme.border}`,padding:16},input:{background:"rgba(18,18,25,0.83)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:10,padding:"6px 10px",color:"white",fontSize:16,outline:"none",width:"100%",fontFamily:"inherit"},btnGhost:{background:"rgba(18,18,25,0.83)",color:"rgba(255,255,255,0.7)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:"6px 12px",fontWeight:600,cursor:"pointer",fontSize:13,fontFamily:"inherit"},};
   const dieType=ch.hitDice||"1d8";const conMod=statMod(ch.stats.con);const availHD=Math.max(0,totalLevel-(ch.usedHitDice||0));
   const closeShort=()=>{setRestModal(null);setShortRestDice(0);setShortRestInput("");setShortRestResult(null);};
   const doShortRest=()=>{if(shortRestDice<=0)return;const rolled=parseInt(shortRestInput);if(isNaN(rolled)||rolled<shortRestDice)return;const healing=Math.max(0,rolled+conMod*shortRestDice);upCh(n=>{n.currentHP=Math.min(n.maxHP,n.currentHP+healing);n.usedHitDice=(n.usedHitDice||0)+shortRestDice;// Reset short-rest limited_use features
     n.featureList=(n.featureList||[]).map(f=>
       (f.type==="limited_use"&&f.resetOn==="short")||(f.type==="ki_pool")
         ?{...f,usesLeft:f.maxUses||1}:f);return n;});setShortRestResult({rolled,conMod,healing,dice:shortRestDice});};
-  const doLongRest=()=>{upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=0;for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}// Reset all limited_use features on long rest
+  const doLongRest=()=>{const hdRegain=Math.max(1,Math.floor(totalLevel/2));upCh(n=>{n.currentHP=n.maxHP;n.tempHP=0;n.usedHitDice=Math.max(0,(n.usedHitDice||0)-hdRegain);for(let lvl=1;lvl<=9;lvl++){const max=n.spellSlots[lvl][1];n.spellSlots[lvl]=[max,max];}// Reset all limited_use features on long rest
     n.featureList=(n.featureList||[]).map(f=>
       (f.type==="limited_use"&&(f.resetOn==="long"||f.resetOn==="short"))||(f.type==="ki_pool")
         ?{...f,usesLeft:f.maxUses||1}:f);return n;});setDeathSaves({success:0,fail:0});setRestModal(null);};
   if(!restModal)return null;
   return(<div style={{position:"fixed",inset:0,zIndex:55,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.85)"}} onClick={restModal==="short"?closeShort:()=>setRestModal(null)}><div style={{...S.card,maxWidth:360,width:"92%",padding:24}} onClick={e=>e.stopPropagation()}>
-    {restModal==="long"&&<><div style={{fontSize:18,fontWeight:900,color:"#60a5fa",marginBottom:6}}>🌙 Lange Rast</div><div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden.</div><div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>{[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel","Alle TW zurück"],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(<div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 10px",background:"rgba(96,165,250,0.05)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}><span style={{color:"rgba(255,255,255,0.7)"}}>{label}</span><span style={{color:"#60a5fa",fontWeight:700}}>{desc}</span></div>))}</div><div style={{display:"flex",gap:8}}><button onClick={doLongRest} style={{flex:1,background:"rgba(96,165,250,0.2)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.4)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>🌙 Rasten</button><button onClick={()=>setRestModal(null)} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button></div></>}
+    {restModal==="long"&&<><div style={{fontSize:18,fontWeight:900,color:"#60a5fa",marginBottom:6}}>🌙 Lange Rast</div><div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:16,lineHeight:1.6}}>Eine lange Rast dauert mindestens 8 Stunden.</div><div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:20}}>{[["❤️ Trefferpunkte",`Volle HP (${ch.maxHP})`],["🎲 Trefferwürfel",`+${Math.max(1,Math.floor(totalLevel/2))} TW zurück (½ Level)`],["✨ Zauberslots","Alle Slots zurück"],["💀 Todesrettungswürfe","Reset"],["🛡 Temporäre HP","Werden entfernt"]].map(([label,desc])=>(<div key={label} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 10px",background:"rgba(96,165,250,0.05)",borderRadius:8,border:"1px solid rgba(96,165,250,0.15)"}}><span style={{color:"rgba(255,255,255,0.7)"}}>{label}</span><span style={{color:"#60a5fa",fontWeight:700}}>{desc}</span></div>))}</div><div style={{display:"flex",gap:8}}><button onClick={doLongRest} style={{flex:1,background:"rgba(96,165,250,0.2)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.4)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>🌙 Rasten</button><button onClick={()=>setRestModal(null)} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button></div></>}
     {restModal==="short"&&<><div style={{fontSize:18,fontWeight:900,color:"#fbbf24",marginBottom:6}}>☕ Kurze Rast</div><div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:14,lineHeight:1.6}}>Mindestens 1 Stunde. Trefferwürfel ausgeben um HP zu heilen.</div>{!shortRestResult?<><div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6}}><div style={{fontSize:13,color:"rgba(255,255,255,0.6)"}}>TW ausgeben:</div><div style={{display:"flex",alignItems:"center",gap:8,marginLeft:"auto"}}><button onClick={()=>setShortRestDice(d=>Math.max(0,d-1))} style={{...S.btnGhost,padding:"4px 10px",fontSize:16}}>−</button><span style={{fontSize:20,fontWeight:900,color:"#fbbf24",minWidth:28,textAlign:"center"}}>{shortRestDice}</span><button onClick={()=>setShortRestDice(d=>Math.min(availHD,d+1))} style={{...S.btnGhost,padding:"4px 10px",fontSize:16}}>+</button></div></div><div style={{fontSize:12,color:"rgba(255,255,255,0.3)",marginBottom:12,textAlign:"right"}}>Verfügbar: {availHD}/{totalLevel} · {dieType}</div>{shortRestDice>0&&<><div style={{padding:"10px 14px",background:"rgba(251,191,36,0.07)",borderRadius:10,border:"1px solid rgba(251,191,36,0.2)",marginBottom:12}}><div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:4}}>Würfle {shortRestDice}×{dieType}</div>{conMod!==0&&<div style={{fontSize:12,color:"rgba(255,255,255,0.5)"}}>+ {shortRestDice}×{fmtMod(conMod)} CON = {conMod>0?"+":""}{shortRestDice*conMod} extra</div>}</div><div style={{marginBottom:16}}><div style={{fontSize:11,color:"rgba(255,255,255,0.4)",marginBottom:4,fontWeight:600,letterSpacing:"0.05em",textTransform:"uppercase"}}>Summe eingeben</div><input type="number" min={shortRestDice} value={shortRestInput} onChange={e=>setShortRestInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doShortRest()} placeholder={`Mind. ${shortRestDice}`} style={{...S.input,fontSize:22,fontWeight:900,textAlign:"center",padding:"10px 14px"}}/></div></>}<div style={{display:"flex",gap:8}}><button onClick={doShortRest} disabled={shortRestDice===0||shortRestInput===""} style={{flex:1,background:shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.2)":"rgba(15,15,22,0.87)",color:shortRestDice>0&&shortRestInput!==""?"#fbbf24":"rgba(255,255,255,0.2)",border:`1px solid ${shortRestDice>0&&shortRestInput!==""?"rgba(251,191,36,0.4)":"rgba(255,255,255,0.1)"}`,borderRadius:10,padding:"10px 0",fontWeight:800,cursor:shortRestDice>0&&shortRestInput!==""?"pointer":"not-allowed",fontSize:14,fontFamily:"inherit"}}>☕ Bestätigen</button><button onClick={closeShort} style={{...S.btnGhost,padding:"10px 16px"}}>Abbrechen</button></div></>:<><div style={{padding:"14px",background:"rgba(251,191,36,0.07)",borderRadius:12,border:"1px solid rgba(251,191,36,0.2)",marginBottom:16}}><div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:6}}>Dein Wurf ({shortRestResult.dice}×{dieType}):</div><div style={{fontSize:22,fontWeight:900,color:"#fbbf24",marginBottom:4}}>{shortRestResult.rolled}</div><div style={{fontSize:18,fontWeight:900,color:"#4ade80"}}>+{shortRestResult.healing} HP geheilt ✓</div></div><button onClick={closeShort} style={{width:"100%",background:"rgba(34,197,94,0.15)",color:"#4ade80",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"10px 0",fontWeight:800,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>Fertig</button></>}</>}
   </div></div>);
 }
@@ -5081,8 +5093,7 @@ function TraitNotesTab({ ch, upCh, up, theme, S, AT }) {
                             transition:"background 0.12s",
                             borderBottom: i < suggestions.length-1 ? "1px solid rgba(255,255,255,0.04)" : "none",
                           }}
-                          onMouseEnter={e => { if(!alreadyUsed) e.currentTarget.style.background = `${theme.accent}0d`; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                          
                         >
                           <span style={{
                             flexShrink:0, fontSize:12, marginTop:1,
@@ -5463,7 +5474,7 @@ function LevelUpModal({ cls, currentLevel, ch, onConfirm, onClose, theme }) {
   // Spell slots
   const newSlots = clsData?.spellSlots?.[newLevel] || null;
   const oldSlots = clsData?.spellSlots?.[currentLevel] || null;
-  const slotChanges = newSlots ? newSlots.map((v, i) => v - (oldSlots?.[i] || 0)).filter((d, i) => d > 0 ? i : false).map((d, i) => d > 0 ? { grade: i+1, delta: d } : null).filter(Boolean) : [];
+  const slotChanges = newSlots ? newSlots.map((v, i) => ({ grade: i+1, delta: v - (oldSlots?.[i] || 0) })).filter(({delta}) => delta > 0) : [];
 
   // ASI flag
   const isASI = newFeatures.some(f => f.includes("ASI") || f.includes("Attributsteigerung"));
@@ -5518,7 +5529,7 @@ function LevelUpModal({ cls, currentLevel, ch, onConfirm, onClose, theme }) {
       justifyContent:"center",background:"rgba(0,0,0,0.88)",backdropFilter:"blur(8px)",padding:16 }}
       onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{
-        maxWidth:480,width:"100%",maxHeight:"92vh",overflowY:"auto",
+        maxWidth:480,width:"100%",maxHeight:"92vh",overflowY:"auto",WebkitOverflowScrolling:"touch",overscrollBehavior:"contain",
         background:"#0f1117",border:`2px solid ${theme.accent}55`,borderRadius:20,
         padding:"24px 20px",boxShadow:`0 0 60px ${theme.accent}22,0 24px 60px rgba(0,0,0,0.8)`,
         animation:"modalIn 0.3s cubic-bezier(0.22,1,0.36,1) forwards",position:"relative",
@@ -6067,17 +6078,28 @@ function App(){
         Object.keys(result.asiStats).forEach(k=>{
           if(result.asiStats[k]>0) n.stats[k]=(n.stats[k]||10)+result.asiStats[k];
         });
-        // CON geändert → HP nochmal anpassen (rückwirkend)
+        // CON geändert → HP nochmal anpassen (rückwirkend, PHB: +1 HP pro Level pro +1 CON-Mod)
         if(result.asiStats.con>0){
-          const extraHP=result.asiStats.con;
-          n.maxHP+=extraHP; n.currentHP+=extraHP;
+          const oldConMod=Math.floor(((n.stats.con-result.asiStats.con)-10)/2);
+          const newConMod=Math.floor((n.stats.con-10)/2);
+          const modDelta=newConMod-oldConMod;
+          if(modDelta>0){
+            const newTotalLevel=n.classes.reduce((s,c)=>s+(c.level||0),0)||1;
+            const extraHP=modDelta*newTotalLevel;
+            n.maxHP+=extraHP; n.currentHP+=extraHP;
+          }
         }
       }
       // Zauberslots
       if(result.newSlots){
         result.newSlots.forEach((count,i)=>{
           const grade=i+1;
-          if(count>0){n.spellSlots[grade]=[count,count];}
+          if(count>0){
+            const prevMax=n.spellSlots[grade]?.[1]||0;
+            const prevCur=n.spellSlots[grade]?.[0]||0;
+            const delta=count-prevMax;
+            n.spellSlots[grade]=[Math.min(prevCur+Math.max(0,delta),count),count];
+          }
         });
       }
       // Features hinzufügen
@@ -6237,17 +6259,36 @@ function App(){
     }
     const baseAC = equippedArmor.armor?.ac || 10;
     const bonus  = armorACBonus;
-    const armorCatItem = ARMOR_CATALOG.find(a => a.name === equippedArmor.name);
-    if (armorCatItem?.addDex) {
-      const effectiveDex = (armorCatItem.maxDex !== null && armorCatItem.maxDex !== undefined)
-        ? Math.min(dexM, armorCatItem.maxDex) : dexM;
+    const armorAddDex = equippedArmor.armor?.addDex ?? ARMOR_CATALOG.find(a => a.name === equippedArmor.name)?.addDex;
+    const armorMaxDex = equippedArmor.armor?.maxDex ?? ARMOR_CATALOG.find(a => a.name === equippedArmor.name)?.maxDex;
+    if (armorAddDex) {
+      const effectiveDex = (armorMaxDex !== null && armorMaxDex !== undefined)
+        ? Math.min(dexM, armorMaxDex) : dexM;
       return baseAC + effectiveDex + bonus + extras;
     }
     return baseAC + bonus + extras;
   })();
   const hpRatio=ch.currentHP/Math.max(1,ch.maxHP);
   const hpColor=hpRatio>0.5?"#22c55e":hpRatio>0.25?"#f59e0b":"#ef4444";
-  const weaponAtkBonus=w=>{const sc=w.weapon?.scale||"STR";let m=0;if(sc==="STR")m=statMod(effStat("str"));else if(sc==="DEX")m=statMod(effStat("dex"));else if(sc==="STR oder DEX")m=Math.max(statMod(effStat("str")),statMod(effStat("dex")));else if(sc==="INT")m=statMod(effStat("int"));else if(sc==="WIS")m=statMod(effStat("wis"));else if(sc==="CHA")m=statMod(effStat("cha"));return m+pb+(parseInt(w.weapon?.bonus)||0)+attackBonusF;};
+  const weaponAtkBonus=w=>{
+    const sc=w.weapon?.scale||"STR";
+    let m=0;
+    if(sc==="STR")m=statMod(effStat("str"));
+    else if(sc==="DEX")m=statMod(effStat("dex"));
+    else if(sc==="STR oder DEX")m=Math.max(statMod(effStat("str")),statMod(effStat("dex")));
+    else if(sc==="INT")m=statMod(effStat("int"));
+    else if(sc==="WIS")m=statMod(effStat("wis"));
+    else if(sc==="CHA")m=statMod(effStat("cha"));
+    // Proficiency check: only add pb if proficient with this weapon
+    const catId=w.weapon?.catalogId;
+    const wCat=w.weapon?.category;
+    let proficient=!catId; // custom weapons (no catalogId) assumed proficient
+    if(catId){
+      const allProfs=(ch.classes||[]).flatMap(c=>WEAPON_PROFICIENCY[c.name]||[]);
+      proficient=allProfs.some(p=>p===catId||p===wCat||p==="einfach"&&wCat==="einfach"||p==="kriegs"&&wCat==="kriegs");
+    }
+    return m+(proficient?pb:0)+(parseInt(w.weapon?.bonus)||0)+attackBonusF;
+  };
   const availableHitDice=Math.max(0,totalLevel-(ch.usedHitDice||0));
   const preparedSpells=[];
   for(let lvl=0;lvl<=9;lvl++){(ch.spells[lvl]||[]).forEach(sp=>{if((lvl===0||sp.prepared)&&sp.name&&sp.name.trim()!=="")preparedSpells.push({name:sp.name,level:lvl});});}
@@ -6348,7 +6389,7 @@ function App(){
             weapon:{
               damage: w.damage, damageType: w.type, damageVers: w.damageVers||null,
               scale: w.scale, bonus:0, props: [...(w.props||[])], range: rangeStr,
-              note: w.note||"",
+              note: w.note||"", catalogId: w.id, category: w.category,
             },
           });
           return n;
@@ -6360,7 +6401,7 @@ function App(){
       const rangeLabels = {alle:"Alle",nah:"Nahkampf",fern:"Fernkampf"};
       return (
         <div style={{position:"fixed",inset:0,zIndex:60,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.88)"}} onClick={()=>setWepCatalogOpen(false)}>
-          <div style={{...S.card,maxWidth:560,width:"95%",maxHeight:"88vh",display:"flex",flexDirection:"column",padding:0,overflow:"hidden"}} onClick={e=>e.stopPropagation()}>
+          <div style={{...S.card,maxWidth:560,width:"95%",maxHeight:"88vh",display:"flex",flexDirection:"column",padding:0,overflow:"hidden",WebkitOverflowScrolling:"touch"}} onClick={e=>e.stopPropagation()}>
             {/* Header */}
             <div style={{padding:"16px 18px 12px",borderBottom:"1px solid rgba(255,255,255,0.08)",flexShrink:0}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -6409,8 +6450,7 @@ function App(){
                     style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 10px",borderRadius:10,marginBottom:4,cursor:"pointer",
                       background:"rgba(15,15,22,0.85)",border:`1px solid rgba(255,255,255,0.07)`,
                       transition:"all 0.15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.background=`${theme.accent}18`;e.currentTarget.style.borderColor=`${theme.accent}44`;}}
-                    onMouseLeave={e=>{e.currentTarget.style.background="rgba(15,15,22,0.85)";e.currentTarget.style.borderColor="rgba(255,255,255,0.07)";}}>
+                    >
                     <div style={{fontSize:22,flexShrink:0,lineHeight:1.2}}>{w.emoji}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
@@ -6476,6 +6516,7 @@ function App(){
             armor:{
               ac:a.baseAC, stealthDisadv:a.stealthDisadv,
               profCategory:a.profCategory, minStr:a.minStr||0, bonus:0,
+              addDex:a.addDex, maxDex:a.maxDex,
             },
           });
           return n;
@@ -6533,8 +6574,7 @@ function App(){
                       transition:"all 0.15s",
                       opacity: 1,
                     }}
-                    onMouseEnter={e=>{e.currentTarget.style.background=`${theme.accent}18`;e.currentTarget.style.borderColor=`${theme.accent}44`;}}
-                    onMouseLeave={e=>{e.currentTarget.style.background=warns.length?"rgba(251,191,36,0.04)":"rgba(15,15,22,0.85)";e.currentTarget.style.borderColor=warns.length?"rgba(251,191,36,0.2)":"rgba(255,255,255,0.07)";}}>
+                    >
                     <div style={{fontSize:22,flexShrink:0,lineHeight:1.2}}>{a.emoji}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:3}}>
@@ -6622,8 +6662,7 @@ function App(){
               {Object.entries(ITEM_PACKS).map(([key, pack]) => (
                 <div key={key} style={{background:"rgba(12,12,18,0.92)",border:`1px solid rgba(255,255,255,0.08)`,borderRadius:12,padding:"12px 14px",cursor:"pointer",transition:"all 0.15s"}}
                   onClick={()=>addPackItems(key)}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor=`${theme.accent}55`;e.currentTarget.style.background=`${theme.accent}0d`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,0.08)";e.currentTarget.style.background="rgba(12,12,18,0.92)";}}>
+                  >
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
                     <div style={{fontWeight:800,fontSize:13,color:"white"}}>{pack.label}</div>
                     <div style={{fontSize:11,fontWeight:700,color:theme.accent,opacity:0.7}}>+ Hinzufügen</div>
@@ -6703,7 +6742,7 @@ function App(){
           <div style={S.card}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontWeight:700,fontSize:14}}>❤️ Trefferpunkte</span><div style={{display:"flex",alignItems:"center",gap:8}}>{ch.tempHP>0&&<span style={{...S.badge,background:"rgba(96,165,250,0.15)",color:"#60a5fa",border:"1px solid rgba(96,165,250,0.3)"}}>+{ch.tempHP} Temp</span>}<span style={{fontWeight:800,fontSize:15}}>{ch.currentHP} <span style={{color:"rgba(255,255,255,0.3)"}}>/ {ch.maxHP}</span></span></div></div>
             <div style={{height:10,borderRadius:10,background:"rgba(18,18,25,0.83)",overflow:"hidden"}}><div style={{height:"100%",borderRadius:10,width:`${Math.max(0,Math.min(100,hpRatio*100))}%`,background:hpColor,transition:"all 0.4s",boxShadow:`0 0 8px ${hpColor}66`}}/></div>
-            <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} onUpdate={val=>up("currentHP",val)}/>
+            <HpButtons currentHP={ch.currentHP} maxHP={ch.maxHP} tempHP={ch.tempHP} onUpdate={val=>up("currentHP",val)} onUpdateTemp={val=>up("tempHP",Math.max(0,val))}/>
           </div>
           <div className="stat-grid-rk">
             <div className="rk-box-desktop" style={{...S.statBox,border:`2px solid ${theme.accent}`,background:`rgba(12,12,18,0.92)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:`0 0 10px ${theme.accent}33`}}><div style={{fontSize:10,color:theme.accent,fontWeight:800}}>RK</div><div style={{fontSize:26,fontWeight:900,color:theme.accent,lineHeight:1}}>{totalAC}</div></div>
