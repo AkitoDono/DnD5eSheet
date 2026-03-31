@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>D&D 5e Sheet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@600;900&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -140,27 +142,6 @@ function InfoModal({ onClose, theme, L, lang }) {
      </span>
     </div>
 
-    <a
-     href="https://buymeacoffee.com/akitodono"
-     target="_blank"
-     rel="noopener noreferrer"
-     style={{
-      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-      width: "100%", marginTop: 20,
-      background: "linear-gradient(135deg, #FFDD00cc, #FFC200cc)",
-      color: "#1a1200", border: "none", borderRadius: 12,
-      padding: "11px 0", fontWeight: 800, cursor: "pointer",
-      fontSize: 14, fontFamily: "inherit", textDecoration: "none",
-      boxShadow: "0 4px 18px rgba(255,210,0,0.25)",
-      transition: "transform 0.15s, box-shadow 0.15s",
-     }}
-     onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 6px 24px rgba(255,210,0,0.4)"; }}
-     onMouseLeave={e => { e.currentTarget.style.transform="translateY(0)"; e.currentTarget.style.boxShadow="0 4px 18px rgba(255,210,0,0.25)"; }}
-    >
-     <span style={{ fontSize: 18 }}>☕</span>
-     <span>{lang==="en" ? "If you enjoy it ..." : "Wenn's dir gefällt ..."}</span>
-    </a>
-
     <button
      onClick={onClose}
      style={{
@@ -179,27 +160,28 @@ function InfoModal({ onClose, theme, L, lang }) {
 }
 
 const STANDARD_LANGUAGES = [
- { name:"Gemeinsprache",   script:"Gemein",    speakers:"Menschen, Halblinge, Halb-Elfen, Halborks",      type:"standard" },
- { name:"Zwergisch",       script:"Zwergisch", speakers:"Zwerge",                                         type:"standard" },
- { name:"Elfisch",         script:"Elfisch",   speakers:"Elfen",                                          type:"standard" },
- { name:"Riesisch",        script:"Zwergisch", speakers:"Oger, Riesen",                                   type:"standard" },
- { name:"Gnomisch",        script:"Zwergisch", speakers:"Gnome",                                          type:"standard" },
- { name:"Goblinisch",      script:"Zwergisch", speakers:"Goblins, Hobgoblins, Bugbears",                  type:"standard" },
- { name:"Halblingisch",    script:"Gemein",    speakers:"Halblinge",                                      type:"standard" },
- { name:"Orkisch",         script:"Zwergisch", speakers:"Orks",                                           type:"standard" },
+ { name:"Gemeinsprache",           script:"Gemein",    speakers:"Alle Charaktere (aus Sigil)",            type:"standard" },
+ { name:"Drakonisch",              script:"Drakonisch",speakers:"Drachen",                                type:"standard" },
+ { name:"Elfisch",                 script:"Elfisch",   speakers:"Elfen",                                  type:"standard" },
+ { name:"Gebärden-Gemeinsprache",  script:"—",         speakers:"Sigil",                                  type:"standard" },
+ { name:"Gnomisch",                script:"Zwergisch", speakers:"Gnome",                                  type:"standard" },
+ { name:"Goblinisch",              script:"Zwergisch", speakers:"Goblinoide",                             type:"standard" },
+ { name:"Halblingisch",            script:"Gemein",    speakers:"Halblinge",                              type:"standard" },
+ { name:"Orkisch",                 script:"Zwergisch", speakers:"Orks",                                   type:"standard" },
+ { name:"Riesisch",                script:"Zwergisch", speakers:"Riesen",                                 type:"standard" },
+ { name:"Zwergisch",               script:"Zwergisch", speakers:"Zwerge",                                 type:"standard" },
 ];
 
 const EXOTIC_LANGUAGES = [
- { name:"Abyssisch",       script:"Infernalisch", speakers:"Dämonen, chaotisch-böse Außenweltler",        type:"exotic" },
- { name:"Celestisch",      script:"Celestisch",   speakers:"Himmlische, gutartige Außerweltler",          type:"exotic" },
- { name:"Drakonisch",      script:"Drakonisch",   speakers:"Drachen, Drachenborn, Kobolds",               type:"exotic" },
- { name:"Tiefensprache",   script:"—",            speakers:"Illithiden, Aboleths (Telepathie-Zeichen)",   type:"exotic" },
- { name:"Infernalisch",    script:"Infernalisch", speakers:"Teufel, Tieflinge",                           type:"exotic" },
- { name:"Sylvanisch",      script:"Elfisch",      speakers:"Fey-Kreaturen, Waldgeister",                  type:"exotic" },
- { name:"Unterdunkel",     script:"Elfisch",      speakers:"Drow und Unterdunkelwesen",                   type:"exotic" },
- { name:"Primordialisch",  script:"Zwergisch",    speakers:"Elementarwesen (inkl. Auran, Aquan, Ignan, Terran)", type:"exotic" },
- { name:"Gnollisch",       script:"—",            speakers:"Gnolls",                                      type:"exotic" },
- { name:"Koboldisch",      script:"Drakonisch",   speakers:"Kobolds",                                     type:"exotic" },
+ { name:"Abyssisch",                  script:"Infernalisch", speakers:"Dämonen des Abyss",                          type:"exotic" },
+ { name:"Celestisch",                 script:"Celestisch",   speakers:"Celestische Wesen",                          type:"exotic" },
+ { name:"Diebessprache",              script:"—",            speakers:"Verschiedene kriminelle Gilden",              type:"exotic" },
+ { name:"Druidisch",                  script:"—",            speakers:"Druidenzirkel",                               type:"exotic" },
+ { name:"Gemeinsprache der Unterreiche",script:"—",          speakers:"Das Unterreich",                             type:"exotic" },
+ { name:"Infernalisch",               script:"Infernalisch", speakers:"Teufel aus den Neun Höllen",                 type:"exotic" },
+ { name:"Sylvanisch",                 script:"Elfisch",      speakers:"Bewohner der Feenwildnis",                   type:"exotic" },
+ { name:"Tiefensprache",              script:"—",            speakers:"Aberrationen",                               type:"exotic" },
+ { name:"Urtümlich",                  script:"Zwergisch",    speakers:"Elementare (Aqual, Aural, Ignal, Terral)",   type:"exotic" },
 ];
 const ALL_LANGUAGES = [...STANDARD_LANGUAGES, ...EXOTIC_LANGUAGES].map(l=>l.name);
 
@@ -1328,88 +1310,88 @@ const CLASS_FEATURES_EN = {
 const WIZARD_CLASSES = [
  { name:"Barbar", emoji:"🪓", role:"Kämpfer", color:"#ef4444",
   tagline:"Wut ist deine Waffe",
-  description:"Der Barbar ist ein rasender Krieger aus primitiven Kulturen. Durch seinen berauschenden Kampfrausch (Rage) kann er enormen Schaden austeilen und gleichzeitig Schläge wegstecken, die jeden anderen töten würden. Er braucht keine Rüstung – sein Körper und sein Zorn sind sein Schutz.",
+  description:"Der Barbar ist ein rasender Krieger. Durch seinen Kampfrausch kann er enormen Schaden austeilen und gleichzeitig Schläge wegstecken, die jeden anderen töten würden. Er braucht keine Rüstung – sein Körper und sein Zorn sind sein Schutz.",
   primaryStat:"STR", primaryStats:["str","con"], hitDie:"1d12",
-  strengths:["Höchste Trefferpunkte aller Klassen","Schaden-Resistenz im Kampfrausch","Kein Rüstung nötig (Unarmored Defense)"],
+  strengths:["Höchste Trefferpunkte aller Klassen (1W12)","Schaden-Resistenz im Kampfrausch","Ungerüstete Verteidigung: RK = 10 + DEX + CON"],
   subclasses:["Pfad des Berserkers","Pfad des Totemkriegers","Pfad des Sturmherolds"],
   playstyle:"Frontline-Kämpfer, der in die Menge stürmt und alles zerhaut. Ideal für Einsteiger." },
  { name:"Barde", emoji:"🎵", role:"Unterstützer/Halbzauberer", color:"#ec4899",
   tagline:"Worte sind mächtiger als Schwerter",
-  description:"Der Barde webt Magie durch Musik, Geschichten und Worte. Er ist der vielseitigste Charakter im Spiel: Er kann heilen, kämpfen, zaubern, überzeugen und Verbündete stärken. Bardic Inspiration verleiht Mitspielern Bonuswürfel in entscheidenden Momenten.",
+  description:"Der Barde webt Magie durch Musik, Geschichten und Worte. Er ist der vielseitigste Charakter im Spiel: Er kann heilen, kämpfen, zaubern, überzeugen und Verbündete stärken. Bardische Inspiration verleiht Mitspielern Bonuswürfel in entscheidenden Momenten.",
   primaryStat:"CHA", primaryStats:["cha","dex"], hitDie:"1d8",
-  strengths:["Zugriff auf fast jede Fertigkeit","Magie aus allen Klassen stehlen (Magical Secrets)","Heilen + Kämpfen + Zaubern in einem"],
+  strengths:["Wähle 3 Fertigkeiten deiner Wahl","Alleskönner: halber Übungsbonus auf alle ungecübten Würfe","Magische Geheimnisse: Zauber aus allen Klassen lernen"],
   subclasses:["Kollegium der Tapferkeit","Kollegium der Wissenschaft","Kollegium der Flüsterer"],
   playstyle:"Der Alleskönner. Komplex, aber unglaublich flexibel. Für kreative Spieler." },
  { name:"Kleriker", emoji:"⛪", role:"Heiler/Unterstützer", color:"#fbbf24",
   tagline:"Die Götter sprechen durch dich",
-  description:"Kleriker sind göttliche Agenten ihrer Gottheit. Sie kombinieren mächtige Heilzauber mit solider Kampffähigkeit. Je nach gewählter Domain kann ein Kleriker ein friedlicher Heiler, ein gepanzerter Krieger oder ein totenbeschwörender Nekromant sein.",
+  description:"Kleriker sind göttliche Agenten ihrer Gottheit. Sie kombinieren mächtige Heilzauber mit solider Kampffähigkeit. Je nach gewählter göttlicher Ordnung kann ein Kleriker ein friedlicher Heiler, ein gepanzerter Krieger oder ein mächtiger Schadensausteiler sein.",
   primaryStat:"WIS", primaryStats:["wis","con"], hitDie:"1d8",
-  strengths:["Beste Heilzauber im Spiel","Kann in schwerer Rüstung kämpfen","Enorm vielseitig durch Domains"],
+  strengths:["Beste Heilzauber im Spiel","Göttliche Schläge ab Stufe 7","Enorm vielseitig durch göttliche Ordnungen"],
   subclasses:["Lebensdomain","Kriegsdomain","Lichtdomain","Wissensdomain"],
   playstyle:"Unverzichtbar in den meisten Gruppen. Kann Heiler, Tank oder Damage-Dealer sein." },
  { name:"Druide", emoji:"🌿", role:"Naturzauberer", color:"#4ade80",
   tagline:"Du bist eins mit der Natur",
-  description:"Druiden schöpfen ihre Macht aus der Natur selbst. Sie können sich in Tiere verwandeln (Wild Shape), mächtige Naturzauber wirken und mit Wildtieren kommunizieren. Als Hüter des Waldes sind sie gleichzeitig Zauberer, Heiler und Gestaltenwandler.",
+  description:"Druiden schöpfen ihre Macht aus der Natur selbst. Sie können sich in Tiere verwandeln (Tiergestalt), mächtige Naturzauber wirken und mit Wildtieren kommunizieren. Als Hüter des Waldes sind sie gleichzeitig Zauberer, Heiler und Gestaltenwandler.",
   primaryStat:"WIS", primaryStats:["wis","con"], hitDie:"1d8",
-  strengths:["Wild Shape: in Tiere verwandeln","Starke Flächenzauber","Flexibel zwischen Kampf und Heilung"],
+  strengths:["Tiergestalt: in Tiere verwandeln","Starke Flächenzauber","Flexibel zwischen Kampf und Heilung"],
   subclasses:["Kreis des Mondes","Kreis des Landes","Kreis der Träume"],
-  playstyle:"Einzigartig durch Wild Shape. Etwas komplex, aber sehr befriedigend zu spielen." },
+  playstyle:"Einzigartig durch Tiergestalt. Etwas komplex, aber sehr befriedigend zu spielen." },
  { name:"Kämpfer", emoji:"⚔️", role:"Kämpfer", color:"#f97316",
   tagline:"Kein Sterblicher kämpft besser",
-  description:"Der Kämpfer ist der Meister des Kampfes. Er beherrscht jede Waffe und Rüstung im Spiel, kann mehrmals pro Runde angreifen und erhält mit Action Surge eine kraftvolle Zusatzaktion. Einfach zu lernen, aber mit Combat Manöver auch für Fortgeschrittene tief.",
+  description:"Der Kämpfer ist der Meister des Kampfes. Er beherrscht jede Waffe und Rüstung im Spiel, kann mehrmals pro Runde angreifen und erhält mit Tatendrang eine kraftvolle Zusatzaktion. Taktisches Verständnis und Waffenmeisterung machen ihn vielseitig.",
   primaryStat:"STR oder DEX", primaryStats:["str","dex","con"], hitDie:"1d10",
-  strengths:["Meiste Angriffe pro Runde","Action Surge für Extraaktionen","Passt zu jedem Kampfstil"],
+  strengths:["Meiste Angriffe pro Runde","Tatendrang für Extraaktionen","Waffenmeisterung: spezielle Waffeneigenschaften"],
   subclasses:["Kampfmeister (Battle Master)","Elusiver Tänzer (Eldritch Knight)","Champion"],
   playstyle:"Der zuverlässigste Kämpfer. Perfekt für Einsteiger oder Min-Maxer." },
  { name:"Mönch", emoji:"👊", role:"Kämpfer/Läufer", color:"#38bdf8",
   tagline:"Dein Körper ist deine Waffe",
-  description:"Der Mönch kanalisiert Ki – innere Energie – um übernatürliche Kampffähigkeiten zu erlangen. Er bewegt sich blitzschnell (Unarmored Movement), schlägt mehrmals pro Runde (Flurry of Blows) und kann sogar laufen, ohne Rüstung zu tragen. Kung-Fu trifft Fantasy.",
+  description:"Der Mönch kanalisiert Fokuspunkte – innere Energie – um übernatürliche Kampffähigkeiten zu erlangen. Er bewegt sich blitzschnell (Ungerüstete Bewegung), schlägt mehrmals pro Runde und kann sogar laufen, ohne Rüstung zu tragen.",
   primaryStat:"DEX + WIS", primaryStats:["dex","wis","con"], hitDie:"1d8",
-  strengths:["Blitzschnelle Bewegung","Viele Angriffe ohne Waffe","Stunning Strike: Feinde betäuben"],
+  strengths:["Blitzschnelle Bewegung (Ungerüstete Bewegung)","Viele Angriffe ohne Waffe","Betäubender Schlag: Feinde betäuben"],
   subclasses:["Weg der offenen Hand","Weg des Schattens","Weg der vier Elemente"],
-  playstyle:"Mobile Nahkampfmaschine. Erfordert Ressourcenmanagement (Ki-Punkte)." },
+  playstyle:"Mobile Nahkampfmaschine. Erfordert Ressourcenmanagement (Fokuspunkte)." },
  { name:"Paladin", emoji:"🛡️", role:"Kämpfer/Heiler", color:"#a78bfa",
   tagline:"Schwöre deinen heiligen Eid",
-  description:"Der Paladin vereint schwere Rüstung, Heilzauber und übernatürliche Kampfkraft. Durch seinen heiligen Eid (Sacred Oath) erhält er einzigartige Fähigkeiten. Sein Smite kann in einem einzigen Treffer massiven Schaden anrichten. Die stärkste Halbzaubererklasse im Kampf.",
+  description:"Der Paladin vereint schwere Rüstung, Heilzauber und übernatürliche Kampfkraft. Durch seinen heiligen Eid erhält er einzigartige Fähigkeiten. Handauflegen heilt Verbündete, Paladin-Niederstrecken kann in einem einzigen Treffer massiven Schaden anrichten.",
   primaryStat:"STR + CHA", primaryStats:["str","cha","con"], hitDie:"1d10",
-  strengths:["Aura of Protection: Gruppe schützen","Divine Smite: explosive Schadensausbrüche","Heilen + Kampf perfekt kombiniert"],
+  strengths:["Handauflegen: Verbündete heilen","Paladin-Niederstrecken: explosive Schadensausbrüche","Aura ab Stufe 6: Gruppe schützen"],
   subclasses:["Eid der Hingabe","Eid der Rache","Eid der Alten","Eid des Abgrunds"],
   playstyle:"Kraftvoller Allrounder. Charisma macht ihn auch im Gespräch stark." },
  { name:"Waldläufer", emoji:"🏹", role:"Kämpfer/Späher", color:"#86efac",
   tagline:"Die Wildnis ist dein Zuhause",
-  description:"Der Waldläufer ist Jäger, Spurenleser und Kämpfer in einem. Er kennt jeden Feindtyp durch seinen Favored Enemy und navigiert jedes Gelände durch Natural Explorer. Mit Fernkampfwaffen oder zwei Klingen kämpft er präzise und tödlich.",
+  description:"Der Waldläufer ist Jäger, Spurenleser und Kämpfer in einem. Er kennt jeden Feindtyp durch seinen Erzfeind und navigiert jedes Gelände durch Waldläufer-Zauberei. Mit Fernkampfwaffen oder zwei Klingen kämpft er präzise und tödlich.",
   primaryStat:"DEX + WIS", primaryStats:["dex","wis","con"], hitDie:"1d10",
-  strengths:["Starker Nah- und Fernkampf","Fährtenlesen und Überleben","Natürliche Magie aus der Wildnis"],
+  strengths:["Erzfeind: Vorteil gegen bestimmte Feindtypen","Waldgebundener Gefährte ab Stufe 2","Erkundung und Kampf kombiniert"],
   subclasses:["Jäger (Hunter)","Bestienmeister","Gleitmeer-Stalker (Gloom Stalker)"],
   playstyle:"Stark in Erkundung und Kampf. Besonders effektiv mit dem richtigen Feindtyp." },
  { name:"Schurke", emoji:"🗡️", role:"Schadensmacher/Späher", color:"#94a3b8",
   tagline:"Einmal treffen. Richtig treffen.",
-  description:"Der Schurke lebt im Schatten. Durch Sneak Attack fügt er mit einem einzigen Treffer enormen Schaden zu – wenn er Vorteil hat oder ein Verbündeter in der Nähe ist. Cunning Action erlaubt ihm, sich blitzschnell zu bewegen, zu verstecken oder zu entwaffnen. Meister der Überraschung.",
+  description:"Der Schurke lebt im Schatten. Durch Hinterhältigen Angriff fügt er mit einem einzigen Treffer enormen Schaden zu – wenn er Vorteil hat oder ein Verbündeter in der Nähe ist. Raffinierte Aktion erlaubt ihm, sich blitzschnell zu bewegen, zu verstecken oder zu sprinten.",
   primaryStat:"DEX", primaryStats:["dex","int"], hitDie:"1d8",
-  strengths:["Höchster Einzeltreffer-Schaden","Expertise verdoppelt Fertigkeitsboni","Uncanny Dodge: halben Schaden vermeiden"],
+  strengths:["Hinterhältiger Angriff: enormer Einzeltreffer-Schaden","Expertise verdoppelt Fertigkeitsboni","Unglaubliches Ausweichen: halben Schaden vermeiden"],
   subclasses:["Assassine","Arkaner Trickster","Schurke (Thief)"],
   playstyle:"Tödlich, wenn klug gespielt. Braucht Positionierung und Planung." },
  { name:"Zauberer (Magier)", emoji:"📚", role:"Vollzauberer", color:"#818cf8",
   tagline:"Wissen ist Macht",
-  description:"Der Magier beherrscht die reinste Form arkaner Magie. Mit seinem Zauberbuch kann er jeden arkanischen Zauber erlernen und ist damit die mächtigste Zaubererklasse im Spiel. Spellbook, Ritualkunde und die breite Zauberauswahl machen ihn zum Meister des Planens.",
+  description:"Der Magier beherrscht die reinste Form arkaner Magie durch erschöpfendes Studium. Mit seinem Zauberbuch kann er jeden arkanischen Zauber vorbereiten. Ritual-Adept, Arkane Erholung und Lieblingszauber machen ihn zum Meister der arkanen Künste.",
   primaryStat:"INT", primaryStats:["int","con","dex"], hitDie:"1d6",
-  strengths:["Größte Zauberauswahl im Spiel","Rituale ohne Slots wirken","Magische Artefakte identifizieren"],
+  strengths:["Größte Zauberauswahl im Spiel","Rituale ohne Slots wirken (Ritual-Adept)","Arkane Erholung: Zauberslots zwischen Rasten zurückerhalten"],
   subclasses:["Schule der Beschwörung","Schule der Verwandlung","Schule der Nekromantie","Schule der Vorahnung"],
   playstyle:"Enorme Kraft, aber zerbrechlich. Für strategische Spieler." },
  { name:"Hexenmeister", emoji:"🔮", role:"Halbzauberer", color:"#c084fc",
   tagline:"Ein Pakt, der alles verändert",
-  description:"Der Hexenmeister hat seine Macht durch einen Pakt mit einem mächtigen Wesen erlangt. Er hat wenige Zauberslots – lädt sie aber nach jeder kurzen Rast auf. Eldritch Blast ist der stärkste Zaubertrick im Spiel. Invocations erlauben einzigartige, permanente Fähigkeiten.",
+  description:"Der Hexenmeister hat seine Macht durch einen Pakt mit einem mächtigen Wesen erlangt. Er hat wenige Zauberplätze – lädt sie aber nach jeder kurzen Rast auf. Schauerliche Anrufungen verleihen einzigartige permanente Fähigkeiten.",
   primaryStat:"CHA", primaryStats:["cha","con"], hitDie:"1d8",
-  strengths:["Slots nach Kurzrast zurück","Eldritch Blast immer verfügbar","Invocations: permanente Sonderfähigkeiten"],
+  strengths:["Zauberplätze nach Kurzrast zurück","Schauerliche Anrufungen: permanente Sonderfähigkeiten","Mystisches Arkanum: mächtige Hochgradszauber"],
   subclasses:["Der Große Alte","Der Erzdämon","Die Feenpatin","Der Himmelsgeist"],
   playstyle:"Einzigartiger Spielstil mit wenigen, aber starken Zaubern. Sehr charakterstark." },
  { name:"Zauberwirker (Sorcerer)", emoji:"✨", role:"Vollzauberer", color:"#fb923c",
   tagline:"Magie fließt durch dein Blut",
-  description:"Der Sorcerer wurde mit magischer Kraft geboren – er lernt sie nicht, er ist sie. Mit Sorcery Points kann er Zauber metamagisch verändern: schneller wirken, verdoppeln, leiser zaubern. Weniger Zauber als der Magier, aber unglaublich flexibel in der Anwendung.",
+  description:"Der Zauberwirker wurde mit magischer Kraft geboren – er lernt sie nicht, er ist sie. Mit Zauberpunkten kann er Zauber metamagisch verändern: schneller wirken, verdoppeln, leiser zaubern. Intuitive Zauberei lässt ihn Zauber ohne Fokus wirken.",
   primaryStat:"CHA", primaryStats:["cha","con"], hitDie:"1d6",
-  strengths:["Metamagie: Zauber anpassen","Flexible Zauberslot-Konvertierung","Innate Spellcasting ohne Fokus"],
+  strengths:["Intuitive Zauberei: Zauber ohne Fokus wirken","Metamagie: Zauber anpassen","Flexible Zauberslot-Konvertierung mit Zauberpunkten"],
   subclasses:["Drachenlinie","Wilder Magie","Göttliche Seele","Sturmzauberer"],
-  playstyle:"Weniger Auswahl, mehr Kontrolle. Für Spieler, die Zauber maximieren wollen." },
+  playstyle:"Weniger Auswahl, mehr Kontrolle. Für Spieler die Zauber maximieren wollen." },
 ];
 
 const WIZARD_RACES = [
@@ -1619,70 +1601,149 @@ const WIZARD_RACES = [
 ];
 
 const WIZARD_BACKGROUNDS = [
+ { name:"Adeliger", emoji:"👑", color:"#a78bfa",
+  description:"Du bist in einer Burg aufgewachsen, umgeben von Reichtum, Macht und Privilegien. Deine Familie ist von niederem Adel und hat dir eine erstklassige Bildung angedeihen lassen.",
+  proficiencies:["Geschichte","Überzeugen"],
+  tools:"Spielset (Wahl)",
+  talent:"Begabt",
+  primaryStats:["str","int","cha"],
+  equipment:"A) Spielset, feine Kleidung, Parfüm, 29 GM · B) 50 GM",
+  suggestedFor:{ classes:["Paladin","Barde","Zauberer (Magier)","Hexenmeister","Kämpfer"], races:["Mensch","Elf","Halb-Elf","Tiefling"] } },
+
  { name:"Akolyth", emoji:"⛪", color:"#fbbf24",
-  description:"Du hast dein Leben im Dienst einer Gottheit oder eines religiösen Ordens verbracht. Rituale, heilige Texte und Gebet sind dir so vertraut wie Atmen.",
-  proficiencies:["Einblick","Religion"],
-  languages:2, equipment:"Heiliges Symbol, Gebetsbuch, Weihrauch, Mönchsrobe, 15 GP",
-  feature:"Unterkunft in Tempeln deiner Religion. Andere Kleriker helfen dir kostenlos.",
-  ideal:"Der Glaube ist der Fels, auf dem alles steht.",
-  bond:"Ich suche den heiligen Text, der meinen Orden vernichtet hätte.",
-  suggestedFor:{ classes:["Kleriker","Paladin","Druide"], races:["Mensch","Zwerg","Elf"] } },
- { name:"Krimineller", emoji:"🎭", color:"#94a3b8",
-  description:"Du warst Teil der Unterwelt – Dieb, Schläger, Schmuggler oder Auftragsmörder. Du kennst die dunkle Seite der Gesellschaft besser als die meisten.",
-  proficiencies:["Täuschung","Heimlichkeit"],
-  tools:"Diebeswerkzeug, ein Kartenspiel", equipment:"Brecheisen, dunkle Kleidung mit Kapuze, 15 GP",
-  feature:"Kriminelle Kontakte: Ein Netz von Informanten, Hehlern und Verbrechern hilft dir.",
-  ideal:"Ich bin loyal zu meinen Gefährten, sonst niemandem.",
-  bond:"Jemand Wichtiges sitzt wegen mir im Gefängnis. Das hole ich nach.",
-  suggestedFor:{ classes:["Schurke","Barde","Hexenmeister"], races:["Halbling","Tiefling","Halb-Elf"] } },
- { name:"Volksheld", emoji:"🌾", color:"#4ade80",
-  description:"Du stammst aus einfachen Verhältnissen, aber eine außergewöhnliche Tat hat dich als Helden deines Volkes bekannt gemacht. Die einfachen Leute schauen zu dir auf.",
-  proficiencies:["Tiere zähmen","Überleben"],
-  tools:"Handwerkswerkzeug, Fahrzeuge (Land)", equipment:"Handwerkswerkzeug, Schaufel, Eisentopf, Alltagskleidung, 10 GP",
-  feature:"Gastfreundschaft des Volkes: In kleinen Dörfern findest du immer Unterkunft und Nahrung.",
-  ideal:"Niemand sollte anderen Menschen gegenüber herablassend sein.",
-  bond:"Ein Tyrann vernichtet das Land meiner Leute. Ich werde ihn stürzen.",
-  suggestedFor:{ classes:["Kämpfer","Barbar","Paladin","Waldläufer"], races:["Mensch","Halbork","Halbling"] } },
- { name:"Adliger", emoji:"👑", color:"#a78bfa",
-  description:"Du bist mit Reichtum, Macht und Privilegien aufgewachsen. Du weißt, wie man Höfe navigiert, Intrigen spinnt und Leute beeinflusst – aber auch welche Last Verantwortung bedeutet.",
-  proficiencies:["Geschichte","Überzeugung"],
-  tools:"Schachspiel", languages:1, equipment:"Feine Kleidung, Siegelring, Stammbaum, 25 GP",
-  feature:"Adliger Auftritt: Menschen aus niedrigeren Ständen weichen dir aus und wollen dich nicht verärgern.",
-  ideal:"Adel verpflichtet. Ich muss meinem Stand gerecht werden.",
-  bond:"Meine Familie wurde zu Unrecht ihrer Ländereien beraubt.",
-  suggestedFor:{ classes:["Paladin","Barde","Zauberer (Magier)","Hexenmeister"], races:["Mensch","Elf","Halb-Elf","Tiefling"] } },
- { name:"Weiser / Gelehrter", emoji:"📚", color:"#818cf8",
-  description:"Du hast Jahre in Bibliotheken, Akademien oder bei Meistern verbracht. Bücher und Wissen sind dein Element. Wenn jemand eine Antwort braucht, fragst du zuerst.",
-  proficiencies:["Arkane Kunde","Geschichte"],
-  languages:2, equipment:"Flasche schwarze Tinte, Schreibfeder, kleines Messer, Brief, 10 GP",
-  feature:"Forschend: Du weißt, wo du Informationen findest – und wen du fragen musst.",
-  ideal:"Der Weg zur Erleuchtung führt durch Wissen.",
-  bond:"Ich besitze ein seltenes Buch voller gefährlichen Wissens.",
-  suggestedFor:{ classes:["Zauberer (Magier)","Kleriker","Druide","Zauberwirker (Sorcerer)"], races:["Hochelf","Gnom","Mensch","Tiefling"] } },
- { name:"Söldner / Soldat", emoji:"⚔️", color:"#ef4444",
-  description:"Du hast als Kämpfer in einem Heer oder als Söldner gedient. Disziplin, Teamarbeit und das Lager sind dir vertraut. Du kennst die echte Seite des Krieges.",
+  description:"Du hast dich dem Dienst in einem Tempel verschrieben. Dort hast du Riten zu Ehren eines Gottes ausgeführt und Religion studiert. Dank der Unterweisung des Priesters hast du gelernt, göttliche Energien zu kanalisieren.",
+  proficiencies:["Motiv erkennen","Religion"],
+  tools:"Kalligrafenwerkzeug",
+  talent:"Eingeweihter der Magie (Kleriker)",
+  primaryStats:["int","wis","cha"],
+  equipment:"A) Kalligrafenwerkzeug, Buch (Gebete), Heiliges Symbol, Pergament (10 Blätter), Robe, 8 GM · B) 50 GM",
+  suggestedFor:{ classes:["Kleriker","Paladin","Druide","Zauberer (Magier)"], races:["Mensch","Zwerg","Elf","Tiefling"] } },
+
+ { name:"Bauer", emoji:"🌾", color:"#86efac",
+  description:"Du bist auf dem Land aufgewachsen. Jahrelang hast du die Tiere versorgt und den Boden kultiviert. Du schätzt die Gaben der Natur und hast zugleich gesunden Respekt vor ihrem Zorn.",
+  proficiencies:["Mit Tieren umgehen","Naturkunde"],
+  tools:"Schreinerwerkzeug",
+  talent:"Zäh",
+  primaryStats:["str","con","wis"],
+  equipment:"A) Sichel, Kampfrüstung, Heilerausrüstung, Eisentopf, Schaufel, Reisekleidung, 30 GM · B) 50 GM",
+  suggestedFor:{ classes:["Barbar","Kämpfer","Druide","Waldläufer","Kleriker"], races:["Mensch","Halbork","Halbling","Zwerg"] } },
+
+ { name:"Einsiedler", emoji:"🏔️", color:"#38bdf8",
+  description:"Du hast deine jungen Jahre abgeschieden in einer Hütte oder einem Kloster fern aller Ansiedlungen verbracht. Deine Gesellschaft bestand aus Kreaturen des Waldes und gelegentlichen Besuchern.",
+  proficiencies:["Heilkunde","Religion"],
+  tools:"Kräuterkundeausrüstung",
+  talent:"Heiler",
+  primaryStats:["con","wis","cha"],
+  equipment:"A) Kampfstab, Kräuterkundeausrüstung, Schlafsack, Buch (Philosophie), Lampe, Öl (3 Flaschen), Reisekleidung, 16 GM · B) 50 GM",
+  suggestedFor:{ classes:["Druide","Kleriker","Mönch","Waldläufer"], races:["Elf","Mensch","Halbling","Zwerg"] } },
+
+ { name:"Händler", emoji:"💰", color:"#fbbf24",
+  description:"Du warst bei einem Händler, einem Karawanenmeister oder Ladenbesitzer in der Lehre. Du bist viel gereist und hast dir deinen Lebensunterhalt mit dem An- und Verkauf von Waren verdient.",
+  proficiencies:["Mit Tieren umgehen","Überzeugen"],
+  tools:"Navigationswerkzeug",
+  talent:"Glückspilz",
+  primaryStats:["con","int","cha"],
+  equipment:"A) Navigationswerkzeug, 2× Beutel, Reisekleidung, 22 GM · B) 50 GM",
+  suggestedFor:{ classes:["Barde","Schurke","Zauberwirker (Sorcerer)","Hexenmeister"], races:["Mensch","Halbling","Gnom","Halb-Elf"] } },
+
+ { name:"Handwerker", emoji:"🔨", color:"#f97316",
+  description:"Du hast in einem Handwerksbetrieb gelernt. In deiner Lehre hast du gelernt, grundlegende handwerkliche Arbeiten auszuführen und schwierige Kunden zu besänftigen.",
+  proficiencies:["Nachforschungen","Überzeugen"],
+  tools:"Handwerkzeug (Wahl)",
+  talent:"Handwerker",
+  primaryStats:["str","dex","int"],
+  equipment:"A) Handwerkzeug (wie oben), 2× Beutel, Reisekleidung, 32 GM · B) 50 GM",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Zauberer (Magier)","Kleriker"], races:["Zwerg","Gnom","Mensch","Halbork"] } },
+
+ { name:"Krimineller", emoji:"🗡️", color:"#94a3b8",
+  description:"Du hast dich in dunklen Gassen durchgeschlagen und mit Taschendiebstählen und Einbrüchen über Wasser gehalten. Vielleicht hast du einer kleinen Bande angehört oder warst Einzelgänger.",
+  proficiencies:["Fingerfertigkeit","Heimlichkeit"],
+  tools:"Diebeswerkzeug",
+  talent:"Wachsam",
+  primaryStats:["dex","con","int"],
+  equipment:"A) 2× Dolch, Diebeswerkzeug, Brechstange, 2× Beutel, Reisekleidung, 16 GM · B) 50 GM",
+  suggestedFor:{ classes:["Schurke","Barde","Hexenmeister","Waldläufer"], races:["Halbling","Tiefling","Halb-Elf","Halbork"] } },
+
+ { name:"Reisender", emoji:"🛤️", color:"#60a5fa",
+  description:"Du bist auf der Straße in Gesellschaft ähnlich glückloser Außenseiter aufgewachsen. Du hast gelernt, auf dich aufzupassen, und hast merkwürdige Arbeit getan, um etwas zu essen zu kriegen.",
+  proficiencies:["Motiv erkennen","Heimlichkeit"],
+  tools:"Diebeswerkzeug",
+  talent:"Glückspilz",
+  primaryStats:["dex","wis","cha"],
+  equipment:"A) 2× Dolch, Diebeswerkzeug, Spielset (beliebig), Schlafsack, 2× Beutel, Reisekleidung, 16 GM · B) 50 GM",
+  suggestedFor:{ classes:["Schurke","Barde","Waldläufer","Hexenmeister"], races:["Halbling","Tiefling","Halbork","Halb-Elf"] } },
+
+ { name:"Scharlatan", emoji:"🎪", color:"#ec4899",
+  description:"Sowie du alt genug warst, hast du in jeder Taverne deinen Lieblingsplatz gehabt. Während deiner Tavernentouren hast du gelernt, Pechvögel auszunehmen – mit gefälschten Zaubertränken oder Stammbäumen.",
+  proficiencies:["Fingerfertigkeit","Täuschen"],
+  tools:"Fälscherausrüstung",
+  talent:"Begabt",
+  primaryStats:["dex","con","cha"],
+  equipment:"A) Fälscherausrüstung, Kostüm, feine Kleidung, 15 GM · B) 50 GM",
+  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister","Zauberwirker (Sorcerer)"], races:["Tiefling","Halb-Elf","Halbling","Mensch"] } },
+
+ { name:"Schreiber", emoji:"📜", color:"#818cf8",
+  description:"Du hast deine prägenden Jahre in einem Skriptorium verbracht, einem Kloster zur Bewahrung von Wissen oder einer staatlichen Behörde. Du hast in klarer Schrift fügliche Texte zu verfassen gelernt.",
+  proficiencies:["Nachforschungen","Wahrnehmung"],
+  tools:"Kalligrafenwerkzeug",
+  talent:"Begabt",
+  primaryStats:["dex","int","wis"],
+  equipment:"A) Kalligrafenwerkzeug, feine Kleidung, Lampe, Öl (3 Flaschen), Pergament (12 Blätter), 23 GM · B) 50 GM",
+  suggestedFor:{ classes:["Zauberer (Magier)","Kleriker","Barde","Hexenmeister"], races:["Mensch","Gnom","Elf","Tiefling"] } },
+
+ { name:"Seemann", emoji:"⚓", color:"#38bdf8",
+  description:"Du hast als Seefahrer gelebt, den Wind im Rücken und das Deck schwankend unter deinen Füßen. In zahllosen Häfen hast du an Tavernentheken Stürme überstanden und Geschichten ausgetauscht.",
+  proficiencies:["Akrobatik","Wahrnehmung"],
+  tools:"Navigationswerkzeug",
+  talent:"Kneipenschläger",
+  primaryStats:["str","dex","wis"],
+  equipment:"A) Dolch, Navigationswerkzeug, Seil, Reisekleidung, 20 GM · B) 50 GM",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Waldläufer","Schurke"], races:["Mensch","Halbork","Halb-Elf","Halbling"] } },
+
+ { name:"Soldat", emoji:"⚔️", color:"#ef4444",
+  description:"Du hast deine Ausbildung für den Krieg begonnen, sowie du erwachsen warst. Der Kampf liegt dir im Blut. Du hast mächtige Grundausbildung auf dem Schlachtfeld genutzt und das Reich beschützt.",
   proficiencies:["Athletik","Einschüchtern"],
-  tools:"Kartenspiel, Fahrzeuge (Land)", equipment:"Rangabzeichen, Kriegstrophäe, Knobelbecher, 10 GP",
-  feature:"Militärischer Rang: Andere Soldaten erkennen deine Autorität an.",
-  ideal:"Ich tue was getan werden muss, auch wenn es hart ist.",
-  bond:"Jemand hat mein Bataillon verraten. Ich werde ihn finden.",
-  suggestedFor:{ classes:["Kämpfer","Barbar","Paladin","Waldläufer"], races:["Mensch","Halbork","Zwerg"] } },
- { name:"Ausgestoßener / Geächteter", emoji:"🏕️", color:"#fb923c",
-  description:"Du hast lange abseits der Zivilisation gelebt – in der Wildnis, in Exile oder als Wanderer. Die Natur ist dein Zuhause. Du brauchst keine Städte.",
-  proficiencies:["Athletik","Überleben"],
-  languages:1, equipment:"Schlafrolle, Messer, Karte deiner Heimat, 10 GP",
-  feature:"Wanderer: Du kannst fast immer Nahrung und Wasser für deine Gruppe finden.",
-  ideal:"Die Natur muss geschützt werden – selbst vor Menschen.",
-  bond:"Eine Familientragödie hat mich in die Wildnis getrieben.",
-  suggestedFor:{ classes:["Waldläufer","Druide","Barbar","Kämpfer"], races:["Waldelfe","Halbling","Halbork","Mensch"] } },
- { name:"Entertainer", emoji:"🎪", color:"#ec4899",
-  description:"Du hast als Schauspieler, Akrobat, Musiker oder Geschichtenerzähler die Herzen der Massen gewonnen. Du weißt, wie man eine Menge begeistert – und wie man verschwindet, wenn es brenzlig wird.",
+  tools:"Spielset (Wahl)",
+  talent:"Wilder Angreifer",
+  primaryStats:["str","dex","con"],
+  equipment:"A) Speer, Kurzbogen, 20 Pfeile, Spielset (wie oben), Heilerausrüstung, Köcher, Reisekleidung, 14 GM · B) 50 GM",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Paladin","Waldläufer"], races:["Mensch","Halbork","Zwerg","Halb-Elf"] } },
+
+ { name:"Unterhaltungskünstler", emoji:"🎭", color:"#f472b6",
+  description:"Du hast einen Großteil deiner Jugend auf Jahrmärkten und in Zirkussen verbracht, warst als Gelegenheitsarbeiter für Musiker und Akrobaten tätig. Du liebst den Applaus und stehst gerne auf der Bühne.",
   proficiencies:["Akrobatik","Auftreten"],
-  tools:"Verkleidungsset, Musikinstrument", equipment:"Musikinstrument, Liebesbrief, Kostüm, 15 GP",
-  feature:"Unterkunft durch Auftritte: Du kannst dir in Tavernen Kost und Logis erspielen.",
-  ideal:"Die Kunst soll alle Menschen berühren, Adel wie Bauer.",
-  bond:"Mein Mentor hat mir alles beigebracht. Ich stehe in seiner Schuld.",
-  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister"], races:["Halb-Elf","Halbling","Tiefling","Mensch"] } },
+  tools:"Musikinstrument (Wahl)",
+  talent:"Musiker",
+  primaryStats:["str","dex","cha"],
+  equipment:"A) Musikinstrument (wie oben), 2× Kostüme, Spiegel, Reisekleidung, 11 GM · B) 50 GM",
+  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister","Zauberwirker (Sorcerer)"], races:["Halb-Elf","Halbling","Tiefling","Mensch"] } },
+
+ { name:"Wache", emoji:"🛡️", color:"#64748b",
+  description:"Deine Füße schmerzen, wenn du nur an die zahllosen Stunden denkst, die du auf deinem Posten im Wachturm verbracht hast. Du hast mit einem Auge nach Plünderern und mit dem anderen nach Beutelschneidern gesucht.",
+  proficiencies:["Athletik","Wahrnehmung"],
+  tools:"Spielset (Wahl)",
+  talent:"Wachsam",
+  primaryStats:["str","int","wis"],
+  equipment:"A) Speer, leichte Armbrust, 20 Bolzen, Spielset (wie oben), abdeckbare Laterne, Handschellen, Köcher, Reisekleidung, 12 GM · B) 50 GM",
+  suggestedFor:{ classes:["Kämpfer","Paladin","Kleriker","Barbar"], races:["Mensch","Zwerg","Halbork","Tiefling"] } },
+
+ { name:"Wegfinder", emoji:"🧭", color:"#4ade80",
+  description:"Du bist in der freien Natur aufgewachsen, weit weg von besiedelten Gebieten. Es gibt viele Wunder in der Wildnis – merkwürdige Monster, unberührte Wälder und Flüsse. Bei deinen Erkundungen hast du gelernt, auf dich aufzupassen.",
+  proficiencies:["Heimlichkeit","Überlebenskunst"],
+  tools:"Kartografenwerkzeug",
+  talent:"Eingeweihter der Magie (Druide)",
+  primaryStats:["dex","con","wis"],
+  equipment:"A) Kurzbogen, 20 Pfeile, Kartografenwerkzeug, Schlafsack, Köcher, Zelt, Reisekleidung, 3 GM · B) 50 GM",
+  suggestedFor:{ classes:["Waldläufer","Druide","Barbar","Mönch"], races:["Elf","Halbling","Mensch","Halbork"] } },
+
+ { name:"Weiser", emoji:"📚", color:"#818cf8",
+  description:"Du hast deine jungen Jahre damit verbracht, zu Herrenhäusern und Klöstern zu reisen und dir mit verschiedenen Gelegenheitsarbeiten Zugang zu den Bibliotheken zu erarbeiten. Du hast die Grundlagen der Magie erlernt.",
+  proficiencies:["Arkane Kunde","Geschichte"],
+  tools:"Kalligrafenwerkzeug",
+  talent:"Eingeweihter der Magie (Magier)",
+  primaryStats:["con","int","wis"],
+  equipment:"A) Kampfstab, Kalligrafenwerkzeug, Buch (Geschichte), Pergament (8 Blätter), Robe, 8 GM · B) 50 GM",
+  suggestedFor:{ classes:["Zauberer (Magier)","Zauberwirker (Sorcerer)","Hexenmeister","Barde"], races:["Mensch","Gnom","Elf","Tiefling"] } },
 ];
 
 const WIZARD_ALIGNMENTS = [
@@ -2044,78 +2105,149 @@ const WIZARD_RACES_EN = [
 ];
 
 const WIZARD_BACKGROUNDS_EN = [
- { name:"Acolyte", emoji:"⛪", color:"#fbbf24",
-  description:"You grew up in a temple or religious order. The gods are not abstract to you – they are real, present and demanding. You know holy rites, prayers and the hierarchy of your faith.",
-  proficiencies:["Insight","Religion"],
-  languages:2, equipment:"Holy symbol, prayer book, 5 candles, 15 GP",
-  feature:"Shelter of the Faithful: temples of your faith offer free accommodation and healing.",
-  ideal:"Faith. Unwavering trust in my deity is the source of my strength.",
-  bond:"I owe everything to the temple that raised me.",
-  tagline:"Devout servant of the gods",
-  suggestedFor:{ classes:["Kleriker","Paladin","Druide","Mönch"], races:["Mensch","Halb-Elf","Zwerg","Tiefling"] } },
- { name:"Criminal", emoji:"🗡️", color:"#94a3b8",
-  description:"You lived outside the law. Whether thief, smuggler or hired killer – you know the dark side of civilization. Contacts in the criminal underworld are your most important assets.",
-  proficiencies:["Deception","Stealth"],
-  tools:"One gaming set, Thieves' tools", equipment:"Crowbar, dark clothes with hood, 15 GP",
-  feature:"Criminal Contact: you have a reliable contact in the criminal underworld.",
-  ideal:"Freedom. Chains – whether of iron or law – are made to be broken.",
-  bond:"I'm trying to pay off a debt to a dangerous person.",
-  tagline:"Life outside the law",
-  suggestedFor:{ classes:["Schurke","Waldläufer","Barbar","Mönch","Hexenmeister"], races:["Mensch","Halb-Elf","Halbork","Tiefling"] } },
- { name:"Folk Hero", emoji:"🌾", color:"#4ade80",
-  description:"You come from simple folk and became a hero through a decisive act. The people trust you – and you carry the responsibility for those who cannot protect themselves.",
-  proficiencies:["Animal Handling","Survival"],
-  tools:"One artisan's tools, Vehicles (land)", equipment:"Artisan's tools, iron pot, common clothes, 10 GP",
-  feature:"Rustic Hospitality: common folk offer shelter and food, and cover for you.",
-  ideal:"Respect. People deserve to be treated with dignity.",
-  bond:"The tyrant who oppressed my people will be brought to justice.",
-  tagline:"Hero of the common folk",
-  suggestedFor:{ classes:["Kämpfer","Barbar","Waldläufer","Paladin","Druide"], races:["Mensch","Halbork","Halbling","Zwerg"] } },
- { name:"Noble", emoji:"👑", color:"#fbbf24",
-  description:"You grew up in wealth and privilege. You know court etiquette, political intrigue and the weight of family reputation. Your title opens many doors – but also creates expectations.",
+ { name:"Noble", emoji:"👑", color:"#a78bfa",
+  description:"You grew up in a castle surrounded by wealth, power and privilege. Your family is of lesser nobility and gave you a first-class education.",
   proficiencies:["History","Persuasion"],
-  tools:"One gaming set", languages:1, equipment:"Fine clothes, signet ring, scroll of pedigree, 25 GP",
-  feature:"Position of Privilege: you are welcomed in high society and get audiences with nobles.",
-  ideal:"Responsibility. My privilege comes with an obligation to protect those beneath me.",
-  bond:"My family's honor is my most precious possession.",
-  tagline:"Born to privilege",
-  suggestedFor:{ classes:["Paladin","Barde","Zauberer (Magier)","Hexenmeister"], races:["Mensch","Elf","Halb-Elf","Tiefling"] } },
- { name:"Sage", emoji:"📚", color:"#818cf8",
-  description:"You spent years in libraries, academies or studying under masters. Books and knowledge are your element. When someone needs an answer, you ask first.",
-  proficiencies:["Arcana","History"],
-  languages:2, equipment:"Bottle of black ink, quill, small knife, letter, 10 GP",
-  feature:"Researcher: you know where to find information – and who to ask.",
-  ideal:"The path to enlightenment leads through knowledge.",
-  bond:"I own a rare book full of dangerous knowledge.",
-  tagline:"Seeker of ancient knowledge",
-  suggestedFor:{ classes:["Zauberer (Magier)","Kleriker","Druide","Zauberwirker (Sorcerer)"], races:["Hochelf","Gnom","Mensch","Tiefling"] } },
+  tools:"Gaming Set (choice)",
+  talent:"Skilled",
+  primaryStats:["str","int","cha"],
+  equipment:"A) Gaming set, fine clothes, perfume, 29 GP · B) 50 GP",
+  suggestedFor:{ classes:["Paladin","Barde","Zauberer (Magier)","Hexenmeister","Kämpfer"], races:["Mensch","Elf","Halb-Elf","Tiefling"] } },
+
+ { name:"Acolyte", emoji:"⛪", color:"#fbbf24",
+  description:"You dedicated yourself to serving in a temple. There you performed rites in honor of a god and studied religion. Thanks to the priest's guidance you learned to channel divine energies.",
+  proficiencies:["Insight","Religion"],
+  tools:"Calligrapher's Supplies",
+  talent:"Magic Initiate (Cleric)",
+  primaryStats:["int","wis","cha"],
+  equipment:"A) Calligrapher's supplies, book (prayers), holy symbol, parchment (10 sheets), robe, 8 GP · B) 50 GP",
+  suggestedFor:{ classes:["Kleriker","Paladin","Druide","Zauberer (Magier)"], races:["Mensch","Zwerg","Elf","Tiefling"] } },
+
+ { name:"Farmer", emoji:"🌾", color:"#86efac",
+  description:"You grew up in the countryside, tending animals and cultivating the land. You appreciate nature's gifts and have a healthy respect for its wrath.",
+  proficiencies:["Animal Handling","Nature"],
+  tools:"Carpenter's Tools",
+  talent:"Tough",
+  primaryStats:["str","con","wis"],
+  equipment:"A) Sickle, healer's kit, iron pot, shovel, traveler's clothes, 30 GP · B) 50 GP",
+  suggestedFor:{ classes:["Barbar","Kämpfer","Druide","Waldläufer","Kleriker"], races:["Mensch","Halbork","Halbling","Zwerg"] } },
+
+ { name:"Hermit", emoji:"🏔️", color:"#38bdf8",
+  description:"You spent your formative years secluded in a hut or monastery far from all settlements. Your only company was forest creatures and occasional visitors.",
+  proficiencies:["Medicine","Religion"],
+  tools:"Herbalism Kit",
+  talent:"Healer",
+  primaryStats:["con","wis","cha"],
+  equipment:"A) Quarterstaff, herbalism kit, bedroll, book (philosophy), lamp, oil (3 flasks), traveler's clothes, 16 GP · B) 50 GP",
+  suggestedFor:{ classes:["Druide","Kleriker","Mönch","Waldläufer"], races:["Elf","Mensch","Halbling","Zwerg"] } },
+
+ { name:"Merchant", emoji:"💰", color:"#fbbf24",
+  description:"You apprenticed with a merchant, caravan master or shopkeeper. You have traveled extensively and earned your living buying and selling goods.",
+  proficiencies:["Animal Handling","Persuasion"],
+  tools:"Navigator's Tools",
+  talent:"Lucky",
+  primaryStats:["con","int","cha"],
+  equipment:"A) Navigator's tools, 2 pouches, traveler's clothes, 22 GP · B) 50 GP",
+  suggestedFor:{ classes:["Barde","Schurke","Zauberwirker (Sorcerer)","Hexenmeister"], races:["Mensch","Halbling","Gnom","Halb-Elf"] } },
+
+ { name:"Artisan", emoji:"🔨", color:"#f97316",
+  description:"You trained in a craft workshop. Your apprenticeship taught you to perform basic craftwork and appease difficult customers.",
+  proficiencies:["Investigation","Persuasion"],
+  tools:"Artisan's Tools (choice)",
+  talent:"Crafter",
+  primaryStats:["str","dex","int"],
+  equipment:"A) Artisan's tools (same as above), 2 pouches, traveler's clothes, 32 GP · B) 50 GP",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Zauberer (Magier)","Kleriker"], races:["Zwerg","Gnom","Mensch","Halbork"] } },
+
+ { name:"Criminal", emoji:"🗡️", color:"#94a3b8",
+  description:"You fought your way through dark alleys, staying afloat through pickpocketing and burglaries. You may have belonged to a small gang or worked alone.",
+  proficiencies:["Sleight of Hand","Stealth"],
+  tools:"Thieves' Tools",
+  talent:"Alert",
+  primaryStats:["dex","con","int"],
+  equipment:"A) 2 daggers, thieves' tools, crowbar, 2 pouches, traveler's clothes, 16 GP · B) 50 GP",
+  suggestedFor:{ classes:["Schurke","Barde","Hexenmeister","Waldläufer"], races:["Halbling","Tiefling","Halb-Elf","Halbork"] } },
+
+ { name:"Wayfarer", emoji:"🛤️", color:"#60a5fa",
+  description:"You grew up on the road among similarly unlucky outsiders. You learned to fend for yourself and did odd jobs to put food on the table.",
+  proficiencies:["Insight","Stealth"],
+  tools:"Thieves' Tools",
+  talent:"Lucky",
+  primaryStats:["dex","wis","cha"],
+  equipment:"A) 2 daggers, thieves' tools, gaming set (any), bedroll, 2 pouches, traveler's clothes, 16 GP · B) 50 GP",
+  suggestedFor:{ classes:["Schurke","Barde","Waldläufer","Hexenmeister"], races:["Halbling","Tiefling","Halbork","Halb-Elf"] } },
+
+ { name:"Charlatan", emoji:"🎪", color:"#ec4899",
+  description:"As soon as you were old enough, you had your favorite spot in every tavern. During your tavern tours you learned to fleece suckers – with fake potions or forged family trees.",
+  proficiencies:["Sleight of Hand","Deception"],
+  tools:"Forgery Kit",
+  talent:"Skilled",
+  primaryStats:["dex","con","cha"],
+  equipment:"A) Forgery kit, costume, fine clothes, 15 GP · B) 50 GP",
+  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister","Zauberwirker (Sorcerer)"], races:["Tiefling","Halb-Elf","Halbling","Mensch"] } },
+
+ { name:"Scribe", emoji:"📜", color:"#818cf8",
+  description:"You spent your formative years in a scriptorium, a monastery preserving knowledge, or a government agency. You learned to compose proper texts in clear script.",
+  proficiencies:["Investigation","Perception"],
+  tools:"Calligrapher's Supplies",
+  talent:"Skilled",
+  primaryStats:["dex","int","wis"],
+  equipment:"A) Calligrapher's supplies, fine clothes, lamp, oil (3 flasks), parchment (12 sheets), 23 GP · B) 50 GP",
+  suggestedFor:{ classes:["Zauberer (Magier)","Kleriker","Barde","Hexenmeister"], races:["Mensch","Gnom","Elf","Tiefling"] } },
+
+ { name:"Sailor", emoji:"⚓", color:"#38bdf8",
+  description:"You lived as a seafarer, the wind at your back and the deck swaying under your feet. In countless ports you weathered storms at tavern counters and swapped tales.",
+  proficiencies:["Acrobatics","Perception"],
+  tools:"Navigator's Tools",
+  talent:"Tavern Brawler",
+  primaryStats:["str","dex","wis"],
+  equipment:"A) Dagger, navigator's tools, rope, traveler's clothes, 20 GP · B) 50 GP",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Waldläufer","Schurke"], races:["Mensch","Halbork","Halb-Elf","Halbling"] } },
+
  { name:"Soldier", emoji:"⚔️", color:"#ef4444",
-  description:"You served as a fighter in an army or as a mercenary. Discipline, teamwork and camp life are familiar to you. You know the real face of war.",
+  description:"You began your military training as soon as you came of age. The fight is in your blood. You used your basic training on the battlefield and protected the realm.",
   proficiencies:["Athletics","Intimidation"],
-  tools:"One gaming set, Vehicles (land)", equipment:"Rank insignia, war trophy, dice set, 10 GP",
-  feature:"Military Rank: other soldiers recognize your authority.",
-  ideal:"I do what must be done, even when it's hard.",
-  bond:"Someone betrayed my battalion. I will find them.",
-  tagline:"Veteran of countless battles",
-  suggestedFor:{ classes:["Kämpfer","Barbar","Paladin","Waldläufer"], races:["Mensch","Halbork","Zwerg"] } },
- { name:"Outlander", emoji:"🏕️", color:"#fb923c",
-  description:"You lived far from civilization – in the wilderness, in exile or as a wanderer. Nature is your home. You don't need cities.",
-  proficiencies:["Athletics","Survival"],
-  languages:1, equipment:"Bedroll, hunting knife, map of your homeland, 10 GP",
-  feature:"Wanderer: you can almost always find food and water for your group.",
-  ideal:"Nature must be protected – even from people.",
-  bond:"A family tragedy drove me into the wilderness.",
-  tagline:"Child of the wild",
-  suggestedFor:{ classes:["Waldläufer","Druide","Barbar","Kämpfer"], races:["Waldelfe","Halbling","Halbork","Mensch"] } },
- { name:"Entertainer", emoji:"🎪", color:"#ec4899",
-  description:"You won the hearts of the masses as an actor, acrobat, musician or storyteller. You know how to captivate a crowd – and how to disappear when things get dangerous.",
+  tools:"Gaming Set (choice)",
+  talent:"Savage Attacker",
+  primaryStats:["str","dex","con"],
+  equipment:"A) Spear, shortbow, 20 arrows, gaming set (same), healer's kit, quiver, traveler's clothes, 14 GP · B) 50 GP",
+  suggestedFor:{ classes:["Kämpfer","Barbar","Paladin","Waldläufer"], races:["Mensch","Halbork","Zwerg","Halb-Elf"] } },
+
+ { name:"Entertainer", emoji:"🎭", color:"#f472b6",
+  description:"You spent much of your youth at fairs and circuses, working as a stagehand for musicians and acrobats. You love the applause and enjoy being on stage.",
   proficiencies:["Acrobatics","Performance"],
-  tools:"Disguise kit, Musical instrument", equipment:"Musical instrument, love letter, costume, 15 GP",
-  feature:"By Popular Demand: you can earn free lodging and meals at inns through performing.",
-  ideal:"Art should touch all people, noble and common alike.",
-  bond:"My mentor taught me everything. I am in their debt.",
-  tagline:"Born for the spotlight",
-  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister"], races:["Halb-Elf","Halbling","Tiefling","Mensch"] } },
+  tools:"Musical Instrument (choice)",
+  talent:"Musician",
+  primaryStats:["str","dex","cha"],
+  equipment:"A) Musical instrument (same), 2 costumes, mirror, traveler's clothes, 11 GP · B) 50 GP",
+  suggestedFor:{ classes:["Barde","Schurke","Hexenmeister","Zauberwirker (Sorcerer)"], races:["Halb-Elf","Halbling","Tiefling","Mensch"] } },
+
+ { name:"Guard", emoji:"🛡️", color:"#64748b",
+  description:"Your feet ache when you think of the countless hours spent at your post in the watchtower. With one eye you watched for plunderers outside the walls, with the other for pickpockets within.",
+  proficiencies:["Athletics","Perception"],
+  tools:"Gaming Set (choice)",
+  talent:"Alert",
+  primaryStats:["str","int","wis"],
+  equipment:"A) Spear, light crossbow, 20 bolts, gaming set (same), hooded lantern, manacles, quiver, traveler's clothes, 12 GP · B) 50 GP",
+  suggestedFor:{ classes:["Kämpfer","Paladin","Kleriker","Barbar"], races:["Mensch","Zwerg","Halbork","Tiefling"] } },
+
+ { name:"Guide", emoji:"🧭", color:"#4ade80",
+  description:"You grew up in the wild, far from populated areas. There are many wonders in the wilderness – strange monsters, untouched forests and rivers. In your explorations you learned to fend for yourself.",
+  proficiencies:["Stealth","Survival"],
+  tools:"Cartographer's Tools",
+  talent:"Magic Initiate (Druid)",
+  primaryStats:["dex","con","wis"],
+  equipment:"A) Shortbow, 20 arrows, cartographer's tools, bedroll, quiver, tent, traveler's clothes, 3 GP · B) 50 GP",
+  suggestedFor:{ classes:["Waldläufer","Druide","Barbar","Mönch"], races:["Elf","Halbling","Mensch","Halbork"] } },
+
+ { name:"Scholar", emoji:"📚", color:"#818cf8",
+  description:"You spent your formative years traveling to manor houses and monasteries, doing odd jobs to gain access to their libraries. You learned the fundamentals of magic.",
+  proficiencies:["Arcana","History"],
+  tools:"Calligrapher's Supplies",
+  talent:"Magic Initiate (Wizard)",
+  primaryStats:["con","int","wis"],
+  equipment:"A) Quarterstaff, calligrapher's supplies, book (history), parchment (8 sheets), robe, 8 GP · B) 50 GP",
+  suggestedFor:{ classes:["Zauberer (Magier)","Zauberwirker (Sorcerer)","Hexenmeister","Barde"], races:["Mensch","Gnom","Elf","Tiefling"] } },
 ];
 
 const WIZARD_ALIGNMENTS_EN = [
@@ -2269,18 +2401,18 @@ const CLASS_MISC_ITEMS = {
 };
 
 const CLASS_STARTING_GOLD = {
- "Barbar":                  25,
- "Barde":                   125,
- "Kleriker":                125,
- "Druide":                  25,
- "Kämpfer":                 125,
- "Mönch":                   13,
- "Paladin":                 125,
- "Waldläufer":              125,
+ "Barbar":                  75,
+ "Barde":                   90,
+ "Kleriker":                110,
+ "Druide":                  50,
+ "Kämpfer":                 155,
+ "Mönch":                   50,
+ "Paladin":                 150,
+ "Waldläufer":              150,
  "Schurke":                 100,
- "Zauberer (Magier)":       100,
+ "Zauberer (Magier)":       55,
  "Hexenmeister":            100,
- "Zauberwirker (Sorcerer)": 75,
+ "Zauberwirker (Sorcerer)": 50,
 };
 
 const CLASS_PACK_MAP = {
@@ -2299,26 +2431,40 @@ const CLASS_PACK_MAP = {
 };
 
 const BACKGROUND_MISC_ITEMS = {
- "Akolyth":              [{ name:"Heiliges Symbol", qty:1 }, { name:"Gebetsbuch", qty:1 }, { name:"Weihrauch", qty:5 }, { name:"Mönchsrobe", qty:1 }],
- "Krimineller":          [{ name:"Brecheisen", qty:1 }, { name:"Dunkle Kleidung mit Kapuze", qty:1 }],
- "Volksheld":            [{ name:"Handwerkswerkzeug", qty:1 }, { name:"Schaufel", qty:1 }, { name:"Eisentopf", qty:1 }, { name:"Alltagskleidung", qty:1 }],
- "Adliger":              [{ name:"Feine Kleidung", qty:1 }, { name:"Siegelring", qty:1 }, { name:"Stammbaum (Schriftrolle)", qty:1 }],
- "Weiser / Gelehrter":   [{ name:"Tintenflasche", qty:1 }, { name:"Schreibfeder", qty:1 }, { name:"Kleines Messer", qty:1 }, { name:"Brief von totem Kollegen", qty:1 }],
+ "Adeliger":              [{ name:"Spielset", qty:1 }, { name:"Feine Kleidung", qty:1 }, { name:"Parfüm", qty:1 }],
+ "Akolyth":              [{ name:"Kalligrafenwerkzeug", qty:1 }, { name:"Buch (Gebete)", qty:1 }, { name:"Heiliges Symbol", qty:1 }, { name:"Pergament", qty:10 }, { name:"Robe", qty:1 }],
+ "Bauer":                [{ name:"Sichel", qty:1 }, { name:"Heilerausrüstung", qty:1 }, { name:"Eisentopf", qty:1 }, { name:"Schaufel", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Einsiedler":           [{ name:"Kampfstab", qty:1 }, { name:"Kräuterkundeausrüstung", qty:1 }, { name:"Schlafsack", qty:1 }, { name:"Buch (Philosophie)", qty:1 }, { name:"Lampe", qty:1 }, { name:"Ölflasche", qty:3 }, { name:"Reisekleidung", qty:1 }],
+ "Händler":              [{ name:"Navigationswerkzeug", qty:1 }, { name:"Beutel", qty:2 }, { name:"Reisekleidung", qty:1 }],
+ "Handwerker":           [{ name:"Handwerkzeug", qty:1 }, { name:"Beutel", qty:2 }, { name:"Reisekleidung", qty:1 }],
+ "Krimineller":          [{ name:"Dolch", qty:2 }, { name:"Diebeswerkzeug", qty:1 }, { name:"Brechstange", qty:1 }, { name:"Beutel", qty:2 }, { name:"Reisekleidung", qty:1 }],
+ "Reisender":            [{ name:"Dolch", qty:2 }, { name:"Diebeswerkzeug", qty:1 }, { name:"Spielset", qty:1 }, { name:"Schlafsack", qty:1 }, { name:"Beutel", qty:2 }, { name:"Reisekleidung", qty:1 }],
+ "Scharlatan":           [{ name:"Fälscherausrüstung", qty:1 }, { name:"Kostüm", qty:1 }, { name:"Feine Kleidung", qty:1 }],
+ "Schreiber":            [{ name:"Kalligrafenwerkzeug", qty:1 }, { name:"Feine Kleidung", qty:1 }, { name:"Lampe", qty:1 }, { name:"Ölflasche", qty:3 }, { name:"Pergament", qty:12 }],
+ "Seemann":              [{ name:"Dolch", qty:1 }, { name:"Navigationswerkzeug", qty:1 }, { name:"Seil", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Soldat":               [{ name:"Speer", qty:1 }, { name:"Kurzbogen", qty:1 }, { name:"Pfeil", qty:20 }, { name:"Spielset", qty:1 }, { name:"Heilerausrüstung", qty:1 }, { name:"Köcher", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Unterhaltungskünstler":[{ name:"Musikinstrument", qty:1 }, { name:"Kostüm", qty:2 }, { name:"Spiegel", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Wache":                [{ name:"Speer", qty:1 }, { name:"Leichte Armbrust", qty:1 }, { name:"Bolzen", qty:20 }, { name:"Spielset", qty:1 }, { name:"Abdeckbare Laterne", qty:1 }, { name:"Handschellen", qty:1 }, { name:"Köcher", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Wegfinder":            [{ name:"Kurzbogen", qty:1 }, { name:"Pfeil", qty:20 }, { name:"Kartografenwerkzeug", qty:1 }, { name:"Schlafsack", qty:1 }, { name:"Köcher", qty:1 }, { name:"Zelt", qty:1 }, { name:"Reisekleidung", qty:1 }],
+ "Weiser":               [{ name:"Kampfstab", qty:1 }, { name:"Kalligrafenwerkzeug", qty:1 }, { name:"Buch (Geschichte)", qty:1 }, { name:"Pergament", qty:8 }, { name:"Robe", qty:1 }],
+ // Alte Namen als Fallback
+ "Weiser / Gelehrter":   [{ name:"Tintenflasche", qty:1 }, { name:"Schreibfeder", qty:1 }, { name:"Kleines Messer", qty:1 }, { name:"Brief", qty:1 }],
  "Söldner / Soldat":     [{ name:"Rangabzeichen", qty:1 }, { name:"Kriegstrophäe", qty:1 }, { name:"Knobelbecher", qty:1 }],
  "Ausgestoßener / Geächteter": [{ name:"Schlafrolle", qty:1 }, { name:"Kleines Messer", qty:1 }, { name:"Karte der Heimat", qty:1 }],
- "Entertainer":          [{ name:"Musikinstrument", qty:1 }, { name:"Liebesbrief", qty:1 }, { name:"Kostüm", qty:1 }],
+ "Entertainer":          [{ name:"Musikinstrument", qty:1 }, { name:"Kostüm", qty:1 }],
+ "Volksheld":            [{ name:"Handwerkswerkzeug", qty:1 }, { name:"Schaufel", qty:1 }, { name:"Eisentopf", qty:1 }],
 };
 
 const ARMOR_PROFICIENCY = {
  "Barbar":                  ["keine","leicht","mittel","schild"],
- "Barde":                   ["keine","leicht","schild"],
- "Kleriker":                ["keine","leicht","mittel","schwer","schild"],
- "Druide":                  ["keine","leicht","mittel","schild"],
+ "Barde":                   ["keine","leicht"],
+ "Kleriker":                ["keine","leicht","mittel","schild"],
+ "Druide":                  ["keine","leicht","schild"],
  "Kämpfer":                 ["keine","leicht","mittel","schwer","schild"],
  "Mönch":                   ["keine"],
  "Paladin":                 ["keine","leicht","mittel","schwer","schild"],
  "Waldläufer":              ["keine","leicht","mittel","schild"],
- "Schurke":                 ["keine","leicht","schild"],
+ "Schurke":                 ["keine","leicht"],
  "Zauberer (Magier)":       ["keine"],
  "Hexenmeister":            ["keine","leicht"],
  "Zauberwirker (Sorcerer)": ["keine"],
@@ -2587,8 +2733,8 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["unarmored","hide","chainShirt"],
   shieldNote:"Schild + Unarmored Defense funktioniert, blockiert aber Zweihänder.",
   packages:[
-   { id:"a", label:"Paket A – Zweihänder", gold:0,  weaponIds:["greataxe","handaxe","handaxe","javelin"], desc:"Großaxt · 2× Handaxt · 4× Wurfspeer" },
-   { id:"b", label:"Paket B – Vielseitig", gold:0,  weaponIds:["battleaxe","handaxe","javelin"],          desc:"Streitaxt · Handaxt · 4× Wurfspeer" },
+   { id:"a", label:"Paket A – Zweihänder", gold:15, armorId:"unarmored", weaponIds:["greataxe","handaxe","handaxe"], desc:"Große Axt · 2× Handaxt · Entdeckerausrüstung · 15 GM" },
+   { id:"b", label:"Paket B – 75 GM",      gold:75, armorId:"unarmored", weaponIds:[],                               desc:"75 GM statt Ausrüstung" },
   ],
  },
  "Barde": {
@@ -2596,28 +2742,26 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Schild möglich, blockiert aber Instrument/Fokus.",
   packages:[
-   { id:"a", label:"Paket A – Nahkämpfer",  gold:0,  weaponIds:["rapier"],             desc:"Rapier · Diplomat-Beutel · Kostüm" },
-   { id:"b", label:"Paket B – Fernkämpfer", gold:0,  weaponIds:["longsword","dagger"],  desc:"Langschwert · Dolch · Entertainer-Beutel" },
-   { id:"c", label:"Paket C – Flexibel",    gold:15, weaponIds:["dagger"],              desc:"Dolch · 15 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Leder + Instrument", gold:19, armorId:"leather",        weaponIds:["rapier","dagger","dagger"], desc:"Lederrüstung · 2× Dolch · Musikinstrument deiner Wahl · Unterhaltungskünstler-Ausrüstung · 19 GM" },
+   { id:"b", label:"Paket B – 90 GM",              gold:90, armorId:"unarmored",      weaponIds:[],                           desc:"90 GM statt Ausrüstung" },
   ],
  },
  "Kleriker": {
-  armorNote:"Kleriker dürfen je nach Domain schwere Rüstung tragen. Schild ist sehr empfehlenswert.",
-  armorPriority:["chainMail","chainShirt","breastplate","scaleMail"],
+  armorNote:"Kleriker können leichte und mittelschwere Rüstung tragen. Schild ist sehr empfehlenswert.",
+  armorPriority:["chainShirt","scaleMail","breastplate"],
   shieldNote:"Schild sehr empfehlenswert – gibt +2 RK.",
   packages:[
-   { id:"a", label:"Paket A – Mace + Schild",   gold:0,  weaponIds:["mace"],        desc:"Streitkolben · Kettenhemd · Schild · Heiliges Symbol" },
-   { id:"b", label:"Paket B – Warhammer",        gold:0,  weaponIds:["warhammer"],   desc:"Kriegshammer · Schuppenrüstung · Heiliges Symbol" },
-   { id:"c", label:"Paket C – Gold",             gold:125,weaponIds:[],              desc:"125 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Streitkolben + Schild", gold:7,   armorId:"chainShirt", hasShield:true,  weaponIds:["mace"], desc:"Kettenhemd · Schild · Streitkolben · Heiliges Symbol · Priesterausrüstung · 7 GM" },
+   { id:"b", label:"Paket B – 110 GM",                gold:110, armorId:"unarmored",                   weaponIds:[],       desc:"110 GM statt Ausrüstung" },
   ],
  },
  "Druide": {
-  armorNote:"Druiden tragen keine Metall-Rüstung. Fellrüstung ist die beste Option.",
-  armorPriority:["hide","leather","unarmored"],
+  armorNote:"Druiden tragen keine Metall-Rüstung (Überzeugung). Lederrüstung ist die beste Option.",
+  armorPriority:["leather","hide","unarmored"],
   shieldNote:"Holzschild möglich (kein Metall).",
   packages:[
-   { id:"a", label:"Paket A – Stab",   gold:0,  weaponIds:["quarterstaff"], desc:"Kampfstab · Lederrüstung · Diplomatenbeutel" },
-   { id:"b", label:"Paket B – Säbel",  gold:0,  weaponIds:["scimitar"],     desc:"Krummsäbel · Lederrüstung · Erkundungsbeutel" },
+   { id:"a", label:"Paket A – Leder + Sichel", gold:9,  armorId:"leather",   hasShield:true,  weaponIds:["scimitar"], desc:"Lederrüstung · Schild · Sichel · Druidischer Fokus (Kampfstab) · Entdeckerausrüstung · Kräuterkundeausrüstung · 9 GM" },
+   { id:"b", label:"Paket B – 50 GM",          gold:50, armorId:"unarmored",                  weaponIds:[],           desc:"50 GM statt Ausrüstung" },
   ],
  },
  "Kämpfer": {
@@ -2625,9 +2769,9 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["chainMail","breastplate","halfPlate","plateMail"],
   shieldNote:"Schild + Einhandwaffe = klassischer Verteidiger-Build.",
   packages:[
-   { id:"a", label:"Paket A – Nahkampf",    gold:0,  weaponIds:["longsword","shortbow"],  desc:"Langschwert · Schild · Kurzbogen · 20 Pfeile" },
-   { id:"b", label:"Paket B – Zweihänder",  gold:0,  weaponIds:["greatsword","shortbow"],  desc:"Großschwert · Leichte Armbrust · 20 Bolzen" },
-   { id:"c", label:"Paket C – Gold",        gold:175,weaponIds:[],                         desc:"175 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Nahkampf",   gold:4,   armorId:"chainMail",      weaponIds:["greatsword","flail","javelin"], desc:"Kettenpanzer · Großschwert · Flegel · 8× Wurfspeer · Gewölbeforscherausrüstung · 4 GM" },
+   { id:"b", label:"Paket B – Fernkampf",  gold:11,  armorId:"studdedLeather", weaponIds:["scimitar","shortbow"],          desc:"Beschlagene Lederrüstung · Krummsäbel · Kurzschwert · Langbogen · 20 Pfeile · Köcher · Gewölbeforscherausrüstung · 11 GM" },
+   { id:"c", label:"Paket C – 155 GM",     gold:155, armorId:"unarmored",      weaponIds:[],                               desc:"155 GM statt Ausrüstung" },
   ],
  },
  "Mönch": {
@@ -2636,38 +2780,35 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["unarmored"],
   shieldNote:"Schild blockiert Mönch-Fähigkeiten – nicht empfohlen.",
   packages:[
-   { id:"a", label:"Paket A – Stab",   gold:0, weaponIds:["quarterstaff","dagger"], desc:"Kampfstab · Dolch · Erkundungsbeutel" },
-   { id:"b", label:"Paket B – Dolche", gold:0, weaponIds:["shortsword","dagger"],   desc:"Kurzschwert · Dolch · Erkundungsbeutel" },
+   { id:"a", label:"Paket A – Speer + Dolche", gold:11, armorId:"unarmored", weaponIds:["javelin","dagger","dagger","dagger","dagger","dagger"], desc:"Speer · 5× Dolch · Handwerkszeug oder Musikinstrument · Entdeckerausrüstung · 11 GM" },
+   { id:"b", label:"Paket B – 50 GM",          gold:50, armorId:"unarmored", weaponIds:[],                                                        desc:"50 GM statt Ausrüstung" },
   ],
  },
  "Paladin": {
-  armorNote:"Paladine sind für schwere Rüstung gebaut. Kettenrüstung zum Start, dann Plattenpanzer.",
+  armorNote:"Paladine sind für schwere Rüstung gebaut. Kettenpanzer zum Start, dann Plattenpanzer.",
   armorPriority:["chainMail","halfPlate","plateMail","breastplate"],
   shieldNote:"Schild sehr empfehlenswert.",
   packages:[
-   { id:"a", label:"Paket A – Schwerter",  gold:0,   weaponIds:["longsword","javelin"],   desc:"Langschwert · Schild · 5× Wurfspeer · Heiliges Symbol" },
-   { id:"b", label:"Paket B – Warhammer",  gold:0,   weaponIds:["warhammer","javelin"],   desc:"Kriegshammer · Schild · 5× Wurfspeer · Heiliges Symbol" },
-   { id:"c", label:"Paket C – Gold",       gold:150, weaponIds:[],                        desc:"150 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Kettenpanzer", gold:9,   armorId:"chainMail", hasShield:true, weaponIds:["longsword","javelin","javelin","javelin","javelin","javelin","javelin"], desc:"Kettenpanzer · Schild · Langschwert · 6× Wurfspeer · Heiliges Symbol · Priesterausrüstung · 9 GM" },
+   { id:"b", label:"Paket B – 150 GM",       gold:150, armorId:"unarmored",                 weaponIds:[],                                                                       desc:"150 GM statt Ausrüstung" },
   ],
  },
  "Waldläufer": {
-  armorNote:"Waldläufer bevorzugen mittlere Rüstung für Balance zwischen Schutz und Beweglichkeit.",
-  armorPriority:["scaleMail","chainShirt","studdedLeather","hide"],
+  armorNote:"Waldläufer bevorzugen beschlagene Lederrüstung für Balance zwischen Schutz und Beweglichkeit.",
+  armorPriority:["studdedLeather","scaleMail","chainShirt","hide"],
   shieldNote:"Schild möglich, aber Bogen-Builds bevorzugen beide Hände frei.",
   packages:[
-   { id:"a", label:"Paket A – Bogenschütze",   gold:0, weaponIds:["longbow","shortsword","shortsword"], desc:"Langbogen · 20 Pfeile · 2× Kurzschwert" },
-   { id:"b", label:"Paket B – Zweikampf",      gold:0, weaponIds:["longsword","shortbow"],              desc:"Langschwert · Kurzbogen · 20 Pfeile" },
-   { id:"c", label:"Paket C – Gold",           gold:150,weaponIds:[],                                  desc:"150 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Leder + Bogen", gold:7,   armorId:"studdedLeather", weaponIds:["scimitar","shortsword","longbow"], desc:"Beschlagene Lederrüstung · Krummsäbel · Kurzschwert · Langbogen · 20 Pfeile · Köcher · Druidischer Fokus (Mistelzweig) · Entdeckerausrüstung · 7 GM" },
+   { id:"b", label:"Paket B – 150 GM",        gold:150, armorId:"unarmored",      weaponIds:[],                                  desc:"150 GM statt Ausrüstung" },
   ],
  },
  "Schurke": {
-  armorNote:"Schurken brauchen Beweglichkeit. Genietetes Leder ist die beste Wahl.",
+  armorNote:"Schurken brauchen Beweglichkeit. Lederrüstung zum Start, dann genietetes Leder.",
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Schild selten sinnvoll für Schurken.",
   packages:[
-   { id:"a", label:"Paket A – Rapier",          gold:0, weaponIds:["rapier","shortbow","dagger"],           desc:"Rapier · Kurzbogen · 20 Pfeile · Dolch · Einbruchswerkzeug" },
-   { id:"b", label:"Paket B – Zwei Klingen",    gold:0, weaponIds:["shortsword","shortbow","dagger","dagger"],desc:"2× Kurzschwert · Kurzbogen · 20 Pfeile · Einbruchswerkzeug" },
-   { id:"c", label:"Paket C – Gold",            gold:100,weaponIds:[],                                       desc:"100 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Leder + Rapier", gold:8,   armorId:"leather",   weaponIds:["rapier","shortbow","dagger","dagger"], desc:"Lederrüstung · 2× Dolch · Kurzschwert · Kurzbogen · 20 Pfeile · Köcher · Diebeswerkzeug · Einbrecherausrüstung · 8 GM" },
+   { id:"b", label:"Paket B – 100 GM",         gold:100, armorId:"unarmored", weaponIds:[],                                      desc:"100 GM statt Ausrüstung" },
   ],
  },
  "Zauberer (Magier)": {
@@ -2675,9 +2816,8 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["unarmored"],
   shieldNote:"Kein Schild möglich.",
   packages:[
-   { id:"a", label:"Paket A – Stab",        gold:0,  weaponIds:["quarterstaff"],  desc:"Kampfstab · Zauberbuchbeutel · Zauberbuch · Tintenfass & Feder" },
-   { id:"b", label:"Paket B – Dolch",       gold:0,  weaponIds:["dagger","dagger"],desc:"2× Dolch · Gelehrtenbeutel · Zauberbuch" },
-   { id:"c", label:"Paket C – Gold",        gold:135,weaponIds:[],                desc:"135 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Stab + Zauberbuch", gold:5,  armorId:"unarmored", weaponIds:["quarterstaff","dagger","dagger"], desc:"2× Dolch · Arkaner Fokus (Kampfstab) · Robe · Zauberbuch · Gelehrtenausrüstung · 5 GM" },
+   { id:"b", label:"Paket B – 55 GM",              gold:55, armorId:"unarmored", weaponIds:[],                                desc:"55 GM statt Ausrüstung" },
   ],
  },
  "Hexenmeister": {
@@ -2685,17 +2825,17 @@ const EQUIPMENT_RECOMMENDATIONS = {
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Schild möglich bei leichter Rüstung.",
   packages:[
-   { id:"a", label:"Paket A – Armbrust",  gold:0, weaponIds:["crossbow_light","dagger","dagger"], desc:"Leichte Armbrust · 20 Bolzen · 2× Dolch · Schulterbeutel" },
-   { id:"b", label:"Paket B – Stab",      gold:0, weaponIds:["quarterstaff","dagger","dagger"],   desc:"Kampfstab · 2× Dolch · Diplomatenbeutel" },
+   { id:"a", label:"Paket A – Leder + Arkaner Fokus", gold:15,  armorId:"leather",   weaponIds:["sickle","dagger","dagger"], desc:"Lederrüstung · Sichel · 2× Dolch · Arkaner Fokus (Kugel) · Buch (okkulte Überlieferungen) · Gelehrtenausrüstung · 15 GM" },
+   { id:"b", label:"Paket B – 100 GM",                gold:100, armorId:"unarmored", weaponIds:[],                           desc:"100 GM statt Ausrüstung" },
   ],
  },
  "Zauberwirker (Sorcerer)": {
-  armorNote:"Sorcerer tragen keine Rüstung. DEX + guter CON sind wichtig.",
+  armorNote:"Zauberer tragen keine Rüstung. Hoher DEX-Wert ist wichtig für die Basis-RK.",
   armorPriority:["unarmored"],
   shieldNote:"Kein Schild möglich.",
   packages:[
-   { id:"a", label:"Paket A – Armbrust",  gold:0,  weaponIds:["crossbow_light","dagger","dagger"], desc:"Leichte Armbrust · 20 Bolzen · 2× Dolch · Erkundungsbeutel" },
-   { id:"b", label:"Paket B – Gold",      gold:100,weaponIds:["dagger","dagger"],                   desc:"2× Dolch · 100 GP statt Ausrüstung" },
+   { id:"a", label:"Paket A – Speer + Arkaner Fokus", gold:28, armorId:"unarmored", weaponIds:["spear","dagger","dagger"], desc:"Speer · 2× Dolch · Arkaner Fokus (Kristall) · Gewölbeforscherausrüstung · 28 GM" },
+   { id:"b", label:"Paket B – 50 GM",                 gold:50, armorId:"unarmored", weaponIds:[],                          desc:"50 GM statt Ausrüstung" },
   ],
  },
 };
@@ -2736,37 +2876,35 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["unarmored","hide","chainShirt"],
   shieldNote:"Shield + Unarmored Defense works, but blocks two-handed weapons.",
   packages:[
-   { id:"a", label:"Package A – Two-Handed", gold:0,  weaponIds:["greataxe","handaxe","handaxe","javelin"], desc:"Greataxe · 2× Handaxe · 4× Javelin" },
-   { id:"b", label:"Package B – Versatile",  gold:0,  weaponIds:["battleaxe","handaxe","javelin"],          desc:"Battleaxe · Handaxe · 4× Javelin" },
+   { id:"a", label:"Package A – Two-Handed", gold:15, armorId:"unarmored", weaponIds:["greataxe","handaxe","handaxe"], desc:"Greataxe · 2× Handaxe · Explorer's Pack · 15 GP" },
+   { id:"b", label:"Package B – 75 GP",      gold:75, armorId:"unarmored", weaponIds:[],                               desc:"75 GP instead of equipment" },
   ],
  },
  "Bard": {
-  armorNote:"Bards wear light armor. Studded leather is ideal.",
+  armorNote:"Bards wear light armor. Leather armor is a good starting choice.",
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Shield possible, but blocks instrument/focus.",
   packages:[
-   { id:"a", label:"Package A – Melee",     gold:0,  weaponIds:["rapier"],             desc:"Rapier · Diplomat's Pack · Costume" },
-   { id:"b", label:"Package B – Ranged",    gold:0,  weaponIds:["longsword","dagger"],  desc:"Longsword · Dagger · Entertainer's Pack" },
-   { id:"c", label:"Package C – Flexible",  gold:15, weaponIds:["dagger"],              desc:"Dagger · 15 GP instead of equipment" },
+   { id:"a", label:"Package A – Leather + Instrument", gold:19, armorId:"leather", weaponIds:["rapier","dagger","dagger"], desc:"Leather Armor · 2× Dagger · Musical Instrument of choice · Entertainer's Pack · 19 GP" },
+   { id:"b", label:"Package B – 90 GP",                gold:90, armorId:"unarmored", weaponIds:[],                           desc:"90 GP instead of equipment" },
   ],
  },
  "Cleric": {
-  armorNote:"Clerics may wear heavy armor depending on their Domain. Shield is highly recommended.",
-  armorPriority:["chainMail","chainShirt","breastplate","scaleMail"],
+  armorNote:"Clerics can wear light and medium armor. Shield is highly recommended.",
+  armorPriority:["chainShirt","scaleMail","breastplate"],
   shieldNote:"Shield highly recommended – grants +2 AC.",
   packages:[
-   { id:"a", label:"Package A – Mace + Shield", gold:0,   weaponIds:["mace"],      desc:"Mace · Chain Mail · Shield · Holy Symbol" },
-   { id:"b", label:"Package B – Warhammer",     gold:0,   weaponIds:["warhammer"], desc:"Warhammer · Scale Mail · Holy Symbol" },
-   { id:"c", label:"Package C – Gold",          gold:125, weaponIds:[],            desc:"125 GP instead of equipment" },
+   { id:"a", label:"Package A – Mace + Shield", gold:7,   armorId:"chainShirt", hasShield:true, weaponIds:["mace"], desc:"Chain Shirt · Shield · Mace · Holy Symbol · Priest's Pack · 7 GP" },
+   { id:"b", label:"Package B – 110 GP",        gold:110, armorId:"unarmored", weaponIds:[],       desc:"110 GP instead of equipment" },
   ],
  },
  "Druid": {
-  armorNote:"Druids wear no metal armor. Hide armor is the best option.",
-  armorPriority:["hide","leather","unarmored"],
+  armorNote:"Druids wear no metal armor (by conviction). Leather armor is the best option.",
+  armorPriority:["leather","hide","unarmored"],
   shieldNote:"Wooden shield possible (no metal).",
   packages:[
-   { id:"a", label:"Package A – Staff",   gold:0, weaponIds:["quarterstaff"], desc:"Quarterstaff · Leather Armor · Diplomat's Pack" },
-   { id:"b", label:"Package B – Scimitar",gold:0, weaponIds:["scimitar"],     desc:"Scimitar · Leather Armor · Explorer's Pack" },
+   { id:"a", label:"Package A – Leather + Scimitar", gold:9,  armorId:"leather", hasShield:true, weaponIds:["scimitar"], desc:"Leather Armor · Shield · Scimitar · Druidic Focus (Staff) · Explorer's Pack · Herbalism Kit · 9 GP" },
+   { id:"b", label:"Package B – 50 GP",              gold:50, armorId:"unarmored", weaponIds:[],           desc:"50 GP instead of equipment" },
   ],
  },
  "Fighter": {
@@ -2774,9 +2912,9 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["chainMail","breastplate","halfPlate","plateMail"],
   shieldNote:"Shield + one-handed weapon = classic defender build.",
   packages:[
-   { id:"a", label:"Package A – Melee",       gold:0,   weaponIds:["longsword","shortbow"],  desc:"Longsword · Shield · Shortbow · 20 Arrows" },
-   { id:"b", label:"Package B – Two-Handed",  gold:0,   weaponIds:["greatsword","shortbow"],  desc:"Greatsword · Light Crossbow · 20 Bolts" },
-   { id:"c", label:"Package C – Gold",        gold:175, weaponIds:[],                         desc:"175 GP instead of equipment" },
+   { id:"a", label:"Package A – Melee",      gold:4,   armorId:"chainMail", weaponIds:["greatsword","flail","javelin"], desc:"Chain Mail · Greatsword · Flail · 8× Javelin · Dungeoneer's Pack · 4 GP" },
+   { id:"b", label:"Package B – Ranged",     gold:11,  armorId:"studdedLeather", weaponIds:["scimitar","shortbow"],           desc:"Studded Leather · Scimitar · Shortsword · Longbow · 20 Arrows · Quiver · Dungeoneer's Pack · 11 GP" },
+   { id:"c", label:"Package C – 155 GP",     gold:155, armorId:"unarmored", weaponIds:[],                                desc:"155 GP instead of equipment" },
   ],
  },
  "Monk": {
@@ -2785,8 +2923,8 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["unarmored"],
   shieldNote:"Shield blocks Monk abilities – not recommended.",
   packages:[
-   { id:"a", label:"Package A – Staff",    gold:0, weaponIds:["quarterstaff","dagger"], desc:"Quarterstaff · Dagger · Dungeoneer's Pack" },
-   { id:"b", label:"Package B – Daggers",  gold:0, weaponIds:["shortsword","dagger"],   desc:"Shortsword · Dagger · Explorer's Pack" },
+   { id:"a", label:"Package A – Spear + Daggers", gold:11, armorId:"unarmored", weaponIds:["javelin","dagger","dagger","dagger","dagger","dagger"], desc:"Spear · 5× Dagger · Tool or Instrument · Explorer's Pack · 11 GP" },
+   { id:"b", label:"Package B – 50 GP",           gold:50, armorId:"unarmored", weaponIds:[],                                                       desc:"50 GP instead of equipment" },
   ],
  },
  "Paladin": {
@@ -2794,29 +2932,26 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["chainMail","halfPlate","plateMail","breastplate"],
   shieldNote:"Shield highly recommended.",
   packages:[
-   { id:"a", label:"Package A – Sword",     gold:0,   weaponIds:["longsword","javelin"],  desc:"Longsword · Shield · 5× Javelin · Holy Symbol" },
-   { id:"b", label:"Package B – Warhammer", gold:0,   weaponIds:["warhammer","javelin"],  desc:"Warhammer · Shield · 5× Javelin · Holy Symbol" },
-   { id:"c", label:"Package C – Gold",      gold:150, weaponIds:[],                       desc:"150 GP instead of equipment" },
+   { id:"a", label:"Package A – Chain Mail", gold:9,   armorId:"chainMail", hasShield:true, weaponIds:["longsword","javelin","javelin","javelin","javelin","javelin","javelin"], desc:"Chain Mail · Shield · Longsword · 6× Javelin · Holy Symbol · Priest's Pack · 9 GP" },
+   { id:"b", label:"Package B – 150 GP",     gold:150, armorId:"unarmored", weaponIds:[],                                                                        desc:"150 GP instead of equipment" },
   ],
  },
  "Ranger": {
-  armorNote:"Rangers prefer medium armor for a balance between protection and mobility.",
-  armorPriority:["scaleMail","chainShirt","studdedLeather","hide"],
+  armorNote:"Rangers prefer studded leather for a balance between protection and mobility.",
+  armorPriority:["studdedLeather","scaleMail","chainShirt","hide"],
   shieldNote:"Shield possible, but bow builds prefer both hands free.",
   packages:[
-   { id:"a", label:"Package A – Archer",     gold:0,   weaponIds:["longbow","shortsword","shortsword"], desc:"Longbow · 20 Arrows · 2× Shortsword" },
-   { id:"b", label:"Package B – Duelist",    gold:0,   weaponIds:["longsword","shortbow"],              desc:"Longsword · Shortbow · 20 Arrows" },
-   { id:"c", label:"Package C – Gold",       gold:150, weaponIds:[],                                   desc:"150 GP instead of equipment" },
+   { id:"a", label:"Package A – Leather + Bow", gold:7,   armorId:"studdedLeather", weaponIds:["scimitar","shortsword","longbow"], desc:"Studded Leather · Scimitar · Shortsword · Longbow · 20 Arrows · Quiver · Druidic Focus · Explorer's Pack · 7 GP" },
+   { id:"b", label:"Package B – 150 GP",        gold:150, armorId:"unarmored", weaponIds:[],                                  desc:"150 GP instead of equipment" },
   ],
  },
  "Rogue": {
-  armorNote:"Rogues need mobility. Studded leather is the best choice.",
+  armorNote:"Rogues need mobility. Leather armor to start, then studded leather.",
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Shield rarely useful for Rogues.",
   packages:[
-   { id:"a", label:"Package A – Rapier",       gold:0,   weaponIds:["rapier","shortbow","dagger"],            desc:"Rapier · Shortbow · 20 Arrows · Dagger · Thieves' Tools" },
-   { id:"b", label:"Package B – Twin Blades",  gold:0,   weaponIds:["shortsword","shortbow","dagger","dagger"],desc:"2× Shortsword · Shortbow · 20 Arrows · Thieves' Tools" },
-   { id:"c", label:"Package C – Gold",         gold:100, weaponIds:[],                                        desc:"100 GP instead of equipment" },
+   { id:"a", label:"Package A – Leather + Rapier", gold:8,   armorId:"leather", weaponIds:["rapier","shortbow","dagger","dagger"], desc:"Leather Armor · 2× Dagger · Shortsword · Shortbow · 20 Arrows · Quiver · Thieves' Tools · Burglar's Pack · 8 GP" },
+   { id:"b", label:"Package B – 100 GP",           gold:100, armorId:"unarmored", weaponIds:[],                                      desc:"100 GP instead of equipment" },
   ],
  },
  "Wizard": {
@@ -2824,9 +2959,8 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["unarmored"],
   shieldNote:"No shield possible.",
   packages:[
-   { id:"a", label:"Package A – Staff",   gold:0,   weaponIds:["quarterstaff"],   desc:"Quarterstaff · Scholar's Pack · Spellbook · Ink & Quill" },
-   { id:"b", label:"Package B – Daggers", gold:0,   weaponIds:["dagger","dagger"],desc:"2× Dagger · Scholar's Pack · Spellbook" },
-   { id:"c", label:"Package C – Gold",   gold:135, weaponIds:[],                 desc:"135 GP instead of equipment" },
+   { id:"a", label:"Package A – Staff + Spellbook", gold:5,  armorId:"unarmored", weaponIds:["quarterstaff","dagger","dagger"], desc:"2× Dagger · Arcane Focus (Quarterstaff) · Robe · Spellbook · Scholar's Pack · 5 GP" },
+   { id:"b", label:"Package B – 55 GP",             gold:55, armorId:"unarmored", weaponIds:[],                                  desc:"55 GP instead of equipment" },
   ],
  },
  "Warlock": {
@@ -2834,17 +2968,17 @@ const EQUIPMENT_RECOMMENDATIONS_EN = {
   armorPriority:["studdedLeather","leather","unarmored"],
   shieldNote:"Shield possible with light armor.",
   packages:[
-   { id:"a", label:"Package A – Crossbow", gold:0, weaponIds:["crossbow_light","dagger","dagger"], desc:"Light Crossbow · 20 Bolts · 2× Dagger · Component Pouch" },
-   { id:"b", label:"Package B – Staff",    gold:0, weaponIds:["quarterstaff","dagger","dagger"],   desc:"Quarterstaff · 2× Dagger · Diplomat's Pack" },
+   { id:"a", label:"Package A – Leather + Arcane Focus", gold:15, armorId:"leather", weaponIds:["sickle","dagger","dagger"], desc:"Leather Armor · Sickle · 2× Dagger · Arcane Focus (Orb) · Book of Occult Lore · Scholar's Pack · 15 GP" },
+   { id:"b", label:"Package B – 100 GP",                 gold:100, armorId:"unarmored", weaponIds:[],                          desc:"100 GP instead of equipment" },
   ],
  },
  "Sorcerer": {
-  armorNote:"Sorcerers wear no armor. DEX + good CON are important.",
+  armorNote:"Sorcerers wear no armor. High DEX is important for base AC.",
   armorPriority:["unarmored"],
   shieldNote:"No shield possible.",
   packages:[
-   { id:"a", label:"Package A – Crossbow", gold:0,   weaponIds:["crossbow_light","dagger","dagger"], desc:"Light Crossbow · 20 Bolts · 2× Dagger · Explorer's Pack" },
-   { id:"b", label:"Package B – Gold",     gold:100, weaponIds:["dagger","dagger"],                   desc:"2× Dagger · 100 GP instead of equipment" },
+   { id:"a", label:"Package A – Spear + Arcane Focus", gold:28, armorId:"unarmored", weaponIds:["spear","dagger","dagger"], desc:"Spear · 2× Dagger · Arcane Focus (Crystal) · Dungeoneer's Pack · 28 GP" },
+   { id:"b", label:"Package B – 50 GP",                gold:50, armorId:"unarmored", weaponIds:[],                          desc:"50 GP instead of equipment" },
   ],
  },
 };
@@ -2884,44 +3018,46 @@ function calcAC(armorId, hasShield, stats, className) {
  return ac + shieldBonus;
 }
 
-function WizardEquipmentStep({ cls, stats, theme, selectedEquipment, onEquipmentChange, lang }) {
+function WizardEquipmentStep({ cls, bg, stats, theme, selectedEquipment, onEquipmentChange, lang }) {
  if(!lang) lang="de";
  const className = cls?.name || "";
- // For EN, map EN class name to DE for internal lookups (armor proficiency, pack map etc.)
  const deClassName = lang==="en" ? (EN_TO_DE_CLASS[className] || className) : className;
  const equipRec = lang==="en" ? EQUIPMENT_RECOMMENDATIONS_EN : EQUIPMENT_RECOMMENDATIONS;
  const rec = equipRec[className] || equipRec[deClassName] || (lang==="en" ? EQUIPMENT_RECOMMENDATIONS_EN["Fighter"] : EQUIPMENT_RECOMMENDATIONS["Kämpfer"]);
  const armorCat = lang==="en" ? ARMOR_CATALOG_EN : ARMOR_CATALOG;
- const allowedTypes = ARMOR_PROFICIENCY[deClassName] || ["keine"];
- const canUseShield = allowedTypes.includes("schild");
 
- const [selectedArmor,   setSelectedArmor]   = useState(selectedEquipment?.armorId    || rec.armorPriority?.[0] || "unarmored");
- const [hasShield,       setHasShield]       = useState(selectedEquipment?.hasShield  || false);
- const [selectedPackage, setSelectedPackage] = useState(selectedEquipment?.packageId  || rec.packages?.[0]?.id  || "a");
+ const [selectedPackage,   setSelectedPackage]   = useState(selectedEquipment?.packageId   || rec.packages?.[0]?.id || "a");
+ const [selectedBgPackage, setSelectedBgPackage] = useState(selectedEquipment?.bgPackageId || "a");
 
  const packages = rec.packages || [];
  const currentPackage = packages.find(p => p.id === selectedPackage) || packages[0];
 
+ // Armor and shield come directly from the package — no free selection
+ const packageArmorId  = currentPackage?.armorId   || "unarmored";
+ const packageHasShield = currentPackage?.hasShield || false;
+
  useEffect(() => {
   onEquipmentChange({
-   armorId:   selectedArmor,
-   hasShield,
-   weaponIds: currentPackage?.weaponIds || [],
-   packageId: selectedPackage,
-   gold:      currentPackage?.gold || 0,
+   armorId:     packageArmorId,
+   hasShield:   packageHasShield,
+   weaponIds:   currentPackage?.weaponIds || [],
+   packageId:   selectedPackage,
+   bgPackageId: selectedBgPackage,
+   gold:        currentPackage?.gold || 0,
   });
- }, [selectedArmor, hasShield, selectedPackage]);
+ }, [selectedPackage, selectedBgPackage]);
 
- const currentAC = calcAC(selectedArmor, hasShield, stats, deClassName);
- const selectedArmorObj = armorCat.find(a => a.id === selectedArmor) || armorCat[0];
- const availableArmors  = armorCat.filter(a => {
-  if (a.id === "unarmored") return true;
-  return allowedTypes.includes(a.type);
- });
+ const currentAC = calcAC(packageArmorId, packageHasShield, stats, deClassName);
+ const selectedArmorObj = armorCat.find(a => a.id === packageArmorId) || armorCat[0];
 
  const dexMod = Math.floor(((stats?.dex || 10) - 10) / 2);
  const conMod = Math.floor(((stats?.con || 10) - 10) / 2);
  const wisMod = Math.floor(((stats?.wis || 10) - 10) / 2);
+
+ // Background package info
+ const bgName = bg?.name || "";
+ const bgEquipA = bg?.equipment?.split("·")[0]?.trim() || "";
+ const bgEquipB = bg?.equipment?.split("·")[1]?.trim() || "50 GM";
 
  return (
   <div className="wizard-fade" style={{ display:"flex", flexDirection:"column", gap:16 }}>
@@ -2951,14 +3087,14 @@ function WizardEquipmentStep({ cls, stats, theme, selectedEquipment, onEquipment
      <div style={{ fontSize:10, fontWeight:800, color:"rgba(255,255,255,0.3)", letterSpacing:"0.07em" }}>{lang==="en"?"ARMOR CLASS":"RÜSTUNGSKLASSE"}</div>
      <div style={{ fontSize:48, fontWeight:900, color:theme.accent, lineHeight:1.1 }}>{currentAC}</div>
      <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:2 }}>
-      {selectedArmorObj.name}{hasShield?(lang==="en"?" + Shield":" + Schild"):""}
+      {selectedArmorObj.name}{packageHasShield?(lang==="en"?" + Shield":" + Schild"):""}
      </div>
     </div>
     <div style={{ display:"flex", flexDirection:"column", gap:5, fontSize:12, color:"rgba(255,255,255,0.45)" }}>
      <div>🎯 DEX {dexMod>=0?"+":""}{dexMod}</div>
      {className==="Barbar" && <div>💪 CON {conMod>=0?"+":""}{conMod}</div>}
      {className==="Mönch"  && <div>🧘 WIS {wisMod>=0?"+":""}{wisMod}</div>}
-     {hasShield             && <div>🔰 +2 {lang==="en"?"Shield":"Schild"}</div>}
+     {packageHasShield      && <div>🔰 +2 {lang==="en"?"Shield":"Schild"}</div>}
     </div>
    </div>
 
@@ -3018,76 +3154,75 @@ function WizardEquipmentStep({ cls, stats, theme, selectedEquipment, onEquipment
     </div>
    </div>
 
-   {/* ARMOR */}
+   {/* ARMOR – fixed from package, no free selection */}
    <div>
     <div style={{ fontSize:11, fontWeight:800, color:theme.accent, letterSpacing:"0.07em", marginBottom:8 }}>🛡 {lang==="en"?"ARMOR":"RÜSTUNG"}</div>
-    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-     {availableArmors.map(armor => {
-      const isSelected = selectedArmor === armor.id;
-      const previewAC  = calcAC(armor.id, hasShield, stats, className);
-      const isRec      = (rec.armorPriority||[]).indexOf(armor.id) === 0;
-      return (
-       <div key={armor.id} onClick={() => setSelectedArmor(armor.id)}
-        className="card-hover"
-        style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-         borderRadius:12, cursor:"pointer",
-         background: isSelected ? `${theme.accent}18` : "rgba(12,12,18,0.90)",
-         border:`2px solid ${isSelected ? theme.accent : isRec ? `${theme.accent}44` : "rgba(255,255,255,0.08)"}`,
-         transition:"all 0.15s" }}>
-        <span style={{ fontSize:20, flexShrink:0 }}>{armor.emoji}</span>
-        <div style={{ flex:1, minWidth:0 }}>
-         <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
-          <span style={{ fontWeight:800, fontSize:13, color: isSelected ? theme.accent : "white" }}>{armor.name}</span>
-          {isRec && !isSelected && (
-           <span style={{ fontSize:10, fontWeight:800, color:"#4ade80",
-            background:"rgba(74,222,128,0.12)", border:"1px solid rgba(74,222,128,0.3)",
-            borderRadius:20, padding:"1px 7px" }}>✦ {lang==="en"?"RECOMMENDED":"EMPFOHLEN"}</span>
-          )}
-          {armor.stealthDisadv && (
-           <span style={{ fontSize:10, color:"#f87171",
-            background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.25)",
-            borderRadius:20, padding:"1px 7px", fontWeight:700 }}>⚠ {lang==="en"?"Stealth":"Heimlichkeit"}</span>
-          )}
-         </div>
-         <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:1 }}>
-          {armor.desc} · {armor.cost}
-         </div>
-        </div>
-        <div style={{ textAlign:"center", flexShrink:0 }}>
-         <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontWeight:700 }}>{lang==="en"?"AC":"RK"}</div>
-         <div style={{ fontSize:22, fontWeight:900,
-          color: isSelected ? theme.accent : "rgba(255,255,255,0.6)" }}>{previewAC}</div>
-        </div>
-        {isSelected && <span style={{ color:theme.accent, fontSize:18, flexShrink:0 }}>✓</span>}
-       </div>
-      );
-     })}
+    <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+     borderRadius:12,
+     background: packageArmorId !== "unarmored" ? `${theme.accent}18` : "rgba(12,12,18,0.90)",
+     border:`2px solid ${packageArmorId !== "unarmored" ? theme.accent : "rgba(255,255,255,0.08)"}` }}>
+     <span style={{ fontSize:20, flexShrink:0 }}>{selectedArmorObj.emoji}</span>
+     <div style={{ flex:1, minWidth:0 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+       <span style={{ fontWeight:800, fontSize:13, color: packageArmorId !== "unarmored" ? theme.accent : "white" }}>
+        {selectedArmorObj.name}
+       </span>
+       {packageHasShield && (
+        <span style={{ fontSize:11, fontWeight:700,
+         background:`${theme.accent}18`, border:`1px solid ${theme.accent}44`,
+         borderRadius:20, padding:"1px 8px", color:theme.accent }}>
+         🔰 + {lang==="en"?"Shield":"Schild"} (+2 {lang==="en"?"AC":"RK"})
+        </span>
+       )}
+       {selectedArmorObj.stealthDisadv && (
+        <span style={{ fontSize:10, color:"#f87171",
+         background:"rgba(248,113,113,0.1)", border:"1px solid rgba(248,113,113,0.25)",
+         borderRadius:20, padding:"1px 7px", fontWeight:700 }}>
+         ⚠ {lang==="en"?"Stealth Disadv.":"Heimlichkeit Nachteil"}
+        </span>
+       )}
+      </div>
+      <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:2 }}>
+       {lang==="en"
+        ? (packageArmorId === "unarmored" ? "Included in this package" : "Included in this package")
+        : (packageArmorId === "unarmored" ? "In diesem Paket enthalten" : "In diesem Paket enthalten")}
+      </div>
+     </div>
+     <div style={{ textAlign:"center", flexShrink:0 }}>
+      <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontWeight:700 }}>{lang==="en"?"AC":"RK"}</div>
+      <div style={{ fontSize:22, fontWeight:900, color: theme.accent }}>{currentAC}</div>
+     </div>
     </div>
    </div>
 
-   {/* SHIELD */}
-   {canUseShield && (
-    <div onClick={() => setHasShield(v => !v)} className="card-hover"
-     style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-      borderRadius:12, cursor:"pointer",
-      background: hasShield ? `${theme.accent}18` : "rgba(12,12,18,0.90)",
-      border:`2px solid ${hasShield ? theme.accent : "rgba(255,255,255,0.08)"}`,
-      transition:"all 0.15s" }}>
-     <span style={{ fontSize:20 }}>🔰</span>
-     <div style={{ flex:1 }}>
-      <div style={{ fontWeight:800, fontSize:13, color: hasShield ? theme.accent : "white" }}>{lang==="en"?"Shield":"Schild"}</div>
-      <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>+2 {lang==="en"?"AC · Uses one hand · 10 GP":"RK · Belegt eine Hand · 10 GP"}</div>
-      {rec.shieldNote && (
-       <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", marginTop:2, fontStyle:"italic" }}>
-        💡 {rec.shieldNote}
-       </div>
-      )}
+   {/* HINTERGRUND-AUSRÜSTUNG */}
+   {bgName && bg?.equipment && (
+    <div>
+     <div style={{ fontSize:11, fontWeight:800, color:"#f472b6", letterSpacing:"0.07em", marginBottom:8 }}>
+      🎒 {lang==="en"?"BACKGROUND EQUIPMENT":"HINTERGRUND-AUSRÜSTUNG"} <span style={{ fontWeight:600, color:"rgba(255,255,255,0.3)" }}>– {bgName}</span>
      </div>
-     <div style={{ textAlign:"center", flexShrink:0 }}>
-      <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontWeight:700 }}>BONUS</div>
-      <div style={{ fontSize:22, fontWeight:900, color: hasShield ? theme.accent : "rgba(255,255,255,0.5)" }}>+2</div>
+     <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      {[
+       { id:"a", label: lang==="en"?"Package A – Equipment":"Paket A – Ausrüstung", desc: bg.equipment.replace(/^A\)\s*/,"").replace(/\s*·\s*B\).*$/,"") },
+       { id:"b", label: lang==="en"?"Package B – 50 GP":"Paket B – 50 GM",          desc: lang==="en"?"50 GP instead of equipment":"50 GM statt Ausrüstung" },
+      ].map(pkg => {
+       const isChosen = selectedBgPackage === pkg.id;
+       return (
+        <div key={pkg.id} onClick={() => setSelectedBgPackage(pkg.id)}
+         className="card-hover"
+         style={{ borderRadius:14, padding:"12px 16px", cursor:"pointer",
+          background: isChosen ? "rgba(244,114,182,0.12)" : "rgba(12,12,18,0.90)",
+          border:`2px solid ${isChosen ? "#f472b6" : "rgba(255,255,255,0.09)"}`,
+          transition:"all 0.15s" }}>
+         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
+          <div style={{ fontWeight:900, fontSize:13, color: isChosen ? "#f472b6" : "white" }}>{pkg.label}</div>
+          {isChosen && <span style={{ color:"#f472b6", fontSize:16 }}>✓</span>}
+         </div>
+         <div style={{ fontSize:12, color:"rgba(255,255,255,0.45)" }}>{pkg.desc}</div>
+        </div>
+       );
+      })}
      </div>
-     {hasShield && <span style={{ color:theme.accent, fontSize:18, flexShrink:0 }}>✓</span>}
     </div>
    )}
   </div>
@@ -4607,10 +4742,13 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
   });
 
   const bgName = (bg?.name || data?.background?.name || "").trim();
+  const bgPackageId = eq?.bgPackageId || "a";
 
-  const bgMiscItems = BACKGROUND_MISC_ITEMS[bgName]
+  const bgMiscItems = bgPackageId === "b" ? [] : (
+   BACKGROUND_MISC_ITEMS[bgName]
    || BACKGROUND_MISC_ITEMS[Object.keys(BACKGROUND_MISC_ITEMS).find(k => k.trim().toLowerCase() === bgName.toLowerCase())]
-   || [];
+   || []
+  );
   bgMiscItems.forEach(item => {
    const alreadyIn = backpackContents.some(c => c.name === item.name);
    if (!alreadyIn) backpackContents.push({ name: item.name, qty: item.qty });
@@ -4674,7 +4812,7 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
     ...wizardLanguages.filter(l => l.trim() !== ""),
    ])],
    inventory:  inventoryFromEquip,
-   currency: { pp:0, gp: selectedPkg?.gold || CLASS_STARTING_GOLD[cls?.name] || 0, ep:0, sp:0, cp:0 },
+   currency: { pp:0, gp: (selectedPkg?.gold || CLASS_STARTING_GOLD[cls?.name] || 0) + (bgPackageId === "b" ? 50 : 0), ep:0, sp:0, cp:0 },
    ...(spellData ? {
     spellcastingAbility: spellData.ability,
     spellSaveDC:         8 + 2 + Math.floor((stats[spellData.ability.toLowerCase()] - 10) / 2),
@@ -5207,6 +5345,7 @@ const chaModFinal = Math.max(1, Math.floor(((stats?.cha||10)-10)/2));
       theme={theme}
       selectedEquipment={selectedEquipment}
       onEquipmentChange={eq => setSelectedEquipment(eq)}
+      bg={data.background}
       lang={lang}
      />
      </div>
@@ -5923,7 +6062,19 @@ function CharacterSelect({onSelect,onNew,theme,onThemeChange,onShowInfo,lang,tog
  return(<div style={{minHeight:"100vh",background:"transparent",color:"white",padding:"20px 16px"}}>
   <div style={{maxWidth:480,margin:"0 auto"}}>
    <div style={{marginBottom:28,display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-    <h1 style={{fontSize:26,fontWeight:900,color:theme.accent,letterSpacing:"-0.5px"}}>⚔ {L.appTitle}</h1>
+    <div style={{display:"flex",flexDirection:"column",gap:2}}>
+     <div style={{
+      fontFamily:"'Cinzel Decorative', serif",
+      fontSize:22, fontWeight:700, lineHeight:1.1,
+      color:theme.accent,
+      letterSpacing:"0.02em",
+     }}>D&amp;D 5e</div>
+     <div style={{
+      fontFamily:"'Cinzel', serif",
+      fontSize:11, fontWeight:600, letterSpacing:"0.25em",
+      color:"rgba(255,255,255,0.35)", textTransform:"uppercase",
+     }}>Character Sheet</div>
+    </div>
     <div style={{display:"flex",gap:8,marginTop:4,alignItems:"center"}}>
      {/* Lang toggle button */}
      <button onClick={toggleLang} title={lang==="de"?"Switch to English":"Auf Deutsch wechseln"} style={{
@@ -5941,6 +6092,17 @@ function CharacterSelect({onSelect,onNew,theme,onThemeChange,onShowInfo,lang,tog
       }}>{lang==="de"?"DE":"EN"}</span>
      </button>
      {/* Info button */}
+     <a href="https://buymeacoffee.com/akitodono" target="_blank" rel="noopener noreferrer" title="Buy me a coffee ☕" style={{
+      height:36,borderRadius:8,
+      background:"linear-gradient(135deg,#FFDD00cc,#FFC200cc)",
+      border:"none",
+      cursor:"pointer",fontSize:13,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+      padding:"0 12px",lineHeight:1,transition:"all 0.2s",textDecoration:"none",
+      color:"#1a1200",boxShadow:"0 2px 8px rgba(255,210,0,0.3)",
+     }}>
+      <span>☕</span>
+      <span>{lang==="en"?"Support me":"Unterstütze mich"}</span>
+     </a>
      <button onClick={onShowInfo} title="Info" className="info-btn" style={{
       width:36,height:36,borderRadius:"50%",
       background:"rgba(255,210,0,0.12)",
@@ -7407,6 +7569,32 @@ function App(){
   <div style={{marginTop:8,paddingTop:6,borderTop:"1px solid rgba(255,255,255,0.07)",fontSize:11,color:"rgba(255,255,255,0.3)",textAlign:"center"}}><span style={{color:"rgba(255,255,255,0.5)"}}>●</span> {L.proficient} &nbsp;<span style={{color:theme.accent}}>●</span> {L.expertise}</div>
  </div>);
 
+ const PassiveSidebar=()=>{
+  const passiveF=(ch.featureList||[]).filter(f=>f.active!==false&&(f.type==="passive"||f.type==="other"));
+  if(passiveF.length===0) return null;
+  return(
+   <div className="skills-sidebar" style={{...S.card,padding:"10px 8px",minWidth:0,background:"rgba(10,10,15,0.93)"}}>
+    <div style={{fontSize:13,fontWeight:800,color:theme.accent,letterSpacing:"0.06em",marginBottom:8,textAlign:"center",textTransform:"uppercase"}}>
+     ✨ {lang==="en"?"Passive Traits":"Passive Merkmale"}
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:5}}>
+     {passiveF.map((f,i)=>(
+      <div key={i} style={{
+       background:`${theme.accent}0d`,
+       border:`1px solid ${theme.accent}2a`,
+       borderRadius:8,padding:"6px 8px",
+      }}>
+       <div style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.85)",lineHeight:1.3}}>
+        ✦ {translateDisplayName(f.keyword||f.name||"?",lang)}
+       </div>
+       {f.note&&<div style={{fontSize:10,color:"rgba(255,255,255,0.38)",marginTop:2,lineHeight:1.4}}>{f.note}</div>}
+      </div>
+     ))}
+    </div>
+   </div>
+  );
+ };
+
  return(<div style={{minHeight:"100vh",background:"transparent",color:"white",fontFamily:"system-ui,sans-serif",position:"relative"}}>
   {/* Info Modal (accessible from sheet too) */}
   {showInfo && <InfoModal onClose={()=>setShowInfo(false)} theme={theme} L={L} lang={lang}/>}
@@ -7762,6 +7950,17 @@ function App(){
      }}>{lang==="de"?"DE":"EN"}</span>
     </button>
     {/* Info button in sheet header */}
+    <a href="https://buymeacoffee.com/akitodono" target="_blank" rel="noopener noreferrer" title="Buy me a coffee ☕" style={{
+     height:32,borderRadius:8,
+     background:"linear-gradient(135deg,#FFDD00cc,#FFC200cc)",
+     border:"none",
+     cursor:"pointer",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",gap:4,
+     padding:"0 10px",lineHeight:1,transition:"all 0.2s",textDecoration:"none",
+     color:"#1a1200",boxShadow:"0 2px 8px rgba(255,210,0,0.3)",marginRight:2,
+    }}>
+     <span>☕</span>
+     <span>{lang==="en"?"Support me":"Unterstütze mich"}</span>
+    </a>
     <button onClick={()=>setShowInfo(true)} title="Info" className="info-btn" style={{
      width:32,height:32,borderRadius:"50%",
      background:"rgba(255,210,0,0.12)",
@@ -7778,8 +7977,8 @@ function App(){
    {tabs.map(([id,label])=>(<button key={id} onClick={()=>setTab(id)} style={{padding:"8px 6px",fontSize:11,fontWeight:700,borderRadius:8,border:`1px solid ${tab===id?`${theme.accent}66`:"rgba(18,18,25,0.83)"}`,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s",background:tab===id?`${theme.accent}28`:"rgba(10,10,15,0.85)",color:tab===id?theme.accent:"rgba(255,255,255,0.35)"}}>{label}</button>))}
   </div>
 
-  <div style={{position:"relative",zIndex:1,padding:"10px 8px",maxWidth:900,margin:"0 auto"}}>
-   {tab==="overview"&&(<div className="overview-grid" style={{display:"grid",gridTemplateColumns:"1fr 260px",gap:14,alignItems:"start"}}>
+  <div style={{position:"relative",zIndex:1,padding:"10px 16px",maxWidth:1200,margin:"0 auto"}}>
+   {tab==="overview"&&(<div className="overview-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,alignItems:"start"}}>
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
      <div style={{display:"flex",gap:12,alignItems:"flex-end"}}>
       {/* Bild */}
@@ -7848,7 +8047,6 @@ function App(){
       const spdBonus = activeF.filter(f=>f.type==="speed_bonus");
       const statBon  = activeF.filter(f=>f.type==="stat_bonus");
       const skillBon = activeF.filter(f=>f.type==="skill_bonus");
-      const passive  = activeF.filter(f=>f.type==="passive"||f.type==="other");
 
       const BADGE_DEFS = [
 
@@ -7965,7 +8163,7 @@ function App(){
 
       const allCount = resist.length+adv.length+disadv.length+extraAtk.length+
        atkBonus.length+sneakAtk.length+bonusDmg.length+acBonus.length+spdBonus.length+
-       statBon.length+skillBon.length+passive.length;
+       statBon.length+skillBon.length;
       if(allCount===0) return null;
 
       const Section = ({label,children}) => (
@@ -8026,45 +8224,6 @@ function App(){
           {disadv.map((f,i)=><Tag key={i} color="#f87171" bg="rgba(248,113,113,0.15)" border="#f87171" shape="sharp" note={f.note||f.desc||""}>▼ {kw(f)}</Tag>)}
          </Section>}
 
-         {passive.length>0&&<Section label={lang==="en"?"✨ PASSIVE FEATURES":"✨ PASSIVE FEATURES"}>
-          {passive.map((f,i) => {
-           const badges = getBadges(f);
-           return (
-            <div key={i} style={{
-             background:"rgba(15,15,22,0.87)",border:"2px solid rgba(255,255,255,0.12)",
-             borderRadius:12,padding:"6px 12px",display:"inline-flex",
-             flexDirection:"column",gap:4,maxWidth:280,
-             boxShadow:"0 0 6px rgba(255,255,255,0.04)",
-            }}>
-             {/* Feature-Name */}
-             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-              <span style={{fontSize:12,fontWeight:800,color:"rgba(255,255,255,0.75)"}}>
-               ✦ {translateDisplayName(f.keyword||f.name||"?",lang)}
-              </span>
-              <span style={{fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:20,
-               background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.35)",
-               flexShrink:0}}>∞</span>
-             </div>
-             {/* Erkannte Bonus-Badges */}
-             {badges.length>0&&(
-              <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-               {badges.map((b,bi)=>(
-                <span key={bi} style={{
-                 fontSize:10,fontWeight:800,padding:"2px 8px",borderRadius:20,
-                 background:b.bg,color:b.color,border:`1px solid ${b.border}55`,
-                 boxShadow:`0 0 6px ${b.border}33`,
-                }}>
-                 {b.icon} {b.labelText}
-                </span>
-               ))}
-              </div>
-             )}
-             {/* Notiz */}
-             {f.note&&<span style={{fontSize:10,fontWeight:500,color:"rgba(255,255,255,0.35)",lineHeight:1.4}}>{f.note}</span>}
-            </div>
-           );
-          })}
-         </Section>}
 
         </div>
        </div>
@@ -8394,10 +8553,17 @@ function App(){
      </div>
      <div className="skills-mobile"><SkillsMobile/></div>
     </div>
-    <div style={{position:"sticky",top:80}}><SkillsSidebar/></div>
+    <div style={{position:"sticky",top:80,display:"flex",flexDirection:"column",gap:10}}>
+     <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+      <div style={{flex:1,minWidth:0}}><SkillsSidebar/></div>
+      {(ch.featureList||[]).some(f=>f.active!==false&&(f.type==="passive"||f.type==="other"))&&(
+       <div style={{flex:1,minWidth:0}}><PassiveSidebar/></div>
+      )}
+     </div>
+    </div>
    </div>)}
 
-   {tab!=="overview"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+   {tab!=="overview"&&<div style={{display:"flex",flexDirection:"column",gap:14,maxWidth:900,margin:"0 auto"}}>
     {tab==="core"&&<>
      <div style={S.card}><div style={S.section}>📋 {lang==="en"?"Basic Info":"Grunddaten"}</div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>{[[lang==="en"?"Character Name":"Charaktername","name"],[lang==="en"?"Race":"Rasse","race"],[lang==="en"?"Background":"Hintergrund","background"],[lang==="en"?"Alignment":"Gesinnung","alignment"]].map(([l,p])=>(<div key={p}><Label>{l}</Label><AT path={p} placeholder={l}/></div>))}<div><Label>{lang==="en"?"Experience Points":"Erfahrungspunkte"}</Label><input type="number" value={ch.xp} onChange={e=>up("xp",+e.target.value)} style={S.input}/></div><div><Label>{lang==="en"?"Hit Dice":"Trefferwürfel"}</Label><AT path="hitDice" placeholder="1d8"/></div></div></div>
      <div style={S.card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><div style={S.section}>⚔ {lang==="en"?"Classes":"Klassen"}</div><button onClick={()=>upCh(n=>{n.classes.push({name:"",subclass:"",level:1});return n;})} style={{...S.btnGhost,fontSize:12,padding:"5px 12px"}}>+ {lang==="en"?"Class":"Klasse"}</button></div><div style={{display:"flex",flexDirection:"column",gap:10}}>{ch.classes.map((c,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"flex-end",background:"rgba(12,12,18,0.90)",borderRadius:12,padding:"10px 12px",border:`1px solid ${theme.border}`}}><div style={{flex:1}}><Label>{lang==="en"?"Class":"Klasse"}</Label><AutoTextarea value={c.name} onChange={e=>upCh(n=>{n.classes[i].name=e.target.value;return n;})} placeholder="Monk"/></div><div style={{flex:1}}><Label>{lang==="en"?"Subclass":"Subklasse"}</Label><AutoTextarea value={c.subclass} onChange={e=>upCh(n=>{n.classes[i].subclass=e.target.value;return n;})} placeholder="Open Hand"/></div><div style={{width:56}}><Label>Level</Label><input type="number" min="1" max="20" value={c.level} onChange={e=>upCh(n=>{n.classes[i].level=+e.target.value;return n;})} style={{...S.input,textAlign:"center",padding:"6px 4px"}}/></div><div style={{display:"flex",flexDirection:"column",gap:4}}><button onClick={()=>c.level<20&&setLevelUpModal({clsIndex:i,cls:c})} disabled={c.level>=20} title={c.level>=20?(lang==="en"?"Max level reached":"Max Level erreicht"):(lang==="en"?"Level Up!":"Level Up!")} style={{background:c.level<20?`${theme.accent}22`:"rgba(12,12,18,0.88)",color:c.level<20?theme.accent:"rgba(255,255,255,0.2)",border:`1px solid ${c.level<20?theme.accent+"55":"rgba(255,255,255,0.08)"}`,borderRadius:8,padding:"5px 8px",cursor:c.level<20?"pointer":"not-allowed",fontSize:13,fontWeight:900,fontFamily:"inherit",transition:"all 0.15s",lineHeight:1}}>⬆</button>{ch.classes.length>1&&<button onClick={()=>upCh(n=>{n.classes.splice(i,1);return n;})} style={{...S.btnDanger,padding:"5px 8px",fontSize:11}}>✕</button>}</div></div>))}<div style={{textAlign:"right",fontSize:12,color:"rgba(255,255,255,0.3)"}}>{lang==="en"?"Total Level":"Gesamt-Level"}: <span style={{color:theme.accent,fontWeight:700}}>{totalLevel}</span> · {lang==="en"?"PB":"ÜB"}: <span style={{color:theme.accent,fontWeight:700}}>{fmtMod(pb)}</span></div></div></div>
